@@ -10,6 +10,13 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function Image() {
+  // Load Space Grotesk Bold font from Google Fonts
+  const spaceGroteskBold = await fetch(
+    new URL(
+      "https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2"
+    )
+  ).then((res) => res.arrayBuffer());
+
   return new ImageResponse(
     (
       <div
@@ -21,7 +28,6 @@ export default async function Image() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#000000",
-          padding: "40px 80px",
         }}
       >
         <div
@@ -30,37 +36,44 @@ export default async function Image() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: "24px",
           }}
         >
-          <h1
+          <div
             style={{
-              fontSize: "72px",
+              fontSize: 80,
               fontWeight: 700,
               color: "#ffffff",
-              textAlign: "center",
-              margin: 0,
-              letterSpacing: "-0.02em",
+              letterSpacing: "-0.025em",
+              fontFamily: "Space Grotesk",
+              lineHeight: 1.1,
             }}
           >
             Porter Network
-          </h1>
-          <p
+          </div>
+          <div
             style={{
-              fontSize: "32px",
+              fontSize: 32,
               fontWeight: 400,
-              color: "#a1a1aa",
-              textAlign: "center",
-              margin: 0,
+              color: "rgba(255, 255, 255, 0.6)",
+              marginTop: 20,
+              fontFamily: "Space Grotesk",
             }}
           >
             The agent economy starts here
-          </p>
+          </div>
         </div>
       </div>
     ),
     {
       ...size,
+      fonts: [
+        {
+          name: "Space Grotesk",
+          data: spaceGroteskBold,
+          style: "normal",
+          weight: 700,
+        },
+      ],
     }
   );
 }
