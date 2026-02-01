@@ -23,6 +23,7 @@ import {
 import { createWalletClient, http, type WalletClient } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
+import { PorterApiClient } from '../api-client.js';
 
 // Session state for authentication
 interface AuthState {
@@ -299,38 +300,53 @@ const TOOLS = [
  * Authenticate with the Porter Network MCP server
  * Signs a challenge message with the wallet to obtain a session
  */
-async function authenticate(account: PrivateKeyAccount): Promise<AuthState | null> {
+async function authenticate(
+  account: PrivateKeyAccount,
+  apiClient: PorterApiClient
+): Promise<AuthState | null> {
   try {
-    // In a real implementation, this would call the actual Porter MCP server
-    // For now, we simulate the authentication flow
-
     console.error('Authenticating with Porter Network...');
 
-    // The challenge would come from auth_get_challenge
-    const challenge = [
-      'Porter Network Authentication',
-      '',
-      `Address: ${account.address}`,
-      `Nonce: ${crypto.randomUUID()}`,
-      `Timestamp: ${new Date().toISOString()}`,
-      '',
-      'Sign this message to authenticate with Porter Network.',
-    ].join('\n');
+    // Step 1: Get challenge from server
+    const challengeResponse = await apiClient.callTool<{
+      challenge: string;
+      walletAddress: string;
+      expiresAt: number;
+    }>('auth_get_challenge', {
+      walletAddress: account.address,
+    });
 
-    // Sign the challenge
+    const { challenge } = challengeResponse;
+
+    // Step 2: Sign the challenge
     const signature = await account.signMessage({ message: challenge });
+
+    // Step 3: Verify signature with server
+    const verifyResponse = await apiClient.callTool<{
+      sessionId: string;
+      walletAddress: string;
+      tier: string | null;
+      isVerifier: boolean;
+      isRegistered: boolean;
+      expiresAt: number;
+    }>('auth_verify', {
+      walletAddress: account.address,
+      signature,
+      challenge,
+    });
+
+    // Store session ID in API client for future calls
+    apiClient.setSessionId(verifyResponse.sessionId);
 
     console.error(`Wallet authenticated: ${account.address}`);
 
-    // In production, this would be the response from auth_verify
-    // For now, create a mock session
     return {
-      sessionId: crypto.randomUUID(),
-      walletAddress: account.address,
-      tier: 'newcomer',
-      isVerifier: false,
-      isRegistered: false, // Would be checked on-chain
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      sessionId: verifyResponse.sessionId,
+      walletAddress: verifyResponse.walletAddress,
+      tier: verifyResponse.tier,
+      isVerifier: verifyResponse.isVerifier,
+      isRegistered: verifyResponse.isRegistered,
+      expiresAt: verifyResponse.expiresAt,
     };
   } catch (error) {
     console.error('Authentication failed:', error);
@@ -346,6 +362,20 @@ async function main() {
     process.exit(1);
   }
 
+  // Get server URL from environment
+  const serverUrl = process.env.PORTER_SERVER_URL || 'http://localhost:3001';
+  console.error(`Connecting to Porter MCP Server at ${serverUrl}...`);
+
+  // Initialize API client
+  const apiClient = new PorterApiClient({ baseUrl: serverUrl });
+
+  // Check server health
+  const isHealthy = await apiClient.healthCheck();
+  if (!isHealthy) {
+    console.error(`Warning: Porter MCP Server at ${serverUrl} is not responding`);
+    console.error('Some tools may not work until the server is available');
+  }
+
   // Create wallet client
   const account = privateKeyToAccount(privateKey as `0x${string}`);
   const rpcUrl = process.env.PORTER_RPC_URL || 'https://sepolia.base.org';
@@ -357,7 +387,7 @@ async function main() {
   });
 
   // Auto-authenticate on startup
-  authState = await authenticate(account);
+  authState = await authenticate(account, apiClient);
 
   // Create MCP server
   const server = new Server(
@@ -380,113 +410,101 @@ async function main() {
   // Handle tool calls
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-
-    // Include sessionId in args for authenticated calls
-    const authenticatedArgs = {
-      ...args,
-      sessionId: authState?.sessionId,
-    };
+    const typedArgs = (args || {}) as Record<string, unknown>;
 
     try {
-      // TODO: Implement actual tool handlers that call the Porter MCP server
-      // For now, return placeholder responses
-      switch (name) {
-        // Auth status tool - returns current client auth state
-        case 'auth_status':
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  authenticated: !!authState?.sessionId,
-                  walletAddress: authState?.walletAddress || account.address,
-                  sessionId: authState?.sessionId,
-                  tier: authState?.tier,
-                  isVerifier: authState?.isVerifier,
-                  isRegistered: authState?.isRegistered,
-                  expiresAt: authState?.expiresAt,
-                }),
-              },
-            ],
-          };
-
-        case 'list_tasks':
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  tasks: [],
-                  total: 0,
-                  hasMore: false,
-                  message: 'Connected to Porter Network. No tasks found matching criteria.',
-                  sessionId: authState?.sessionId,
-                }),
-              },
-            ],
-          };
-
-        case 'get_task':
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  error: 'Task not found',
-                  taskId: args?.taskId,
-                }),
-              },
-            ],
-          };
-
-        case 'get_balance':
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  address: account.address,
-                  balance: '0',
-                  symbol: 'ETH',
-                  decimals: 18,
-                }),
-              },
-            ],
-          };
-
-        case 'get_profile':
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  address: args?.address || account.address,
-                  name: authState?.isRegistered ? 'Registered Agent' : 'Unregistered Agent',
-                  tier: authState?.tier || 'newcomer',
-                  reputation: '0',
-                  tasksCompleted: 0,
-                  successRate: 0,
-                  skills: [],
-                  isVerifier: authState?.isVerifier || false,
-                  stakedAmount: '0',
-                }),
-              },
-            ],
-          };
-
-        default:
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  error: `Tool ${name} is not yet implemented`,
-                  args: authenticatedArgs,
-                }),
-              },
-            ],
-          };
+      // auth_status is handled locally - returns current client auth state
+      if (name === 'auth_status') {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                authenticated: !!authState?.sessionId,
+                walletAddress: authState?.walletAddress || account.address,
+                sessionId: authState?.sessionId,
+                tier: authState?.tier,
+                isVerifier: authState?.isVerifier,
+                isRegistered: authState?.isRegistered,
+                expiresAt: authState?.expiresAt,
+              }),
+            },
+          ],
+        };
       }
+
+      // get_balance and get_profile are handled locally (read from chain)
+      if (name === 'get_balance') {
+        // TODO: Implement actual balance query from chain
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                address: account.address,
+                balance: '0',
+                symbol: 'ETH',
+                decimals: 18,
+              }),
+            },
+          ],
+        };
+      }
+
+      if (name === 'get_profile') {
+        // TODO: Implement actual profile query from chain
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                address: typedArgs.address || account.address,
+                name: authState?.isRegistered ? 'Registered Agent' : 'Unregistered Agent',
+                tier: authState?.tier || 'newcomer',
+                reputation: '0',
+                tasksCompleted: 0,
+                successRate: 0,
+                skills: [],
+                isVerifier: authState?.isVerifier || false,
+                stakedAmount: '0',
+              }),
+            },
+          ],
+        };
+      }
+
+      // All other tools are forwarded to the Porter MCP Server
+      const result = await apiClient.callTool(name, typedArgs);
+
+      // Special handling for auth_verify - update local auth state
+      if (name === 'auth_verify') {
+        const verifyResult = result as {
+          sessionId: string;
+          walletAddress: string;
+          tier: string | null;
+          isVerifier: boolean;
+          isRegistered: boolean;
+          expiresAt: number;
+        };
+        authState = {
+          sessionId: verifyResult.sessionId,
+          walletAddress: verifyResult.walletAddress,
+          tier: verifyResult.tier,
+          isVerifier: verifyResult.isVerifier,
+          isRegistered: verifyResult.isRegistered,
+          expiresAt: verifyResult.expiresAt,
+        };
+        apiClient.setSessionId(verifyResult.sessionId);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
     } catch (error) {
       return {
         content: [
@@ -506,7 +524,8 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error('Porter Network MCP server started');
+  console.error('Porter Network MCP client started');
+  console.error(`Server: ${serverUrl}`);
   console.error(`Wallet: ${account.address}`);
   console.error(`RPC: ${rpcUrl}`);
   console.error(`Authenticated: ${!!authState?.sessionId}`);
