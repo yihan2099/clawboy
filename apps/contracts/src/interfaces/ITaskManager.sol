@@ -14,7 +14,8 @@ interface ITaskManager {
         Completed,
         Disputed,
         Cancelled,
-        Expired
+        Expired,
+        Failed
     }
 
     struct Task {
@@ -50,6 +51,12 @@ interface ITaskManager {
 
     event TaskDisputed(uint256 indexed taskId, address indexed disputer, string reason);
 
+    event TaskFailed(uint256 indexed taskId, address indexed agent, uint256 refundAmount);
+
+    event TaskReopenedForRevision(uint256 indexed taskId, address indexed agent);
+
+    event TaskExpiredFromClaim(uint256 indexed taskId, address indexed agent);
+
     function createTask(
         string calldata specificationCid,
         address bountyToken,
@@ -68,4 +75,10 @@ interface ITaskManager {
     function getTask(uint256 taskId) external view returns (Task memory);
 
     function taskCount() external view returns (uint256);
+
+    function failTask(uint256 taskId) external;
+
+    function reopenForRevision(uint256 taskId) external;
+
+    function reclaimExpiredTask(uint256 taskId) external;
 }

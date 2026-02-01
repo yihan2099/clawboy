@@ -39,6 +39,8 @@ contract TaskManager is ITaskManager {
     error TaskAlreadyClaimed();
     error OnlyOwner();
     error OnlyVerificationHub();
+    error ClaimNotExpired();
+    error OnlyCreatorCanReclaim();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert OnlyOwner();
@@ -190,6 +192,89 @@ contract TaskManager is ITaskManager {
         porterRegistry.incrementCompleted(task.claimedBy);
 
         emit TaskCompleted(taskId, task.claimedBy, task.bountyAmount);
+    }
+
+    /**
+     * @notice Fail a task (called by VerificationHub when verdict is Rejected)
+     * @param taskId The task ID
+     */
+    function failTask(uint256 taskId) external onlyVerificationHub {
+        Task storage task = _tasks[taskId];
+        if (task.id == 0) revert TaskNotFound();
+
+        address failedAgent = task.claimedBy;
+        uint256 refundAmount = task.bountyAmount;
+
+        task.status = TaskStatus.Failed;
+        task.claimedBy = address(0);
+        task.claimedAt = 0;
+        task.submissionCid = "";
+
+        // Refund bounty to creator
+        escrowVault.refund(taskId, task.creator);
+
+        // Penalize agent (-50 reputation)
+        porterRegistry.incrementFailed(failedAgent);
+        porterRegistry.updateReputation(failedAgent, -50);
+
+        emit TaskFailed(taskId, failedAgent, refundAmount);
+    }
+
+    /**
+     * @notice Reopen a task for revision (called by VerificationHub when revision is requested)
+     * @param taskId The task ID
+     */
+    function reopenForRevision(uint256 taskId) external onlyVerificationHub {
+        Task storage task = _tasks[taskId];
+        if (task.id == 0) revert TaskNotFound();
+
+        address currentAgent = task.claimedBy;
+
+        // Reset to Claimed so agent can resubmit
+        task.status = TaskStatus.Claimed;
+        task.submissionCid = "";
+        task.claimedAt = block.timestamp; // Reset claim timer
+
+        uint256 newDeadline = block.timestamp + DEFAULT_CLAIM_DURATION;
+        if (task.deadline != 0 && task.deadline < newDeadline) {
+            newDeadline = task.deadline;
+        }
+
+        emit TaskReopenedForRevision(taskId, currentAgent);
+        emit TaskClaimed(taskId, currentAgent, newDeadline);
+    }
+
+    /**
+     * @notice Reclaim an expired task (called by creator when claim has expired)
+     * @param taskId The task ID
+     */
+    function reclaimExpiredTask(uint256 taskId) external {
+        Task storage task = _tasks[taskId];
+        if (task.id == 0) revert TaskNotFound();
+        if (task.creator != msg.sender) revert OnlyCreatorCanReclaim();
+        if (task.status != TaskStatus.Claimed) revert TaskNotClaimed();
+
+        // Check if claim has expired
+        uint256 claimDeadline = task.claimedAt + DEFAULT_CLAIM_DURATION;
+        if (task.deadline != 0 && task.deadline < claimDeadline) {
+            claimDeadline = task.deadline;
+        }
+        if (block.timestamp <= claimDeadline) revert ClaimNotExpired();
+
+        address expiredAgent = task.claimedBy;
+
+        task.status = TaskStatus.Expired;
+        task.claimedBy = address(0);
+        task.claimedAt = 0;
+
+        // Refund bounty
+        escrowVault.refund(taskId, task.creator);
+
+        // Penalize agent (-25 reputation, less than rejection)
+        porterRegistry.incrementFailed(expiredAgent);
+        porterRegistry.updateReputation(expiredAgent, -25);
+
+        emit TaskExpiredFromClaim(taskId, expiredAgent);
     }
 
     /**

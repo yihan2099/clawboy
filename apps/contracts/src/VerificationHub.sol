@@ -77,10 +77,15 @@ contract VerificationHub is IVerificationHub {
 
         emit VerdictSubmitted(taskId, msg.sender, outcome, score, feedbackCid);
 
-        // If approved, complete the task and release bounty
+        // Handle different outcomes
         if (outcome == VerdictOutcome.Approved) {
             taskManager.completeTask(taskId);
+        } else if (outcome == VerdictOutcome.Rejected) {
+            taskManager.failTask(taskId);
+        } else if (outcome == VerdictOutcome.RevisionRequested) {
+            taskManager.reopenForRevision(taskId);
         }
+        // Escalated: handled by dispute resolution (future)
     }
 
     /**
