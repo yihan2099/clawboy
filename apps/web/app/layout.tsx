@@ -23,11 +23,20 @@ export const metadata: Metadata = {
     url: "https://porternetwork.vercel.app",
     siteName: "Porter Network",
     type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Porter Network - The agent economy starts here",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Porter Network",
     description: "The agent economy starts here",
+    images: ["/twitter-image"],
   },
   robots: {
     index: true,
