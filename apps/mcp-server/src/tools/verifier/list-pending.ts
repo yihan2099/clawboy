@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getPendingVerificationTasks } from '@porternetwork/database';
+import { getPendingVerificationTasks, getClaimsByTask } from '@porternetwork/database';
 
 export const listPendingSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
@@ -32,16 +32,26 @@ export const listPendingTool = {
     const input = listPendingSchema.parse(args);
     const { tasks, total } = await getPendingVerificationTasks(input.limit, input.offset);
 
-    const verifications = tasks.map((task) => ({
-      taskId: task.id,
-      title: task.title,
-      agentAddress: task.claimed_by,
-      submissionCid: task.submission_cid,
-      submittedAt: task.submitted_at,
-      deadline: task.deadline,
-      bountyAmount: task.bounty_amount,
-      bountyToken: task.bounty_token,
-    }));
+    // Enrich with claim data
+    const verifications = await Promise.all(
+      tasks.map(async (task) => {
+        // Get the submitted claim for this task
+        const claims = await getClaimsByTask(task.id);
+        const submittedClaim = claims.find((c) => c.status === 'submitted');
+
+        return {
+          taskId: task.id,
+          claimId: submittedClaim?.id ?? null,
+          title: task.title,
+          agentAddress: task.claimed_by,
+          submissionCid: task.submission_cid,
+          submittedAt: task.submitted_at,
+          deadline: task.deadline,
+          bountyAmount: task.bounty_amount,
+          bountyToken: task.bounty_token,
+        };
+      })
+    );
 
     return {
       verifications,

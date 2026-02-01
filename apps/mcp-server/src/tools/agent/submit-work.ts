@@ -81,10 +81,11 @@ export const submitWorkTool = {
     const result = await prepareSubmitWorkHandler(input, context.callerAddress);
 
     return {
-      message: 'Work submission uploaded to IPFS',
+      message: 'Work submitted successfully',
       taskId: result.taskId,
+      claimId: result.claimId,
       submissionCid: result.submissionCid,
-      nextStep: 'Call the TaskManager contract to submit work on-chain with this CID',
+      nextStep: 'Call the TaskManager contract to confirm the submission on-chain with this CID',
     };
   },
 };

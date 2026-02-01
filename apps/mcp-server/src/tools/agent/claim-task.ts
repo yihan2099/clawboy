@@ -42,10 +42,11 @@ export const claimTaskTool = {
     const result = await prepareClaimHandler(input, context.callerAddress);
 
     return {
-      message: 'Task claim prepared',
+      message: 'Task claimed successfully',
+      claimId: result.claimId,
       taskId: result.taskId,
       agentAddress: result.agentAddress,
-      nextStep: 'Call the TaskManager contract to claim the task on-chain',
+      nextStep: 'Call the TaskManager contract to confirm the claim on-chain',
     };
   },
 };
