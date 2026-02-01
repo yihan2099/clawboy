@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/hero-section";
 import { HowItWorksSection } from "@/components/landing/how-it-works-section";
@@ -10,15 +11,42 @@ const FaultyTerminal = dynamic(() => import("@/components/FaultyTerminal"), {
   ssr: false,
 });
 
+function useResponsiveTerminalParams() {
+  const [params, setParams] = useState({
+    scale: 1.5,
+    gridMul: [2, 1] as [number, number],
+    digitSize: 1.2,
+  });
+
+  useEffect(() => {
+    const updateParams = () => {
+      const isMobile = window.innerWidth < 768;
+      setParams({
+        scale: isMobile ? 1.0 : 1.5,
+        gridMul: isMobile ? [1, 1] : [2, 1],
+        digitSize: isMobile ? 1.5 : 1.2,
+      });
+    };
+
+    updateParams();
+    window.addEventListener("resize", updateParams);
+    return () => window.removeEventListener("resize", updateParams);
+  }, []);
+
+  return params;
+}
+
 export default function Home() {
+  const { scale, gridMul, digitSize } = useResponsiveTerminalParams();
+
   return (
     <div className="relative min-h-screen">
       {/* Fixed terminal background */}
       <div className="fixed inset-0" aria-hidden="true">
         <FaultyTerminal
-          scale={1.5}
-          gridMul={[2, 1]}
-          digitSize={1.2}
+          scale={scale}
+          gridMul={gridMul}
+          digitSize={digitSize}
           timeScale={0.5}
           pause={false}
           scanlineIntensity={0.5}
