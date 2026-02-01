@@ -213,10 +213,10 @@ float botChar(vec2 p, float variant) {
     else return botCharCrab(p);  // 30% chance for crab
 }
 
-// XHODAI logo text (spans 6 cells horizontally)
+// PORTERNETWORK logo text (spans 13 cells horizontally)
 // Each letter is 3x5, with 1 pixel spacing = 4 pixels per letter
-// Total width: 6 letters * 4 - 1 = 23 pixels, height: 5 pixels
-float xhodaiLogo(vec2 p, int letterIndex) {
+// Total width: 13 letters * 4 - 1 = 51 pixels, height: 5 pixels
+float porternetworkLogo(vec2 p, int letterIndex) {
     float px = p.x * 3.0;
     float py = (1.0 - p.y) * 5.0;
     int ix = int(floor(px));
@@ -224,53 +224,109 @@ float xhodaiLogo(vec2 p, int letterIndex) {
 
     bool on = false;
 
-    // X (3x5)
+    // P (3x5)
     if (letterIndex == 0) {
-        if (iy == 0) on = (ix == 0 || ix == 2);
-        else if (iy == 1) on = (ix == 1);
-        else if (iy == 2) on = (ix == 1);
-        else if (iy == 3) on = (ix == 1);
-        else if (iy == 4) on = (ix == 0 || ix == 2);
-    }
-    // H (3x5)
-    else if (letterIndex == 1) {
-        if (iy == 0) on = (ix == 0 || ix == 2);
+        if (iy == 0) on = (ix == 0 || ix == 1);
         else if (iy == 1) on = (ix == 0 || ix == 2);
-        else if (iy == 2) on = true;
-        else if (iy == 3) on = (ix == 0 || ix == 2);
-        else if (iy == 4) on = (ix == 0 || ix == 2);
+        else if (iy == 2) on = (ix == 0 || ix == 1);
+        else if (iy == 3) on = (ix == 0);
+        else if (iy == 4) on = (ix == 0);
     }
     // O (3x5)
-    else if (letterIndex == 2) {
+    else if (letterIndex == 1) {
         if (iy == 0) on = (ix == 1);
         else if (iy == 1) on = (ix == 0 || ix == 2);
         else if (iy == 2) on = (ix == 0 || ix == 2);
         else if (iy == 3) on = (ix == 0 || ix == 2);
         else if (iy == 4) on = (ix == 1);
     }
-    // D (3x5)
-    else if (letterIndex == 3) {
+    // R (3x5)
+    else if (letterIndex == 2) {
         if (iy == 0) on = (ix == 0 || ix == 1);
         else if (iy == 1) on = (ix == 0 || ix == 2);
-        else if (iy == 2) on = (ix == 0 || ix == 2);
-        else if (iy == 3) on = (ix == 0 || ix == 2);
-        else if (iy == 4) on = (ix == 0 || ix == 1);
-    }
-    // A (3x5)
-    else if (letterIndex == 4) {
-        if (iy == 0) on = (ix == 1);
-        else if (iy == 1) on = (ix == 0 || ix == 2);
-        else if (iy == 2) on = true;
+        else if (iy == 2) on = (ix == 0 || ix == 1);
         else if (iy == 3) on = (ix == 0 || ix == 2);
         else if (iy == 4) on = (ix == 0 || ix == 2);
     }
-    // I (3x5)
-    else if (letterIndex == 5) {
+    // T (3x5)
+    else if (letterIndex == 3) {
         if (iy == 0) on = true;
         else if (iy == 1) on = (ix == 1);
         else if (iy == 2) on = (ix == 1);
         else if (iy == 3) on = (ix == 1);
+        else if (iy == 4) on = (ix == 1);
+    }
+    // E (3x5)
+    else if (letterIndex == 4) {
+        if (iy == 0) on = true;
+        else if (iy == 1) on = (ix == 0);
+        else if (iy == 2) on = (ix == 0 || ix == 1);
+        else if (iy == 3) on = (ix == 0);
         else if (iy == 4) on = true;
+    }
+    // R (3x5)
+    else if (letterIndex == 5) {
+        if (iy == 0) on = (ix == 0 || ix == 1);
+        else if (iy == 1) on = (ix == 0 || ix == 2);
+        else if (iy == 2) on = (ix == 0 || ix == 1);
+        else if (iy == 3) on = (ix == 0 || ix == 2);
+        else if (iy == 4) on = (ix == 0 || ix == 2);
+    }
+    // N (3x5)
+    else if (letterIndex == 6) {
+        if (iy == 0) on = (ix == 0 || ix == 2);
+        else if (iy == 1) on = true;
+        else if (iy == 2) on = (ix == 0 || ix == 2);
+        else if (iy == 3) on = (ix == 0 || ix == 2);
+        else if (iy == 4) on = (ix == 0 || ix == 2);
+    }
+    // E (3x5)
+    else if (letterIndex == 7) {
+        if (iy == 0) on = true;
+        else if (iy == 1) on = (ix == 0);
+        else if (iy == 2) on = (ix == 0 || ix == 1);
+        else if (iy == 3) on = (ix == 0);
+        else if (iy == 4) on = true;
+    }
+    // T (3x5)
+    else if (letterIndex == 8) {
+        if (iy == 0) on = true;
+        else if (iy == 1) on = (ix == 1);
+        else if (iy == 2) on = (ix == 1);
+        else if (iy == 3) on = (ix == 1);
+        else if (iy == 4) on = (ix == 1);
+    }
+    // W (3x5)
+    else if (letterIndex == 9) {
+        if (iy == 0) on = (ix == 0 || ix == 2);
+        else if (iy == 1) on = (ix == 0 || ix == 2);
+        else if (iy == 2) on = (ix == 0 || ix == 2);
+        else if (iy == 3) on = true;
+        else if (iy == 4) on = (ix == 0 || ix == 2);
+    }
+    // O (3x5)
+    else if (letterIndex == 10) {
+        if (iy == 0) on = (ix == 1);
+        else if (iy == 1) on = (ix == 0 || ix == 2);
+        else if (iy == 2) on = (ix == 0 || ix == 2);
+        else if (iy == 3) on = (ix == 0 || ix == 2);
+        else if (iy == 4) on = (ix == 1);
+    }
+    // R (3x5)
+    else if (letterIndex == 11) {
+        if (iy == 0) on = (ix == 0 || ix == 1);
+        else if (iy == 1) on = (ix == 0 || ix == 2);
+        else if (iy == 2) on = (ix == 0 || ix == 1);
+        else if (iy == 3) on = (ix == 0 || ix == 2);
+        else if (iy == 4) on = (ix == 0 || ix == 2);
+    }
+    // K (3x5)
+    else if (letterIndex == 12) {
+        if (iy == 0) on = (ix == 0 || ix == 2);
+        else if (iy == 1) on = (ix == 0 || ix == 1);
+        else if (iy == 2) on = (ix == 0);
+        else if (iy == 3) on = (ix == 0 || ix == 1);
+        else if (iy == 4) on = (ix == 0 || ix == 2);
     }
 
     return on ? 1.0 : 0.0;
@@ -340,13 +396,13 @@ float digit(vec2 p){
     float cellHash3 = fract(sin(dot(cellId + uSeed * 3.0, vec2(27.632, 41.912))) * 65432.123);
     float cellHash4 = fract(sin(dot(cellId + uSeed * 4.0, vec2(73.156, 19.847))) * 98234.567);
 
-    // XHODAI logo - random placement based on hash, checking 6 consecutive cells
+    // PORTERNETWORK logo - random placement based on hash, checking 13 consecutive cells
     bool isLogo = false;
     int letterIndex = 0;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 13; i++) {
         vec2 checkCell = cellId - vec2(float(i), 0.0);
         float checkHash = fract(sin(dot(checkCell + uSeed, vec2(55.123, 33.456))) * 77777.0);
-        if (checkHash < 0.004) {
+        if (checkHash < 0.002) {
             isLogo = true;
             letterIndex = i;
             break;
@@ -365,8 +421,8 @@ float digit(vec2 p){
     float brightness = 0.0;
 
     if (isLogo) {
-        // Render XHODAI letter
-        float logoVal = xhodaiLogo(p, letterIndex);
+        // Render PORTERNETWORK letter
+        float logoVal = porternetworkLogo(p, letterIndex);
         brightness = logoVal * 0.85;
     } else if (isBot && intensity > 0.1) {
         // Render bot character (brighter, more prominent) with random variant

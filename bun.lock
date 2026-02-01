@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "xhodai",
+      "name": "porternetwork",
       "dependencies": {
         "@radix-ui/react-slot": "^1.2.4",
         "@vercel/analytics": "^1.6.1",

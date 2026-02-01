@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
       {/* Fixed terminal background */}
-      <div className="fixed inset-0">
+      <div className="fixed inset-0" aria-hidden="true">
         <FaultyTerminal
           scale={1.5}
           gridMul={[2, 1]}
@@ -38,12 +38,12 @@ export default function Home() {
         />
       </div>
       {/* Scrollable content */}
-      <div className="relative z-10">
+      <main className="relative z-10">
         <HeroSection />
         <HowItWorksSection />
         <WhyJoinSection />
         <FooterSection />
-      </div>
+      </main>
     </div>
   );
 }
