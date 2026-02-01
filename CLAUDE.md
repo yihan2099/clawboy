@@ -4,67 +4,97 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Porter Network is a Turborepo + Bun monorepo for an "agent economy" platform where tasks can be posted, completed, and verified by autonomous agents. Currently consists of a Next.js landing page with waitlist functionality.
+Porter Network is a Turborepo + Bun monorepo for an "agent economy" platform where tasks can be posted, completed, and verified by autonomous agents on Base (L2). The platform uses smart contracts for task management and escrow, with an MCP (Model Context Protocol) integration for AI agent interaction.
 
 ## Commands
 
 ```bash
 # Development
-bun install           # Install all dependencies
-bun run dev           # Start dev server (Next.js with Turbopack)
-bun run build         # Build all packages
-bun run lint          # Lint all packages
-bun run clean         # Remove build artifacts and node_modules
+bun install                    # Install all dependencies
+bun run dev                    # Start all dev servers
+bun run dev:web                # Start only the Next.js web app
+bun run dev:mcp                # Start only the MCP server
+bun run dev:indexer            # Start only the blockchain indexer
+bun run build                  # Build all packages
+bun run lint                   # Lint all packages
+bun run typecheck              # TypeScript check all packages
+bun run clean                  # Remove build artifacts and node_modules
+
+# Smart Contracts (requires Foundry)
+bun run build:contracts        # Build Solidity contracts
+bun run test:contracts         # Run contract tests with verbose output
+
+# Within apps/contracts directory:
+forge test -vvv                # Run tests with traces
+forge test --gas-report        # Run tests with gas report
+forge coverage                 # Generate coverage report
+forge fmt                      # Format Solidity code
 ```
 
-Dev server runs at http://localhost:3000.
+Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3001.
 
 ## Architecture
 
 ```
 porternetwork/
 ├── apps/
-│   └── web/                    # Next.js 16 application (main app)
+│   ├── web/                   # Next.js 16 landing page + waitlist
+│   ├── contracts/             # Foundry Solidity smart contracts (Base L2)
+│   ├── mcp-server/            # MCP server for AI agent integration
+│   └── indexer/               # Blockchain event indexer
 ├── packages/
-│   ├── shared-types/           # Shared TypeScript types
-│   ├── ui-components/          # Shared UI component library
-│   ├── web3-utils/             # Web3 utilities (placeholder)
-│   └── ipfs-utils/             # IPFS utilities (placeholder)
-├── turbo.json                  # Turborepo pipeline config
-└── package.json                # Bun workspace root
+│   ├── contracts/             # TypeScript ABIs and contract addresses
+│   ├── database/              # Supabase client and queries
+│   ├── shared-types/          # Shared TypeScript types (task, agent, claim, verification, mcp)
+│   ├── mcp-client/            # Publishable MCP client for Claude Desktop
+│   ├── web3-utils/            # Web3 utilities (viem-based)
+│   └── ipfs-utils/            # IPFS/Pinata utilities
 ```
 
-### Web App Structure (apps/web)
+### Smart Contracts (apps/contracts)
 
-- **app/**: Next.js App Router pages and layouts
-- **app/actions/**: Server actions (e.g., `joinWaitlist`)
-- **components/landing/**: Landing page section components
-- **components/ui/**: shadcn/ui components (New York style)
-- **lib/**: Utilities, validations, rate limiting
-- **middleware.ts**: Rate limiting middleware
+Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
+- **TaskManager.sol**: Task creation, claiming, and lifecycle management
+- **EscrowVault.sol**: Payment escrow for task rewards
+- **VerificationHub.sol**: Task completion verification logic
+- **PorterRegistry.sol**: Agent registration and reputation
 
-### Key Patterns
+### MCP Integration
 
-1. **Server Actions**: Waitlist uses Next.js server actions with Zod validation
-2. **Rate Limiting**: In-memory rate limiter (5 requests/hour per IP) via middleware
-3. **Security Hardening**: SSRF protection in URL validation, strict security headers in next.config.ts
-4. **UI**: shadcn/ui with Radix primitives, TailwindCSS 4, CVA for variants
-5. **WebGL Effect**: FaultyTerminal component using OGL library for background effect
+- **mcp-server** (apps/): Backend MCP server exposing Porter Network tools to AI agents
+- **mcp-client** (packages/): NPM-publishable client for adding Porter capabilities to Claude Desktop
+
+### Data Flow
+
+1. Tasks created on-chain via TaskManager with specs stored on IPFS (Pinata)
+2. Indexer watches chain events and syncs to Supabase
+3. MCP server queries Supabase and exposes tools for agents to browse/claim/submit tasks
+4. Verification and payout handled on-chain via VerificationHub and EscrowVault
 
 ## Environment Variables
 
-Copy `apps/web/.env.local.example` to `apps/web/.env.local`:
+Each app has its own `.env.example`:
 
-```
-RESEND_API_KEY=re_xxxxx
-RESEND_NEWSLETTER_SEGMENT_ID=xxxxx
-```
+**apps/web/.env.local**:
+- `RESEND_API_KEY`, `RESEND_NEWSLETTER_SEGMENT_ID` - Waitlist email functionality
+
+**apps/contracts/.env**:
+- `BASE_SEPOLIA_RPC_URL`, `BASE_MAINNET_RPC_URL` - RPC endpoints
+- `DEPLOYER_PRIVATE_KEY` - For contract deployment
+- `BASESCAN_API_KEY` - For contract verification
+
+**apps/indexer/.env** and **apps/mcp-server/.env**:
+- `RPC_URL`, `CHAIN_ID` - Blockchain connection
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` - Database
+- `PINATA_JWT`, `PINATA_GATEWAY` - IPFS for task specs
 
 ## Tech Stack
 
 - **Runtime**: Bun 1.3.5
-- **Framework**: Next.js 16.1.6 with React 19
-- **Build**: Turbopack (dev), Turborepo (monorepo)
-- **Styling**: TailwindCSS 4, shadcn/ui
-- **Validation**: Zod 4
-- **Email**: Resend
+- **Monorepo**: Turborepo
+- **Web**: Next.js 16 with React 19, TailwindCSS 4, shadcn/ui
+- **Contracts**: Foundry, Solidity 0.8.24, OpenZeppelin
+- **Blockchain**: Base (L2), viem for TypeScript interactions
+- **Database**: Supabase
+- **Storage**: IPFS via Pinata
+- **MCP**: @modelcontextprotocol/sdk
