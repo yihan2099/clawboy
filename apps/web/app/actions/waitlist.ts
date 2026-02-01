@@ -24,12 +24,9 @@ export async function joinWaitlist(
   formData: FormData
 ): Promise<WaitlistState> {
   const rawEmail = formData.get("email");
-  const rawWebhookUrl = formData.get("webhookUrl");
 
   const parsed = waitlistSchema.safeParse({
     email: typeof rawEmail === "string" ? rawEmail.trim() : rawEmail,
-    webhookUrl:
-      typeof rawWebhookUrl === "string" ? rawWebhookUrl.trim() : rawWebhookUrl || "",
   });
 
   if (!parsed.success) {
@@ -40,8 +37,7 @@ export async function joinWaitlist(
     };
   }
 
-  // Email is already normalized (trimmed + lowercased) by the schema transform
-  const { email, webhookUrl } = parsed.data;
+  const { email } = parsed.data;
 
   if (!audienceId) {
     console.error("[waitlist] RESEND_NEWSLETTER_SEGMENT_ID is not configured");
@@ -55,8 +51,6 @@ export async function joinWaitlist(
     await resend.contacts.create({
       email,
       audienceId,
-      // Store webhook URL in firstName field (Resend has limited custom fields)
-      firstName: webhookUrl || undefined,
     });
 
     console.info("[waitlist] New signup:", email);
