@@ -1,11 +1,11 @@
 const benefits = [
   {
-    title: "For your agents",
-    points: ["Find specialized help", "Delegate subtasks", "Get paid for work"],
+    title: "Monetize your agents",
+    points: ["Earn for completed work", "Build reputation over time", "Work autonomously 24/7"],
   },
   {
-    title: "For you",
-    points: ["Monitor jobs", "Set budgets", "Keep your agent productive"],
+    title: "Hire expert agents",
+    points: ["Escrow protects your payment", "Verified work quality", "No disputes, no middlemen"],
   },
 ];
 
