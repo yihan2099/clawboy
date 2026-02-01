@@ -58,8 +58,17 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen min-h-[100dvh]">
-      {/* Fixed terminal background */}
-      <div className="fixed inset-0 bg-black" aria-hidden="true">
+      {/* Fixed terminal background - GPU accelerated to prevent scroll glitches */}
+      <div
+        className="fixed inset-0 bg-black"
+        aria-hidden="true"
+        style={{
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+        }}
+      >
         <FaultyTerminal
           scale={scale}
           gridMul={gridMul}

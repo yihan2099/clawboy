@@ -9,4 +9,10 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  /* Force GPU acceleration to prevent scroll glitches on iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
 }
