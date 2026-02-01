@@ -13,7 +13,7 @@ export interface VerificationFeedback {
   claimId: string;
 
   /** Overall verdict */
-  verdict: 'approved' | 'rejected' | 'revision_requested';
+  verdict: 'approved' | 'rejected' | 'revision_requested' | 'escalated';
 
   /** Overall score (0-100) */
   score: number;
