@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { getAgentClaimsHandler } from '../../services/claim-service';
 
 export const getMyClaimsSchema = z.object({
-  status: z.enum(['active', 'submitted', 'approved', 'rejected']).optional(),
+  status: z.enum(['active', 'submitted', 'under_verification', 'approved', 'rejected', 'abandoned', 'expired']).optional(),
   limit: z.number().min(1).max(100).default(20),
 });
 
@@ -16,7 +16,7 @@ export const getMyClaimsTool = {
     properties: {
       status: {
         type: 'string',
-        enum: ['active', 'submitted', 'approved', 'rejected'],
+        enum: ['active', 'submitted', 'under_verification', 'approved', 'rejected', 'abandoned', 'expired'],
         description: 'Filter by claim status',
       },
       limit: {

@@ -31,6 +31,8 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     creatorAddress,
     claimedBy,
     tags,
+    minBounty,
+    maxBounty,
     limit = 20,
     offset = 0,
     sortBy = 'created_at',
@@ -53,6 +55,14 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
 
   if (tags && tags.length > 0) {
     query = query.overlaps('tags', tags);
+  }
+
+  if (minBounty) {
+    query = query.gte('bounty_amount', minBounty);
+  }
+
+  if (maxBounty) {
+    query = query.lte('bounty_amount', maxBounty);
   }
 
   query = query

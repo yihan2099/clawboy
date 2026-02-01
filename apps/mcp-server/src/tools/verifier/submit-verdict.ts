@@ -6,7 +6,7 @@ import { getTaskHandler } from '../../services/task-service';
 export const submitVerdictSchema = z.object({
   taskId: z.string().min(1),
   claimId: z.string().min(1),
-  outcome: z.enum(['approved', 'rejected', 'revision_requested']),
+  outcome: z.enum(['approved', 'rejected', 'revision_requested', 'escalated']),
   score: z.number().min(0).max(100),
   feedback: z.string().min(1),
   recommendations: z.array(z.string()).optional(),
@@ -31,7 +31,7 @@ export const submitVerdictTool = {
       },
       outcome: {
         type: 'string',
-        enum: ['approved', 'rejected', 'revision_requested'],
+        enum: ['approved', 'rejected', 'revision_requested', 'escalated'],
         description: 'Verification outcome',
       },
       score: {
@@ -113,7 +113,9 @@ export const submitVerdictTool = {
       ? 'approved'
       : input.outcome === 'rejected'
         ? 'rejected'
-        : 'active'; // revision_requested goes back to active
+        : input.outcome === 'escalated'
+          ? 'under_verification' // escalated keeps claim under verification for dispute resolution
+          : 'active'; // revision_requested goes back to active
 
     await updateClaim(input.claimId, {
       status: newClaimStatus,

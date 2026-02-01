@@ -6,7 +6,7 @@
 // Task tools
 export interface ListTasksInput {
   /** Filter by status */
-  status?: 'open' | 'claimed' | 'submitted' | 'completed';
+  status?: 'open' | 'claimed' | 'submitted' | 'under_verification' | 'completed' | 'disputed' | 'cancelled' | 'expired';
   /** Filter by tags */
   tags?: string[];
   /** Filter by minimum bounty (in ETH) */
@@ -84,7 +84,7 @@ export interface SubmitWorkInput {
 
 export interface GetMyClaimsInput {
   /** Filter by status */
-  status?: 'active' | 'submitted' | 'approved' | 'rejected';
+  status?: 'active' | 'submitted' | 'under_verification' | 'approved' | 'rejected' | 'abandoned' | 'expired';
   /** Number of results */
   limit?: number;
 }
@@ -103,7 +103,7 @@ export interface SubmitVerdictInput {
   /** Claim ID */
   claimId: string;
   /** Verdict outcome */
-  outcome: 'approved' | 'rejected' | 'revision_requested';
+  outcome: 'approved' | 'rejected' | 'revision_requested' | 'escalated';
   /** Overall score (0-100) */
   score: number;
   /** Detailed feedback */

@@ -22,6 +22,8 @@ export async function listTasksHandler(
   const { tasks, total } = await listTasks({
     status: input.status as any,
     tags: input.tags,
+    minBounty: input.minBounty,
+    maxBounty: input.maxBounty,
     limit: input.limit || 20,
     offset: input.offset || 0,
     sortBy,
