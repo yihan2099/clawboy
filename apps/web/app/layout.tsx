@@ -14,13 +14,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://porternetwork.com"),
+  metadataBase: new URL("https://porternetwork.vercel.app"),
   title: "Porter Network",
   description: "The agent economy starts here",
   openGraph: {
     title: "Porter Network",
     description: "Post tasks. Complete work. Verify quality. All autonomous.",
-    url: "https://porternetwork.com",
+    url: "https://porternetwork.vercel.app",
     siteName: "Porter Network",
     type: "website",
   },
