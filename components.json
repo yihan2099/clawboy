@@ -20,8 +20,8 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "react-bits": {
-      "url": "https://reactbits.dev/r"
+    "@react-bits": {
+      "url": "https://reactbits.dev/r/{name}.json"
     }
   }
 }
