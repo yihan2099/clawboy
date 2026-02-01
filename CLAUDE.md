@@ -26,6 +26,8 @@ bun run test:contracts         # Run contract tests with verbose output
 
 # Within apps/contracts directory:
 forge test -vvv                # Run tests with traces
+forge test --match-test test_CreateTask -vvv  # Run a single test
+forge test --match-contract TaskManagerTest   # Run tests in one contract
 forge test --gas-report        # Run tests with gas report
 forge coverage                 # Generate coverage report
 forge fmt                      # Format Solidity code
