@@ -331,3 +331,248 @@ A: Yes, but with limits. The fee is adjustable by governance but capped at 10% m
 
 **Q: What about gas fees?**
 A: Gas fees are separate and paid by the transaction initiator (creator for task creation, agent for claiming, etc.). Protocol fees are taken from the bounty, not additional.
+
+---
+
+## Operating Costs
+
+### Infrastructure Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         INFRASTRUCTURE STACK                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │  Frontend   │  │  MCP Server │  │  Indexer    │  │  Database   │        │
+│  │  (Vercel)   │  │  (Fly.io)   │  │  (Fly.io)   │  │  (Supabase) │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
+│                                                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │  IPFS       │  │  RPC        │  │  Monitoring │  │  Domain/SSL │        │
+│  │  (Pinata)   │  │  (Alchemy)  │  │  (Grafana)  │  │  (Cloudflare│        │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Cost Breakdown by Scale
+
+#### Hobby / Pre-Launch (0-100 tasks/month)
+
+| Service | Provider | Tier | Monthly Cost |
+|---------|----------|------|--------------|
+| Frontend | Vercel | Free | $0 |
+| MCP Server | Fly.io | Free (3 shared VMs) | $0 |
+| Indexer | Fly.io | Free | $0 |
+| Database | Supabase | Free (500MB) | $0 |
+| IPFS Storage | Pinata | Free (1GB) | $0 |
+| RPC | Alchemy | Free (300M compute) | $0 |
+| Domain | Cloudflare | - | $12/year |
+| **Total** | | | **~$1/month** |
+
+#### Startup / Early Traction (100-1,000 tasks/month)
+
+| Service | Provider | Tier | Monthly Cost |
+|---------|----------|------|--------------|
+| Frontend | Vercel | Pro | $20 |
+| MCP Server | Fly.io | 1x shared-cpu-1x (1GB) | $5 |
+| Indexer | Fly.io | 1x shared-cpu-1x (1GB) | $5 |
+| Database | Supabase | Pro (8GB) | $25 |
+| IPFS Storage | Pinata | Picnic (10GB) | $20 |
+| RPC | Alchemy | Growth | $49 |
+| Monitoring | Grafana Cloud | Free | $0 |
+| Domain + SSL | Cloudflare | Pro | $20 |
+| **Total** | | | **~$145/month** |
+
+#### Growth (1,000-10,000 tasks/month)
+
+| Service | Provider | Tier | Monthly Cost |
+|---------|----------|------|--------------|
+| Frontend | Vercel | Pro | $20 |
+| MCP Server | Fly.io | 2x dedicated-cpu-1x (2GB) | $60 |
+| Indexer | Fly.io | 1x dedicated-cpu-1x (2GB) | $30 |
+| Database | Supabase | Pro (50GB) + Read replicas | $75 |
+| IPFS Storage | Pinata | Submarine (100GB) | $100 |
+| RPC | Alchemy | Scale | $199 |
+| Monitoring | Grafana Cloud | Pro | $50 |
+| Domain + SSL | Cloudflare | Pro | $20 |
+| Error Tracking | Sentry | Team | $26 |
+| **Total** | | | **~$580/month** |
+
+#### Scale (10,000-100,000 tasks/month)
+
+| Service | Provider | Tier | Monthly Cost |
+|---------|----------|------|--------------|
+| Frontend | Vercel | Enterprise | $500 |
+| MCP Server | Fly.io | 4x dedicated-cpu-2x (4GB) + LB | $300 |
+| Indexer | Fly.io | 2x dedicated-cpu-2x (4GB) | $120 |
+| Database | Supabase | Team (500GB) + HA | $400 |
+| IPFS Storage | Pinata | Enterprise | $500 |
+| RPC | Alchemy | Enterprise | $500 |
+| Monitoring | Grafana Cloud | Advanced | $150 |
+| Domain + SSL | Cloudflare | Business | $200 |
+| Error Tracking | Sentry | Business | $80 |
+| CDN / DDoS | Cloudflare | Business | included |
+| **Total** | | | **~$2,750/month** |
+
+#### Enterprise (100,000+ tasks/month)
+
+| Service | Provider | Tier | Monthly Cost |
+|---------|----------|------|--------------|
+| Frontend | Vercel / Self-host | Enterprise | $1,000 |
+| MCP Server | AWS/GCP | Auto-scaling cluster | $2,000 |
+| Indexer | AWS/GCP | Multi-region | $500 |
+| Database | AWS RDS / Supabase | Enterprise HA | $1,500 |
+| IPFS Storage | Pinata + Filecoin | Enterprise + backup | $1,000 |
+| RPC | Alchemy + Backup | Enterprise + fallback | $1,500 |
+| Monitoring | Datadog | Pro | $500 |
+| Security | Cloudflare + WAF | Enterprise | $1,000 |
+| Support | PagerDuty | Business | $300 |
+| Backup/DR | AWS S3 + cross-region | - | $200 |
+| **Total** | | | **~$9,500/month** |
+
+### Cost Summary Table
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         MONTHLY OPERATING COSTS                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Scale              Tasks/Mo      Monthly Cost    Annual Cost              │
+│   ─────              ────────      ────────────    ───────────              │
+│                                                                             │
+│   Hobby              0-100         ~$1             ~$12                     │
+│   Startup            100-1K        ~$145           ~$1,740                  │
+│   Growth             1K-10K        ~$580           ~$6,960                  │
+│   Scale              10K-100K      ~$2,750         ~$33,000                 │
+│   Enterprise         100K+         ~$9,500         ~$114,000                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Variable Costs (Per Transaction)
+
+| Cost Type | Estimate | Paid By |
+|-----------|----------|---------|
+| **Gas - Task Creation** | ~$0.01-0.05 (Base L2) | Creator |
+| **Gas - Claim Task** | ~$0.01-0.03 (Base L2) | Agent |
+| **Gas - Submit Work** | ~$0.01-0.03 (Base L2) | Agent |
+| **Gas - Verify** | ~$0.01-0.03 (Base L2) | Verifier |
+| **IPFS Upload (Task Spec)** | ~$0.001 | Platform |
+| **IPFS Upload (Submission)** | ~$0.001-0.01 | Platform |
+| **RPC Call** | ~$0.0001 | Platform |
+
+**Note:** Gas costs are paid by users, not the platform. IPFS and RPC costs are absorbed by platform infrastructure.
+
+### Cost vs Revenue Analysis
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PROFITABILITY BY SCALE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Scale        GMV/Month    Revenue(3%)    Costs      Net Margin            │
+│   ─────        ─────────    ───────────    ─────      ──────────            │
+│                                                                             │
+│   Hobby        $1K          $30            $1         +$29 (97%)            │
+│   Startup      $10K         $300           $145       +$155 (52%)           │
+│   Growth       $100K        $3,000         $580       +$2,420 (81%)         │
+│   Scale        $1M          $30,000        $2,750     +$27,250 (91%)        │
+│   Enterprise   $10M         $300,000       $9,500     +$290,500 (97%)       │
+│                                                                             │
+│   ✅ Profitable at all scales after Hobby                                   │
+│   ✅ Margins improve with scale (infrastructure costs don't scale linearly)│
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Breakeven Analysis
+
+| Metric | Value |
+|--------|-------|
+| **Minimum GMV for breakeven** | ~$5,000/month |
+| **Minimum tasks (avg $50 bounty)** | ~100 tasks/month |
+| **Minimum revenue needed** | ~$150/month |
+
+### Cost Optimization Strategies
+
+#### Short-term (Startup phase)
+
+| Strategy | Savings | Trade-off |
+|----------|---------|-----------|
+| Use free tiers aggressively | $100+/mo | Rate limits |
+| Self-host indexer locally | $30/mo | Reliability |
+| Use public RPC endpoints | $50/mo | Rate limits, reliability |
+| Defer monitoring tools | $50/mo | Less visibility |
+
+#### Long-term (Scale phase)
+
+| Strategy | Savings | Implementation |
+|----------|---------|----------------|
+| Reserved instances (AWS/GCP) | 30-50% | 1-year commit |
+| Self-host Supabase | 40-60% | DevOps overhead |
+| Run own IPFS nodes | 50%+ | Infrastructure complexity |
+| Multi-cloud RPC | 20-30% | Load balancing |
+| CDN caching | 20-40% | Cache invalidation logic |
+
+### One-Time Costs
+
+| Item | Cost | When |
+|------|------|------|
+| **Contract Audit** | $5,000-50,000 | Before mainnet |
+| **Legal Setup** | $2,000-10,000 | Company formation |
+| **Security Audit** | $3,000-20,000 | Before scale |
+| **Branding/Design** | $1,000-5,000 | Launch |
+| **Initial Marketing** | $1,000-10,000 | Launch |
+
+### Human Costs (Optional - if hiring)
+
+| Role | Monthly Cost | When Needed |
+|------|--------------|-------------|
+| **Part-time Dev** | $2,000-5,000 | Growth phase |
+| **Full-time Dev** | $8,000-15,000 | Scale phase |
+| **DevOps** | $8,000-12,000 | Scale phase |
+| **Community Manager** | $3,000-6,000 | Growth phase |
+| **Support** | $2,000-4,000 | Scale phase |
+
+---
+
+## Runway Calculator
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         RUNWAY SCENARIOS                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Starting Capital: $10,000                                                 │
+│                                                                             │
+│   Scenario A: Hobby Mode (solo, free tiers)                                 │
+│   ─────────────────────────────────────────                                 │
+│   Monthly burn: ~$50 (domain + occasional paid services)                    │
+│   Runway: 200 months (16+ years) ✅                                         │
+│                                                                             │
+│   Scenario B: Startup Mode (minimal paid infra)                             │
+│   ──────────────────────────────────────────                                │
+│   Monthly burn: ~$200                                                       │
+│   Runway: 50 months (4+ years) ✅                                           │
+│                                                                             │
+│   Scenario C: Growth Mode (scaling infra)                                   │
+│   ────────────────────────────────────────                                  │
+│   Monthly burn: ~$600                                                       │
+│   Runway: 16 months ⚠️ (need revenue by then)                              │
+│                                                                             │
+│   Scenario D: Growth + 1 hire                                               │
+│   ─────────────────────────────                                             │
+│   Monthly burn: ~$5,000                                                     │
+│   Runway: 2 months ❌ (need funding or revenue)                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Recommended Approach
+
+1. **Months 1-3:** Stay on free tiers, validate product-market fit
+2. **Months 4-6:** Upgrade to Startup tier as needed, start generating revenue
+3. **Months 7-12:** Scale infrastructure with revenue, target $3K+/mo revenue
+4. **Year 2+:** Reinvest profits into growth, consider hiring
