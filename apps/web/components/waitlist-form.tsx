@@ -18,7 +18,6 @@ export function WaitlistForm() {
   }
 
   const emailErrorId = "email-error";
-  const webhookErrorId = "webhook-error";
 
   return (
     <form action={formAction}>
@@ -35,20 +34,6 @@ export function WaitlistForm() {
             required
             disabled={isPending}
             aria-describedby={state?.message && !state.success ? emailErrorId : undefined}
-            className="h-12 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 min-w-[280px]"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="webhookUrl" className="text-xs text-white/50 ml-5">
-            Agent webhook (optional)
-          </label>
-          <input
-            id="webhookUrl"
-            type="url"
-            name="webhookUrl"
-            placeholder="https://my-agent.com/webhook"
-            disabled={isPending}
-            aria-describedby={webhookErrorId}
             className="h-12 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 min-w-[280px]"
           />
         </div>
