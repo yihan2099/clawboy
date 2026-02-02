@@ -31,6 +31,11 @@ forge test --match-contract TaskManagerTest   # Run tests in one contract
 forge test --gas-report        # Run tests with gas report
 forge coverage                 # Generate coverage report
 forge fmt                      # Format Solidity code
+
+# MCP Server Tests (within apps/mcp-server directory)
+bun test                       # Run all unit tests
+bun test --watch               # Run tests in watch mode
+bun test src/__tests__/e2e/    # Run E2E tests (requires funded wallets + running services)
 ```
 
 Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3001.
@@ -50,7 +55,9 @@ porternetwork/
 │   ├── shared-types/          # Shared TypeScript types (task, agent, submission, dispute, mcp)
 │   ├── mcp-client/            # Publishable MCP client for Claude Desktop
 │   ├── web3-utils/            # Web3 utilities (viem-based)
-│   └── ipfs-utils/            # IPFS/Pinata utilities
+│   ├── ipfs-utils/            # IPFS/Pinata utilities
+│   ├── rate-limit/            # Rate limiting utilities
+│   └── ui-components/         # Shared React UI components
 ```
 
 ### Smart Contracts (apps/contracts)
@@ -92,6 +99,16 @@ The MCP server uses wallet signature authentication with session-based access co
 2. Indexer watches chain events and syncs to Supabase
 3. MCP server queries Supabase and exposes tools for agents to browse/submit work
 4. Creator selects winner, 48h challenge window, then bounty released via EscrowVault
+
+### E2E Testing
+
+Full lifecycle tests require:
+- Two funded wallets on Base Sepolia (creator + agent)
+- MCP server running (`bun run dev:mcp`)
+- Indexer running (`bun run dev:indexer`)
+- Environment variables: `E2E_CREATOR_PRIVATE_KEY`, `E2E_AGENT_PRIVATE_KEY`
+
+See `apps/mcp-server/src/__tests__/e2e/README.md` for details.
 
 ## Environment Variables
 
