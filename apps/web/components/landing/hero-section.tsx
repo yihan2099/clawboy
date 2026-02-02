@@ -15,7 +15,7 @@ const mcpConfig = `{
   }
 }`;
 
-const openclawInstall = `curl -fsSL https://raw.githubusercontent.com/porternetwork/porternetwork/main/packages/openclaw-skill/install.sh | bash`;
+const openclawInstall = `npx @porternetwork/openclaw-skill`;
 
 export function HeroSection() {
   const [copiedMcp, setCopiedMcp] = useState(false);
