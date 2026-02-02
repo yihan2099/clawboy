@@ -1,6 +1,7 @@
 /**
  * Supabase database type definitions
  * This file should be regenerated with: supabase gen types typescript
+ * Updated for competitive task system with optimistic verification
  */
 
 export interface Database {
@@ -11,7 +12,7 @@ export interface Database {
           id: string;
           chain_task_id: string;
           creator_address: string;
-          status: string;
+          status: string; // 'open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'
           bounty_amount: string;
           bounty_token: string;
           specification_cid: string;
@@ -19,10 +20,10 @@ export interface Database {
           description: string;
           tags: string[];
           deadline: string | null;
-          claimed_by: string | null;
-          claimed_at: string | null;
-          submission_cid: string | null;
-          submitted_at: string | null;
+          winner_address: string | null;
+          selected_at: string | null;
+          challenge_deadline: string | null;
+          submission_count: number;
           created_at_block: string;
           created_at: string;
           updated_at: string;
@@ -39,10 +40,10 @@ export interface Database {
           description: string;
           tags?: string[];
           deadline?: string | null;
-          claimed_by?: string | null;
-          claimed_at?: string | null;
-          submission_cid?: string | null;
-          submitted_at?: string | null;
+          winner_address?: string | null;
+          selected_at?: string | null;
+          challenge_deadline?: string | null;
+          submission_count?: number;
           created_at_block: string;
           created_at?: string;
           updated_at?: string;
@@ -59,10 +60,10 @@ export interface Database {
           description?: string;
           tags?: string[];
           deadline?: string | null;
-          claimed_by?: string | null;
-          claimed_at?: string | null;
-          submission_cid?: string | null;
-          submitted_at?: string | null;
+          winner_address?: string | null;
+          selected_at?: string | null;
+          challenge_deadline?: string | null;
+          submission_count?: number;
           created_at_block?: string;
           created_at?: string;
           updated_at?: string;
@@ -72,11 +73,10 @@ export interface Database {
         Row: {
           id: string;
           address: string;
-          tier: string;
           reputation: string;
-          tasks_completed: number;
-          tasks_failed: number;
-          staked_amount: string;
+          tasks_won: number;
+          disputes_won: number;
+          disputes_lost: number;
           profile_cid: string;
           name: string;
           skills: string[];
@@ -88,11 +88,10 @@ export interface Database {
         Insert: {
           id?: string;
           address: string;
-          tier: string;
           reputation?: string;
-          tasks_completed?: number;
-          tasks_failed?: number;
-          staked_amount?: string;
+          tasks_won?: number;
+          disputes_won?: number;
+          disputes_lost?: number;
           profile_cid: string;
           name: string;
           skills?: string[];
@@ -104,11 +103,10 @@ export interface Database {
         Update: {
           id?: string;
           address?: string;
-          tier?: string;
           reputation?: string;
-          tasks_completed?: number;
-          tasks_failed?: number;
-          staked_amount?: string;
+          tasks_won?: number;
+          disputes_won?: number;
+          disputes_lost?: number;
           profile_cid?: string;
           name?: string;
           skills?: string[];
@@ -118,82 +116,117 @@ export interface Database {
           updated_at?: string;
         };
       };
-      claims: {
+      submissions: {
         Row: {
           id: string;
           task_id: string;
           agent_address: string;
-          status: string;
-          claimed_at: string;
-          deadline: string | null;
-          submission_cid: string | null;
-          submitted_at: string | null;
-          verdict_id: string | null;
-          created_at: string;
+          submission_cid: string;
+          submission_index: number;
+          is_winner: boolean;
+          submitted_at: string;
           updated_at: string;
+          created_at: string;
         };
         Insert: {
           id?: string;
           task_id: string;
           agent_address: string;
-          status: string;
-          claimed_at: string;
-          deadline?: string | null;
-          submission_cid?: string | null;
-          submitted_at?: string | null;
-          verdict_id?: string | null;
+          submission_cid: string;
+          submission_index: number;
+          is_winner?: boolean;
+          submitted_at: string;
+          updated_at: string;
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
           task_id?: string;
           agent_address?: string;
-          status?: string;
-          claimed_at?: string;
-          deadline?: string | null;
-          submission_cid?: string | null;
-          submitted_at?: string | null;
-          verdict_id?: string | null;
-          created_at?: string;
+          submission_cid?: string;
+          submission_index?: number;
+          is_winner?: boolean;
+          submitted_at?: string;
           updated_at?: string;
+          created_at?: string;
         };
       };
-      verdicts: {
+      disputes: {
         Row: {
           id: string;
+          chain_dispute_id: string;
           task_id: string;
-          claim_id: string;
-          verifier_address: string;
-          outcome: string;
-          score: number;
-          feedback_cid: string;
+          disputer_address: string;
+          dispute_stake: string;
+          voting_deadline: string;
+          status: string; // 'active', 'resolved', 'cancelled'
+          disputer_won: boolean | null;
+          votes_for_disputer: string;
+          votes_against_disputer: string;
           tx_hash: string;
-          verified_at: string;
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          chain_dispute_id: string;
+          task_id: string;
+          disputer_address: string;
+          dispute_stake: string;
+          voting_deadline: string;
+          status?: string;
+          disputer_won?: boolean | null;
+          votes_for_disputer?: string;
+          votes_against_disputer?: string;
+          tx_hash: string;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          chain_dispute_id?: string;
+          task_id?: string;
+          disputer_address?: string;
+          dispute_stake?: string;
+          voting_deadline?: string;
+          status?: string;
+          disputer_won?: boolean | null;
+          votes_for_disputer?: string;
+          votes_against_disputer?: string;
+          tx_hash?: string;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+      };
+      dispute_votes: {
+        Row: {
+          id: string;
+          dispute_id: string;
+          voter_address: string;
+          supports_disputer: boolean;
+          weight: number;
+          tx_hash: string;
+          voted_at: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          task_id: string;
-          claim_id: string;
-          verifier_address: string;
-          outcome: string;
-          score: number;
-          feedback_cid: string;
+          dispute_id: string;
+          voter_address: string;
+          supports_disputer: boolean;
+          weight: number;
           tx_hash: string;
-          verified_at: string;
+          voted_at: string;
           created_at?: string;
         };
         Update: {
           id?: string;
-          task_id?: string;
-          claim_id?: string;
-          verifier_address?: string;
-          outcome?: string;
-          score?: number;
-          feedback_cid?: string;
+          dispute_id?: string;
+          voter_address?: string;
+          supports_disputer?: boolean;
+          weight?: number;
           tx_hash?: string;
-          verified_at?: string;
+          voted_at?: string;
           created_at?: string;
         };
       };

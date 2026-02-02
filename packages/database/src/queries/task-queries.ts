@@ -8,13 +8,13 @@ const getWriteClient = () => getSupabaseAdminClient();
 export interface ListTasksOptions {
   status?: TaskStatus;
   creatorAddress?: string;
-  claimedBy?: string;
+  winnerAddress?: string;
   tags?: string[];
   minBounty?: string;
   maxBounty?: string;
   limit?: number;
   offset?: number;
-  sortBy?: 'bounty_amount' | 'created_at' | 'deadline';
+  sortBy?: 'bounty_amount' | 'created_at' | 'deadline' | 'submission_count';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -31,7 +31,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   const {
     status,
     creatorAddress,
-    claimedBy,
+    winnerAddress,
     tags,
     minBounty,
     maxBounty,
@@ -51,7 +51,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
       p_max_bounty: maxBounty || null,
       p_status: status || null,
       p_creator_address: creatorAddress?.toLowerCase() || null,
-      p_claimed_by: claimedBy?.toLowerCase() || null,
+      p_winner_address: winnerAddress?.toLowerCase() || null,
       p_tags: tags && tags.length > 0 ? tags : null,
       p_limit: limit,
       p_offset: offset,
@@ -71,7 +71,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
       p_max_bounty: maxBounty || null,
       p_status: status || null,
       p_creator_address: creatorAddress?.toLowerCase() || null,
-      p_claimed_by: claimedBy?.toLowerCase() || null,
+      p_winner_address: winnerAddress?.toLowerCase() || null,
       p_tags: tags && tags.length > 0 ? tags : null,
     });
 
@@ -94,8 +94,8 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     query = query.eq('creator_address', creatorAddress.toLowerCase());
   }
 
-  if (claimedBy) {
-    query = query.eq('claimed_by', claimedBy.toLowerCase());
+  if (winnerAddress) {
+    query = query.eq('winner_address', winnerAddress.toLowerCase());
   }
 
   if (tags && tags.length > 0) {
@@ -207,9 +207,9 @@ export async function updateTask(
 }
 
 /**
- * Get tasks pending verification
+ * Get tasks in review (ready for dispute or finalization)
  */
-export async function getPendingVerificationTasks(
+export async function getTasksInReview(
   limit = 20,
   offset = 0
 ): Promise<{ tasks: TaskRow[]; total: number }> {
@@ -218,12 +218,57 @@ export async function getPendingVerificationTasks(
   const { data, error, count } = await supabase
     .from('tasks')
     .select('*', { count: 'exact' })
-    .eq('status', 'submitted')
-    .order('submitted_at', { ascending: true })
+    .eq('status', 'in_review')
+    .order('selected_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (error) {
-    throw new Error(`Failed to get pending tasks: ${error.message}`);
+    throw new Error(`Failed to get tasks in review: ${error.message}`);
+  }
+
+  return {
+    tasks: (data ?? []) as TaskRow[],
+    total: count ?? 0,
+  };
+}
+
+/**
+ * Get tasks that are past their challenge deadline and ready for finalization
+ */
+export async function getTasksReadyForFinalization(): Promise<TaskRow[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('status', 'in_review')
+    .lte('challenge_deadline', new Date().toISOString());
+
+  if (error) {
+    throw new Error(`Failed to get tasks ready for finalization: ${error.message}`);
+  }
+
+  return (data ?? []) as TaskRow[];
+}
+
+/**
+ * Get disputed tasks
+ */
+export async function getDisputedTasks(
+  limit = 20,
+  offset = 0
+): Promise<{ tasks: TaskRow[]; total: number }> {
+  const supabase = getSupabaseClient();
+
+  const { data, error, count } = await supabase
+    .from('tasks')
+    .select('*', { count: 'exact' })
+    .eq('status', 'disputed')
+    .order('selected_at', { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`Failed to get disputed tasks: ${error.message}`);
   }
 
   return {
