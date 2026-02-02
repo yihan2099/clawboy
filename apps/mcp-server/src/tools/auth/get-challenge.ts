@@ -52,8 +52,8 @@ export async function getChallengeHandler(
 
   const walletAddress = input.walletAddress as `0x${string}`;
 
-  // Generate challenge
-  const { challenge, nonce, expiresAt } = generateChallenge(walletAddress);
+  // Generate challenge (now async with Redis support)
+  const { challenge, nonce, expiresAt } = await generateChallenge(walletAddress);
 
   return {
     challenge,

@@ -10,13 +10,22 @@ import { cors } from 'hono/cors';
 import { createMcpRateLimitMiddleware } from '@porternetwork/rate-limit/middleware/hono';
 import type { ServerContext } from './server';
 import { getSession } from './auth/session-manager';
-import { checkAccess } from './auth/access-control';
+import { checkAccessWithRegistrationRefresh } from './auth/access-control';
 import { listTasksTool } from './tools/task/list-tasks';
 import { getTaskTool } from './tools/task/get-task';
 import { createTaskTool } from './tools/task/create-task';
 import { cancelTaskTool } from './tools/task/cancel-task';
 import { submitWorkTool } from './tools/agent/submit-work';
 import { getMySubmissionsTool } from './tools/agent/get-my-submissions';
+import { registerAgentTool } from './tools/agent/register-agent';
+import { updateProfileTool } from './tools/agent/update-profile';
+import {
+  getDisputeTool,
+  listDisputesTool,
+  startDisputeTool,
+  submitVoteTool,
+  resolveDisputeTool,
+} from './tools/dispute';
 import {
   getChallengeHandler,
   verifySignatureHandler,
@@ -178,6 +187,22 @@ async function executeTool(
       return await submitWorkTool.handler(args, context);
     case 'get_my_submissions':
       return await getMySubmissionsTool.handler(args, context);
+    case 'register_agent':
+      return await registerAgentTool.handler(args, context);
+    case 'update_profile':
+      return await updateProfileTool.handler(args, context);
+
+    // Dispute tools
+    case 'get_dispute':
+      return await getDisputeTool.handler(args);
+    case 'list_disputes':
+      return await listDisputesTool.handler(args);
+    case 'start_dispute':
+      return await startDisputeTool.handler(args, context);
+    case 'submit_vote':
+      return await submitVoteTool.handler(args, context);
+    case 'resolve_dispute':
+      return await resolveDisputeTool.handler(args);
 
     default:
       throw new Error(`Unknown tool: ${toolName}`);
@@ -203,8 +228,8 @@ app.post('/tools/:toolName', async (c) => {
     // Build context from session
     const context = await buildContext(sessionId);
 
-    // Check access control
-    const accessCheck = checkAccess(toolName, context);
+    // Check access control (with on-chain registration refresh for registered tools)
+    const accessCheck = await checkAccessWithRegistrationRefresh(toolName, context);
     if (!accessCheck.allowed) {
       // SECURITY: Log access denial
       const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
@@ -219,6 +244,11 @@ app.post('/tools/:toolName', async (c) => {
         },
         403
       );
+    }
+
+    // If registration was just detected, update the context
+    if (accessCheck.registrationUpdated) {
+      context.isRegistered = true;
     }
 
     // Execute the tool

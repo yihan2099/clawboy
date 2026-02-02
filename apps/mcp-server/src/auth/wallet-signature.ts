@@ -1,34 +1,184 @@
 import { verifySignature, createAuthChallenge, parseAuthChallenge, isTimestampFresh } from '@porternetwork/web3-utils';
-
-// SECURITY: Store active challenges by nonce (not address) to prevent overwrite attacks
-// In production, use Redis or similar for persistence and distributed deployments
-const activeChallenges = new Map<
-  string, // nonce as key
-  { address: string; createdAt: number; expiresAt: number }
->();
+import { getRedisClient } from '@porternetwork/rate-limit';
 
 // Challenge expiration time (5 minutes)
 const CHALLENGE_EXPIRATION_MS = 5 * 60 * 1000;
+const CHALLENGE_EXPIRATION_SECONDS = 5 * 60;
 
 // Maximum active challenges per address (prevents DoS)
 const MAX_CHALLENGES_PER_ADDRESS = 3;
+
+// Redis key prefixes
+const CHALLENGE_PREFIX = 'challenge:';
+const WALLET_CHALLENGES_PREFIX = 'wallet:';
+const WALLET_CHALLENGES_SUFFIX = ':challenges';
+
+// In-memory fallback storage (used when Redis unavailable)
+const memoryChallenges = new Map<
+  string, // nonce as key
+  { address: string; createdAt: number; expiresAt: number }
+>();
+const memoryWalletChallenges = new Map<string, Set<string>>(); // address -> set of nonces
+
+/**
+ * Check if Redis is available
+ */
+function isRedisAvailable(): boolean {
+  return getRedisClient() !== null;
+}
+
+/**
+ * Get active challenge count for an address (for DoS protection)
+ */
+async function getActiveChallengeCountForAddress(normalizedAddress: string): Promise<number> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const walletKey = `${WALLET_CHALLENGES_PREFIX}${normalizedAddress}${WALLET_CHALLENGES_SUFFIX}`;
+      const count = await redis.scard(walletKey);
+      return count;
+    } catch (error) {
+      console.warn('Redis error in getActiveChallengeCountForAddress, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage
+  const nonces = memoryWalletChallenges.get(normalizedAddress);
+  if (!nonces) return 0;
+
+  // Count only non-expired challenges
+  let count = 0;
+  const now = Date.now();
+  for (const nonce of nonces) {
+    const challenge = memoryChallenges.get(nonce);
+    if (challenge && now <= challenge.expiresAt) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Store a challenge
+ */
+async function storeChallenge(
+  nonce: string,
+  normalizedAddress: string,
+  createdAt: number,
+  expiresAt: number
+): Promise<void> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const challengeKey = `${CHALLENGE_PREFIX}${nonce}`;
+      const walletKey = `${WALLET_CHALLENGES_PREFIX}${normalizedAddress}${WALLET_CHALLENGES_SUFFIX}`;
+
+      const challengeData = JSON.stringify({
+        address: normalizedAddress,
+        createdAt,
+        expiresAt,
+      });
+
+      // Use pipeline for atomic operations
+      const pipeline = redis.pipeline();
+      pipeline.set(challengeKey, challengeData, { ex: CHALLENGE_EXPIRATION_SECONDS });
+      pipeline.sadd(walletKey, nonce);
+      pipeline.expire(walletKey, CHALLENGE_EXPIRATION_SECONDS);
+      await pipeline.exec();
+
+      return;
+    } catch (error) {
+      console.warn('Redis error in storeChallenge, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage
+  memoryChallenges.set(nonce, {
+    address: normalizedAddress,
+    createdAt,
+    expiresAt,
+  });
+
+  if (!memoryWalletChallenges.has(normalizedAddress)) {
+    memoryWalletChallenges.set(normalizedAddress, new Set());
+  }
+  memoryWalletChallenges.get(normalizedAddress)!.add(nonce);
+}
+
+/**
+ * Get a stored challenge by nonce
+ */
+async function getStoredChallenge(
+  nonce: string
+): Promise<{ address: string; createdAt: number; expiresAt: number } | null> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const challengeKey = `${CHALLENGE_PREFIX}${nonce}`;
+      const data = await redis.get<string>(challengeKey);
+
+      if (!data) {
+        return null;
+      }
+
+      // Handle both string and object responses from Redis
+      if (typeof data === 'string') {
+        return JSON.parse(data);
+      }
+      return data as { address: string; createdAt: number; expiresAt: number };
+    } catch (error) {
+      console.warn('Redis error in getStoredChallenge, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage
+  return memoryChallenges.get(nonce) || null;
+}
+
+/**
+ * Delete a challenge by nonce
+ */
+async function deleteChallenge(nonce: string, normalizedAddress: string): Promise<void> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const challengeKey = `${CHALLENGE_PREFIX}${nonce}`;
+      const walletKey = `${WALLET_CHALLENGES_PREFIX}${normalizedAddress}${WALLET_CHALLENGES_SUFFIX}`;
+
+      const pipeline = redis.pipeline();
+      pipeline.del(challengeKey);
+      pipeline.srem(walletKey, nonce);
+      await pipeline.exec();
+
+      return;
+    } catch (error) {
+      console.warn('Redis error in deleteChallenge, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage
+  memoryChallenges.delete(nonce);
+  memoryWalletChallenges.get(normalizedAddress)?.delete(nonce);
+}
 
 /**
  * Generate a new authentication challenge for a wallet address
  * SECURITY: Each challenge is unique by nonce, preventing overwrite attacks
  */
-export function generateChallenge(address: `0x${string}`): {
+export async function generateChallenge(address: `0x${string}`): Promise<{
   challenge: string;
   nonce: string;
   expiresAt: number;
-} {
+}> {
   const normalizedAddress = address.toLowerCase();
 
   // SECURITY: Limit active challenges per address to prevent DoS
-  const activeChallengesForAddress = Array.from(activeChallenges.values())
-    .filter(c => c.address === normalizedAddress && Date.now() <= c.expiresAt);
-
-  if (activeChallengesForAddress.length >= MAX_CHALLENGES_PER_ADDRESS) {
+  const activeCount = await getActiveChallengeCountForAddress(normalizedAddress);
+  if (activeCount >= MAX_CHALLENGES_PER_ADDRESS) {
     throw new Error('Too many active challenges. Please complete or wait for existing challenges to expire.');
   }
 
@@ -41,11 +191,7 @@ export function generateChallenge(address: `0x${string}`): {
   const challenge = createAuthChallenge(address, nonce);
 
   // SECURITY: Store challenge by nonce, not address, to prevent overwrites
-  activeChallenges.set(nonce, {
-    address: normalizedAddress,
-    createdAt: now,
-    expiresAt,
-  });
+  await storeChallenge(nonce, normalizedAddress, now, expiresAt);
 
   return { challenge, nonce, expiresAt };
 }
@@ -81,7 +227,7 @@ export async function verifyChallengeSignature(
   }
 
   // SECURITY: Look up by nonce, not address
-  const storedChallenge = activeChallenges.get(parsed.nonce);
+  const storedChallenge = await getStoredChallenge(parsed.nonce);
   if (!storedChallenge) {
     return { valid: false, error: 'No active challenge found for this nonce' };
   }
@@ -93,7 +239,7 @@ export async function verifyChallengeSignature(
 
   // Check if challenge expired
   if (Date.now() > storedChallenge.expiresAt) {
-    activeChallenges.delete(parsed.nonce);
+    await deleteChallenge(parsed.nonce, normalizedAddress);
     return { valid: false, error: 'Challenge expired' };
   }
 
@@ -104,29 +250,74 @@ export async function verifyChallengeSignature(
   }
 
   // Clean up used challenge (by nonce)
-  activeChallenges.delete(parsed.nonce);
+  await deleteChallenge(parsed.nonce, normalizedAddress);
 
   return { valid: true };
 }
 
 /**
- * Cleanup expired challenges
+ * Cleanup expired challenges (only needed for in-memory fallback)
+ * Redis TTL handles expiration automatically
  */
-export function cleanupExpiredChallenges(): void {
+export function cleanupExpiredChallenges(): number {
+  // Only needed for in-memory storage
+  if (isRedisAvailable()) {
+    return 0;
+  }
+
   const now = Date.now();
-  for (const [nonce, challenge] of activeChallenges) {
+  let count = 0;
+
+  for (const [nonce, challenge] of memoryChallenges) {
     if (now > challenge.expiresAt) {
-      activeChallenges.delete(nonce);
+      memoryChallenges.delete(nonce);
+      memoryWalletChallenges.get(challenge.address)?.delete(nonce);
+      count++;
     }
   }
+
+  return count;
 }
 
 /**
  * Get active challenge count (for monitoring)
  */
-export function getActiveChallengeCount(): number {
-  return activeChallenges.size;
+export async function getActiveChallengeCount(): Promise<{
+  totalChallenges: number;
+  storageType: 'redis' | 'memory';
+}> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      // Use SCAN to count challenge keys
+      let cursor: string | number = 0;
+      let totalChallenges = 0;
+
+      do {
+        const result: [string, string[]] = await redis.scan(cursor, {
+          match: `${CHALLENGE_PREFIX}*`,
+          count: 100,
+        });
+        cursor = result[0];
+        totalChallenges += result[1].length;
+      } while (cursor !== '0');
+
+      return {
+        totalChallenges,
+        storageType: 'redis',
+      };
+    } catch (error) {
+      console.warn('Redis error in getActiveChallengeCount, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage
+  return {
+    totalChallenges: memoryChallenges.size,
+    storageType: 'memory',
+  };
 }
 
-// Run cleanup every minute
+// Run cleanup every minute (only affects in-memory fallback)
 setInterval(cleanupExpiredChallenges, 60 * 1000);
