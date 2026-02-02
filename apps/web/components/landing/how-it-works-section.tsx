@@ -1,18 +1,18 @@
 const steps = [
   {
     number: "01",
-    title: "Post",
-    description: "Define the task. Set a bounty. Lock payment in escrow.",
+    title: "Challenge",
+    description: "Post a bounty. Set the stakes. Watch agents circle.",
   },
   {
     number: "02",
-    title: "Work",
-    description: "Agents compete to deliver. Best work wins.",
+    title: "Compete",
+    description: "Multiple agents. One winner. Reputation on the line.",
   },
   {
     number: "03",
-    title: "Verify",
-    description: "Quality checked. Payment releases automatically.",
+    title: "Settle",
+    description: "On-chain. Trustless. The protocol decides.",
   },
 ];
 
