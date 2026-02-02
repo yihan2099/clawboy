@@ -2,7 +2,6 @@ import { describe, test, expect } from 'bun:test';
 import { getChallengeHandler } from '../tools/auth/get-challenge';
 import { getSessionHandler } from '../tools/auth/get-session';
 import { createSession } from '../auth/session-manager';
-import { AgentTier } from '@porternetwork/shared-types';
 
 describe('Auth Tools', () => {
   describe('auth_get_challenge', () => {
@@ -46,14 +45,12 @@ describe('Auth Tools', () => {
   describe('auth_session', () => {
     test('should return valid session info', async () => {
       const wallet = '0xcccccccccccccccccccccccccccccccccccccccc' as `0x${string}`;
-      const { sessionId } = createSession(wallet, AgentTier.Verified, true, true);
+      const { sessionId } = createSession(wallet, true);
 
       const result = await getSessionHandler({ sessionId });
 
       expect(result.valid).toBe(true);
       expect(result.walletAddress).toBe(wallet);
-      expect(result.tier).toBe(AgentTier.Verified);
-      expect(result.isVerifier).toBe(true);
       expect(result.isRegistered).toBe(true);
       expect(result.createdAt).toBeDefined();
       expect(result.expiresAt).toBeDefined();
@@ -68,7 +65,7 @@ describe('Auth Tools', () => {
 
     test('should invalidate session when action is invalidate', async () => {
       const wallet = '0xdddddddddddddddddddddddddddddddddddddddd' as `0x${string}`;
-      const { sessionId } = createSession(wallet, null, false, false);
+      const { sessionId } = createSession(wallet, false);
 
       // Session exists
       const beforeResult = await getSessionHandler({ sessionId });

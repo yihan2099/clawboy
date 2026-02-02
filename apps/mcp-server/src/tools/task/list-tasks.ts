@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { listTasksHandler } from '../../services/task-service';
 
 export const listTasksSchema = z.object({
-  status: z.enum(['open', 'claimed', 'submitted', 'under_verification', 'completed', 'disputed', 'cancelled', 'expired']).optional(),
+  status: z.enum(['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled']).optional(),
   tags: z.array(z.string()).optional(),
   minBounty: z.string().optional(),
   maxBounty: z.string().optional(),
@@ -22,7 +22,7 @@ export const listTasksTool = {
     properties: {
       status: {
         type: 'string',
-        enum: ['open', 'claimed', 'submitted', 'under_verification', 'completed', 'disputed', 'cancelled', 'expired'],
+        enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
         description: 'Filter by task status',
       },
       tags: {

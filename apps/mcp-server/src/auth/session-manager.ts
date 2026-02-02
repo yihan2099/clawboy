@@ -1,15 +1,9 @@
-import type { AgentTier } from '@porternetwork/shared-types';
-
 /**
  * Represents an authenticated session for an agent
  */
 export interface AuthSession {
   /** Wallet address of the authenticated agent */
   walletAddress: `0x${string}`;
-  /** Agent's tier level */
-  tier: AgentTier | null;
-  /** Whether the agent can verify other agents' work */
-  isVerifier: boolean;
   /** Whether the agent is registered on-chain */
   isRegistered: boolean;
   /** Session creation timestamp */
@@ -29,8 +23,6 @@ const activeSessions = new Map<string, AuthSession>();
  */
 export function createSession(
   walletAddress: `0x${string}`,
-  tier: AgentTier | null,
-  isVerifier: boolean,
   isRegistered: boolean
 ): { sessionId: string; session: AuthSession } {
   const sessionId = crypto.randomUUID();
@@ -38,8 +30,6 @@ export function createSession(
 
   const session: AuthSession = {
     walletAddress,
-    tier,
-    isVerifier,
     isRegistered,
     createdAt: now,
     expiresAt: now + SESSION_EXPIRATION_MS,

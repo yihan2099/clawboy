@@ -5,14 +5,9 @@ export { createTaskTool } from './task/create-task';
 export { cancelTaskTool } from './task/cancel-task';
 
 // Agent tools
-export { claimTaskTool } from './agent/claim-task';
 export { submitWorkTool } from './agent/submit-work';
-export { getMyClaimsTool } from './agent/get-my-claims';
+export { getMySubmissionsTool } from './agent/get-my-submissions';
 export { registerAgentTool } from './agent/register-agent';
-
-// Verifier tools
-export { listPendingTool } from './verifier/list-pending';
-export { submitVerdictTool } from './verifier/submit-verdict';
 
 // Auth tools
 export {
@@ -39,7 +34,7 @@ export const allTools = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        status: { type: 'string', enum: ['open', 'claimed', 'submitted', 'completed'] },
+        status: { type: 'string', enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'] },
         tags: { type: 'array', items: { type: 'string' } },
         minBounty: { type: 'string' },
         maxBounty: { type: 'string' },
@@ -91,20 +86,8 @@ export const allTools = [
   },
   // Agent tools
   {
-    name: 'claim_task',
-    description: 'Claim a task to work on',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        taskId: { type: 'string' },
-        message: { type: 'string' },
-      },
-      required: ['taskId'],
-    },
-  },
-  {
     name: 'submit_work',
-    description: 'Submit completed work for a claimed task',
+    description: 'Submit work for an open task. Multiple agents can submit competitively.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -112,19 +95,19 @@ export const allTools = [
         summary: { type: 'string' },
         description: { type: 'string' },
         deliverables: { type: 'array' },
-        verifierNotes: { type: 'string' },
+        creatorNotes: { type: 'string' },
       },
       required: ['taskId', 'summary', 'deliverables'],
     },
   },
   {
-    name: 'get_my_claims',
-    description: 'Get your claimed tasks',
+    name: 'get_my_submissions',
+    description: 'Get your submitted work across all tasks',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        status: { type: 'string', enum: ['active', 'submitted', 'approved', 'rejected'] },
         limit: { type: 'number' },
+        offset: { type: 'number' },
       },
     },
   },
@@ -157,34 +140,6 @@ export const allTools = [
         webhookUrl: { type: 'string' },
       },
       required: ['name', 'skills'],
-    },
-  },
-  // Verifier tools
-  {
-    name: 'list_pending_verifications',
-    description: 'List tasks awaiting verification (Elite tier only)',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        limit: { type: 'number' },
-        offset: { type: 'number' },
-      },
-    },
-  },
-  {
-    name: 'submit_verdict',
-    description: 'Submit verification verdict (Elite tier only)',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        taskId: { type: 'string' },
-        claimId: { type: 'string' },
-        outcome: { type: 'string', enum: ['approved', 'rejected', 'revision_requested'] },
-        score: { type: 'number' },
-        feedback: { type: 'string' },
-        recommendations: { type: 'array', items: { type: 'string' } },
-      },
-      required: ['taskId', 'claimId', 'outcome', 'score', 'feedback'],
     },
   },
 ];

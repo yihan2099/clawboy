@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { AgentTier } from '@porternetwork/shared-types';
+import { createMcpRateLimitMiddleware } from '@porternetwork/rate-limit/middleware/hono';
 import type { ServerContext } from './server';
 import { getSession } from './auth/session-manager';
 import { checkAccess } from './auth/access-control';
@@ -15,11 +15,8 @@ import { listTasksTool } from './tools/task/list-tasks';
 import { getTaskTool } from './tools/task/get-task';
 import { createTaskTool } from './tools/task/create-task';
 import { cancelTaskTool } from './tools/task/cancel-task';
-import { claimTaskTool } from './tools/agent/claim-task';
 import { submitWorkTool } from './tools/agent/submit-work';
-import { getMyClaimsTool } from './tools/agent/get-my-claims';
-import { listPendingTool } from './tools/verifier/list-pending';
-import { submitVerdictTool } from './tools/verifier/submit-verdict';
+import { getMySubmissionsTool } from './tools/agent/get-my-submissions';
 import {
   getChallengeHandler,
   verifySignatureHandler,
@@ -31,6 +28,9 @@ const app = new Hono();
 
 // Enable CORS for client calls
 app.use('/*', cors());
+
+// Rate limiting middleware for tool endpoints
+app.use('/tools/*', createMcpRateLimitMiddleware());
 
 // Health check endpoint
 app.get('/health', (c) => {
@@ -52,9 +52,7 @@ app.get('/tools', (c) => {
 function buildContext(sessionId: string | null): ServerContext {
   let context: ServerContext = {
     callerAddress: '0x0000000000000000000000000000000000000000',
-    isVerifier: false,
     isAuthenticated: false,
-    tier: null,
     isRegistered: false,
     sessionId: null,
   };
@@ -64,9 +62,7 @@ function buildContext(sessionId: string | null): ServerContext {
     if (session) {
       context = {
         callerAddress: session.walletAddress,
-        isVerifier: session.isVerifier,
         isAuthenticated: true,
-        tier: session.tier,
         isRegistered: session.isRegistered,
         sessionId,
       };
@@ -102,16 +98,10 @@ async function executeTool(
       return await createTaskTool.handler(args, context);
     case 'cancel_task':
       return await cancelTaskTool.handler(args, context);
-    case 'claim_task':
-      return await claimTaskTool.handler(args, context);
     case 'submit_work':
       return await submitWorkTool.handler(args, context);
-    case 'get_my_claims':
-      return await getMyClaimsTool.handler(args, context);
-    case 'list_pending_verifications':
-      return await listPendingTool.handler(args, context);
-    case 'submit_verdict':
-      return await submitVerdictTool.handler(args, context);
+    case 'get_my_submissions':
+      return await getMySubmissionsTool.handler(args, context);
 
     default:
       throw new Error(`Unknown tool: ${toolName}`);

@@ -1,5 +1,4 @@
 import { getSession, invalidateSession } from '../../auth/session-manager';
-import type { AgentTier } from '@porternetwork/shared-types';
 
 /**
  * Input for auth_session tool
@@ -15,8 +14,6 @@ export interface GetSessionInput {
 export interface GetSessionOutput {
   valid: boolean;
   walletAddress?: string;
-  tier?: AgentTier | null;
-  isVerifier?: boolean;
   isRegistered?: boolean;
   createdAt?: number;
   expiresAt?: number;
@@ -84,8 +81,6 @@ export async function getSessionHandler(
   return {
     valid: true,
     walletAddress: session.walletAddress,
-    tier: session.tier,
-    isVerifier: session.isVerifier,
     isRegistered: session.isRegistered,
     createdAt: session.createdAt,
     expiresAt: session.expiresAt,

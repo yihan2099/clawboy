@@ -6,6 +6,8 @@
  * - Authentication flow
  * - Contract interactions via viem
  * - Database queries
+ *
+ * Updated for competitive task system (no claims, direct submissions)
  */
 
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
@@ -224,7 +226,6 @@ export async function createTaskOnChain(
   const txReceipt = await publicClient.getTransactionReceipt({ hash });
 
   // Parse TaskCreated event to get taskId
-  const taskCreatedTopic = '0x'; // We'll find it by iterating
   let taskId: bigint | undefined;
 
   for (const log of txReceipt.logs) {
@@ -251,29 +252,7 @@ export async function createTaskOnChain(
 }
 
 /**
- * Claim a task on-chain
- */
-export async function claimTaskOnChain(
-  wallet: TestWallet,
-  taskId: bigint
-): Promise<`0x${string}`> {
-  const hash = await wallet.walletClient.writeContract({
-    address: addresses.taskManager,
-    abi: TaskManagerABI,
-    functionName: 'claimTask',
-    args: [taskId],
-  });
-
-  const receipt = await waitForTransaction(hash, CHAIN_ID);
-  if (receipt.status !== 'success') {
-    throw new Error('Task claim transaction failed');
-  }
-
-  return hash;
-}
-
-/**
- * Submit work for a task on-chain
+ * Submit work for a task on-chain (competitive model - no claiming)
  */
 export async function submitWorkOnChain(
   wallet: TestWallet,
@@ -296,6 +275,29 @@ export async function submitWorkOnChain(
 }
 
 /**
+ * Select winner for a task on-chain (creator only)
+ */
+export async function selectWinnerOnChain(
+  wallet: TestWallet,
+  taskId: bigint,
+  winnerAddress: `0x${string}`
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.taskManager,
+    abi: TaskManagerABI,
+    functionName: 'selectWinner',
+    args: [taskId, winnerAddress],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Select winner transaction failed');
+  }
+
+  return hash;
+}
+
+/**
  * Get task data from chain
  */
 export async function getTaskFromChain(taskId: bigint): Promise<{
@@ -304,8 +306,8 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
   status: number;
   bountyAmount: bigint;
   specificationCid: string;
-  claimedBy: `0x${string}`;
-  submissionCid: string;
+  selectedWinner: `0x${string}`;
+  submissionCount: bigint;
 }> {
   const publicClient = getPublicClient(CHAIN_ID);
 
@@ -316,18 +318,19 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
     args: [taskId],
   });
 
+  // Updated struct mapping for competitive model
   const task = result as unknown as readonly [
-    bigint,
-    `0x${string}`,
-    number,
-    bigint,
-    `0x${string}`,
-    string,
-    `0x${string}`,
-    bigint,
-    string,
-    bigint,
-    bigint
+    bigint,           // id
+    `0x${string}`,    // creator
+    number,           // status
+    bigint,           // bountyAmount
+    `0x${string}`,    // bountyToken
+    string,           // specificationCid
+    `0x${string}`,    // selectedWinner
+    bigint,           // selectedAt
+    bigint,           // challengeDeadline
+    bigint,           // deadline
+    bigint            // createdAtBlock
   ];
 
   return {
@@ -336,8 +339,8 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
     status: task[2],
     bountyAmount: task[3],
     specificationCid: task[5],
-    claimedBy: task[6],
-    submissionCid: task[8],
+    selectedWinner: task[6],
+    submissionCount: 0n, // Would need separate call to get submission count
   };
 }
 
@@ -413,17 +416,15 @@ export function resetClients(): void {
 }
 
 /**
- * Task status enum matching contract
+ * Task status enum matching contract (competitive model)
  */
 export const TaskStatus = {
   Open: 0,
-  Claimed: 1,
-  Submitted: 2,
-  UnderVerification: 3,
-  Completed: 4,
-  Disputed: 5,
-  Cancelled: 6,
-  Expired: 7,
+  InReview: 1,
+  Completed: 2,
+  Disputed: 3,
+  Refunded: 4,
+  Cancelled: 5,
 } as const;
 
 /**
@@ -432,13 +433,109 @@ export const TaskStatus = {
 export function taskStatusToString(status: number): string {
   const statusNames: Record<number, string> = {
     0: 'open',
-    1: 'claimed',
-    2: 'submitted',
-    3: 'under_verification',
-    4: 'completed',
-    5: 'disputed',
-    6: 'cancelled',
-    7: 'expired',
+    1: 'in_review',
+    2: 'completed',
+    3: 'disputed',
+    4: 'refunded',
+    5: 'cancelled',
   };
   return statusNames[status] ?? 'unknown';
+}
+
+/**
+ * TaskManager function names for competitive model
+ */
+export type TaskManagerFunction =
+  | 'createTask'
+  | 'submitWork'
+  | 'selectWinner'
+  | 'rejectAll'
+  | 'finalizeTask'
+  | 'cancelTask'
+  | 'markDisputed'
+  | 'resolveDispute';
+
+// ============================================================================
+// Additional Contract Interactions (for complete lifecycle testing)
+// ============================================================================
+
+/**
+ * Finalize a task after the challenge window has passed
+ * Note: On a real testnet, this requires waiting for the 48h challenge period
+ * This function will fail if called before the challenge deadline
+ */
+export async function finalizeTaskOnChain(
+  wallet: TestWallet,
+  taskId: bigint
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.taskManager,
+    abi: TaskManagerABI,
+    functionName: 'finalizeTask',
+    args: [taskId],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Finalize task transaction failed');
+  }
+
+  return hash;
+}
+
+/**
+ * Get the challenge deadline for a task (useful for timing finalization)
+ */
+export async function getTaskChallengeDeadline(taskId: bigint): Promise<{
+  deadline: Date;
+  isPassed: boolean;
+  remainingMs: number;
+}> {
+  const task = await getTaskFromChain(taskId);
+  const publicClient = getPublicClient(CHAIN_ID);
+
+  // Read challengeDeadline directly
+  const result = await publicClient.readContract({
+    address: addresses.taskManager,
+    abi: TaskManagerABI,
+    functionName: 'getTask',
+    args: [taskId],
+  });
+
+  // Task struct: [id, creator, status, bountyAmount, bountyToken, specCid, selectedWinner, selectedAt, challengeDeadline, deadline, createdAtBlock]
+  const taskData = result as readonly unknown[];
+  const challengeDeadline = taskData[8] as bigint;
+  const deadlineMs = Number(challengeDeadline) * 1000;
+  const now = Date.now();
+
+  return {
+    deadline: new Date(deadlineMs),
+    isPassed: now > deadlineMs,
+    remainingMs: Math.max(0, deadlineMs - now),
+  };
+}
+
+/**
+ * Wait for challenge deadline to pass (useful for manual testing)
+ * Warning: This can take up to 48 hours on testnet!
+ */
+export async function waitForChallengeDeadline(
+  taskId: bigint,
+  pollIntervalMs: number = 60000 // Poll every minute
+): Promise<void> {
+  console.log('Waiting for challenge deadline...');
+  console.log('Warning: This can take up to 48 hours on testnet!');
+
+  let { isPassed, remainingMs } = await getTaskChallengeDeadline(taskId);
+
+  while (!isPassed) {
+    const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+    const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+    console.log(`Remaining: ${hours}h ${minutes}m`);
+
+    await sleep(pollIntervalMs);
+    ({ isPassed, remainingMs } = await getTaskChallengeDeadline(taskId));
+  }
+
+  console.log('Challenge deadline has passed!');
 }

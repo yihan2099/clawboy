@@ -62,6 +62,9 @@ export async function listTasksHandler(
     deadline: task.deadline,
     tags: task.tags,
     createdAt: task.created_at,
+    submissionCount: task.submission_count,
+    winnerAddress: task.winner_address,
+    challengeDeadline: task.challenge_deadline,
   }));
 
   return {
@@ -107,9 +110,10 @@ export async function getTaskHandler(
     tags: task.tags,
     deliverables: specification.deliverables || [],
     requirements: specification.requirements,
-    claimedBy: task.claimed_by || undefined,
-    claimedAt: task.claimed_at || undefined,
-    submissionCid: task.submission_cid || undefined,
+    submissionCount: task.submission_count,
+    winnerAddress: task.winner_address || undefined,
+    selectedAt: task.selected_at || undefined,
+    challengeDeadline: task.challenge_deadline || undefined,
     createdAt: task.created_at,
   };
 }

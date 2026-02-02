@@ -5,11 +5,10 @@
  * 1. Auth: Challenge + Sign + Verify → sessionId
  * 2. Register: MCP register_agent → On-chain register()
  * 3. Create Task: MCP create_task → On-chain createTask()
- * 4. Claim Task: MCP claim_task → On-chain claimTask()
- * 5. Submit Work: MCP submit_work → On-chain submitWork()
+ * 4. Submit Work: MCP submit_work → On-chain submitWork() (competitive - no claiming)
+ * 5. Select Winner: On-chain selectWinner() (creator selects best submission)
  *
- * Note: Verification step (6-7) is skipped because it requires Elite tier agents
- * which need 1000+ reputation - not available on fresh testnet.
+ * Updated for competitive task system with optimistic verification.
  *
  * Prerequisites:
  * - Two funded wallets on Base Sepolia (set via env vars)
@@ -35,8 +34,10 @@ import {
   registerAgentOnChain,
   checkAgentRegistered,
   createTaskOnChain,
-  claimTaskOnChain,
   submitWorkOnChain,
+  selectWinnerOnChain,
+  finalizeTaskOnChain,
+  getTaskChallengeDeadline,
   getTaskFromChain,
   waitForTaskInDB,
   waitForTaskStatus,
@@ -50,7 +51,6 @@ import {
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';
 import { createTaskTool } from '../../tools/task/create-task';
-import { claimTaskTool } from '../../tools/agent/claim-task';
 import { submitWorkTool } from '../../tools/agent/submit-work';
 
 // Test configuration
@@ -86,6 +86,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
   beforeAll(async () => {
     console.log('\n========================================');
     console.log('E2E Task Lifecycle Test - Base Sepolia');
+    console.log('(Competitive Model - No Claiming)');
     console.log('========================================\n');
 
     // Reset any cached clients
@@ -264,55 +265,10 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     );
   });
 
-  test('Step 5: Agent claims the task', async () => {
-    console.log('\n--- Step 5: Task Claim ---\n');
+  test('Step 5: Agent submits work (competitive - no claiming)', async () => {
+    console.log('\n--- Step 5: Work Submission ---\n');
 
-    // Claim via MCP (creates database record)
-    console.log('Claiming task via MCP...');
-    const claimResult = await claimTaskTool.handler(
-      {
-        taskId: dbTaskId,
-        message: 'E2E test claim - automated test agent',
-      },
-      { callerAddress: agentWallet.address }
-    );
-
-    console.log(`Claim ID: ${claimResult.claimId}`);
-
-    // Claim on-chain
-    console.log('Claiming task on-chain...');
-    const txHash = await claimTaskOnChain(agentWallet, chainTaskId);
-    console.log(`Claim tx: ${txHash}`);
-
-    // Verify on-chain state
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
-    console.log(`Claimed by: ${onChainTask.claimedBy}`);
-
-    expect(onChainTask.status).toBe(TaskStatus.Claimed);
-    expect(onChainTask.claimedBy.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
-
-    // Wait for indexer to sync the claim
-    console.log('\nWaiting for indexer to sync claim...');
-    const dbTask = await waitForTaskStatus(
-      chainTaskId,
-      'claimed',
-      INDEXER_SYNC_WAIT_MS
-    );
-    console.log(`Database status: ${dbTask!.status}`);
-
-    expect(dbTask!.status).toBe('claimed');
-    expect(dbTask!.claimed_by?.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
-  });
-
-  test('Step 6: Agent submits work', async () => {
-    console.log('\n--- Step 6: Work Submission ---\n');
-
-    // Submit work via MCP (uploads to IPFS, updates database)
+    // Submit work via MCP (uploads to IPFS, creates database record)
     console.log('Submitting work via MCP...');
     const submitResult = await submitWorkTool.handler(
       {
@@ -327,13 +283,14 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
             url: 'https://example.com/test-output',
           },
         ],
-        verifierNotes: 'Automated E2E test - please approve',
+        creatorNotes: 'Automated E2E test - please approve',
       },
       { callerAddress: agentWallet.address }
     );
 
     submissionCid = submitResult.submissionCid;
     console.log(`Submission CID: ${submissionCid}`);
+    console.log(`Is update: ${submitResult.isUpdate}`);
 
     // Submit on-chain
     console.log('Submitting work on-chain...');
@@ -344,26 +301,51 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     );
     console.log(`Submit tx: ${txHash}`);
 
+    // Verify on-chain state (task should still be open until creator selects winner)
+    const onChainTask = await getTaskFromChain(chainTaskId);
+    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+
+    // In competitive model, task stays open until deadline or creator selects
+    expect(onChainTask.status).toBe(TaskStatus.Open);
+  });
+
+  test('Step 6: Creator selects winner', async () => {
+    console.log('\n--- Step 6: Winner Selection ---\n');
+
+    // Select winner on-chain (agent who submitted)
+    console.log('Selecting winner on-chain...');
+    const txHash = await selectWinnerOnChain(
+      creatorWallet,
+      chainTaskId,
+      agentWallet.address
+    );
+    console.log(`Select winner tx: ${txHash}`);
+
     // Verify on-chain state
     const onChainTask = await getTaskFromChain(chainTaskId);
     console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
-    console.log(`Submission CID on-chain: ${onChainTask.submissionCid}`);
+    console.log(`Selected winner: ${onChainTask.selectedWinner}`);
 
-    expect(onChainTask.status).toBe(TaskStatus.Submitted);
-    expect(onChainTask.submissionCid).toBe(submissionCid);
+    // Task should now be in review (48h challenge window)
+    expect(onChainTask.status).toBe(TaskStatus.InReview);
+    expect(onChainTask.selectedWinner.toLowerCase()).toBe(
+      agentWallet.address.toLowerCase()
+    );
 
-    // Wait for indexer to sync the submission
-    console.log('\nWaiting for indexer to sync submission...');
+    // Wait for indexer to sync
+    console.log('\nWaiting for indexer to sync winner selection...');
     const dbTask = await waitForTaskStatus(
       chainTaskId,
-      'submitted',
+      'in_review',
       INDEXER_SYNC_WAIT_MS
     );
     console.log(`Database status: ${dbTask!.status}`);
-    console.log(`Database submission CID: ${dbTask!.submission_cid}`);
+    console.log(`Database winner: ${dbTask!.winner_address}`);
 
-    expect(dbTask!.status).toBe('submitted');
-    expect(dbTask!.submission_cid).toBe(submissionCid);
+    expect(dbTask!.status).toBe('in_review');
+    expect(dbTask!.winner_address?.toLowerCase()).toBe(
+      agentWallet.address.toLowerCase()
+    );
   });
 
   test('Final verification: Complete state check', async () => {
@@ -376,9 +358,8 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     console.log(`  Status: ${taskStatusToString(onChainTask.status)}`);
     console.log(`  Creator: ${onChainTask.creator}`);
     console.log(`  Bounty: ${formatEther(onChainTask.bountyAmount)} ETH`);
-    console.log(`  Claimed by: ${onChainTask.claimedBy}`);
+    console.log(`  Selected Winner: ${onChainTask.selectedWinner}`);
     console.log(`  Spec CID: ${onChainTask.specificationCid}`);
-    console.log(`  Submission CID: ${onChainTask.submissionCid}`);
 
     // Database verification
     const dbTask = await waitForTaskInDB(chainTaskId);
@@ -387,22 +368,84 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     console.log(`  Chain ID: ${dbTask!.chain_task_id}`);
     console.log(`  Status: ${dbTask!.status}`);
     console.log(`  Title: ${dbTask!.title}`);
+    console.log(`  Winner: ${dbTask!.winner_address}`);
+    console.log(`  Submission Count: ${dbTask!.submission_count}`);
+
+    // Check challenge deadline
+    const deadline = await getTaskChallengeDeadline(chainTaskId);
+    console.log('\nChallenge window:');
+    console.log(`  Deadline: ${deadline.deadline.toISOString()}`);
+    console.log(`  Passed: ${deadline.isPassed}`);
+    if (!deadline.isPassed) {
+      const hours = Math.floor(deadline.remainingMs / (60 * 60 * 1000));
+      const minutes = Math.floor(
+        (deadline.remainingMs % (60 * 60 * 1000)) / (60 * 1000)
+      );
+      console.log(`  Remaining: ${hours}h ${minutes}m`);
+    }
 
     // Assertions
-    expect(onChainTask.status).toBe(TaskStatus.Submitted);
-    expect(dbTask!.status).toBe('submitted');
-    expect(onChainTask.submissionCid).toBe(submissionCid);
-    expect(dbTask!.submission_cid).toBe(submissionCid);
+    expect(onChainTask.status).toBe(TaskStatus.InReview);
+    expect(dbTask!.status).toBe('in_review');
+    expect(dbTask!.winner_address?.toLowerCase()).toBe(
+      agentWallet.address.toLowerCase()
+    );
 
     console.log('\n========================================');
     console.log('E2E Test Complete!');
     console.log('========================================');
-    console.log('\nNote: Verification step skipped - requires Elite tier agents');
-    console.log(
-      'To complete full lifecycle, add grantEliteStatus() to PorterRegistry'
-    );
+    console.log('\nTask is now in 48h challenge window.');
+    console.log('After challenge period, call finalizeTask() to complete.');
     console.log('========================================\n');
   });
+
+  // Note: The following test can only be run after the 48h challenge period
+  // This is commented out because it requires waiting 48h on testnet
+  // For a complete test, either:
+  // 1. Deploy contracts with shorter challenge period for testing
+  // 2. Run this test manually after the challenge period
+  // 3. Use a local Foundry/Anvil node where time can be advanced
+  /*
+  test('Step 7: Finalize task after challenge period (manual)', async () => {
+    console.log('\n--- Step 7: Task Finalization ---\n');
+
+    // Check if challenge period has passed
+    const deadline = await getTaskChallengeDeadline(chainTaskId);
+    if (!deadline.isPassed) {
+      console.log('Challenge period not yet passed');
+      console.log(`Remaining: ${Math.floor(deadline.remainingMs / (60 * 60 * 1000))}h`);
+      console.log('Skipping finalization test...');
+      return;
+    }
+
+    // Finalize the task (releases bounty to winner)
+    console.log('Finalizing task...');
+    const txHash = await finalizeTaskOnChain(creatorWallet, chainTaskId);
+    console.log(`Finalize tx: ${txHash}`);
+
+    // Verify on-chain state
+    const onChainTask = await getTaskFromChain(chainTaskId);
+    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+
+    expect(onChainTask.status).toBe(TaskStatus.Completed);
+
+    // Wait for indexer to sync
+    console.log('\nWaiting for indexer to sync finalization...');
+    const dbTask = await waitForTaskStatus(
+      chainTaskId,
+      'completed',
+      INDEXER_SYNC_WAIT_MS
+    );
+    console.log(`Database status: ${dbTask!.status}`);
+
+    expect(dbTask!.status).toBe('completed');
+
+    console.log('\n========================================');
+    console.log('Task Lifecycle Complete!');
+    console.log('Bounty released to winner.');
+    console.log('========================================\n');
+  });
+  */
 });
 
 // Also export a standalone test runner for manual testing

@@ -6,18 +6,14 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { AgentTier } from '@porternetwork/shared-types';
 import { allTools } from './tools';
 import { listTasksTool } from './tools/task/list-tasks';
 import { getTaskTool } from './tools/task/get-task';
 import { createTaskTool } from './tools/task/create-task';
 import { cancelTaskTool } from './tools/task/cancel-task';
-import { claimTaskTool } from './tools/agent/claim-task';
 import { submitWorkTool } from './tools/agent/submit-work';
-import { getMyClaimsTool } from './tools/agent/get-my-claims';
+import { getMySubmissionsTool } from './tools/agent/get-my-submissions';
 import { registerAgentTool } from './tools/agent/register-agent';
-import { listPendingTool } from './tools/verifier/list-pending';
-import { submitVerdictTool } from './tools/verifier/submit-verdict';
 import {
   getChallengeHandler,
   verifySignatureHandler,
@@ -29,9 +25,7 @@ import { allPrompts, getPromptContent } from './prompts';
 
 export interface ServerContext {
   callerAddress: `0x${string}`;
-  isVerifier: boolean;
   isAuthenticated: boolean;
-  tier: AgentTier | null;
   isRegistered: boolean;
   sessionId: string | null;
 }
@@ -97,9 +91,7 @@ export function createMcpServer() {
     // Build context from session
     let context: ServerContext = {
       callerAddress: '0x0000000000000000000000000000000000000000',
-      isVerifier: false,
       isAuthenticated: false,
-      tier: null,
       isRegistered: false,
       sessionId: null,
     };
@@ -109,9 +101,7 @@ export function createMcpServer() {
       if (session) {
         context = {
           callerAddress: session.walletAddress,
-          isVerifier: session.isVerifier,
           isAuthenticated: true,
-          tier: session.tier,
           isRegistered: session.isRegistered,
           sessionId,
         };
@@ -163,23 +153,14 @@ export function createMcpServer() {
         case 'cancel_task':
           result = await cancelTaskTool.handler(args, context);
           break;
-        case 'claim_task':
-          result = await claimTaskTool.handler(args, context);
-          break;
         case 'submit_work':
           result = await submitWorkTool.handler(args, context);
           break;
-        case 'get_my_claims':
-          result = await getMyClaimsTool.handler(args, context);
+        case 'get_my_submissions':
+          result = await getMySubmissionsTool.handler(args, context);
           break;
         case 'register_agent':
           result = await registerAgentTool.handler(args, context);
-          break;
-        case 'list_pending_verifications':
-          result = await listPendingTool.handler(args, context);
-          break;
-        case 'submit_verdict':
-          result = await submitVerdictTool.handler(args, context);
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);

@@ -2,8 +2,9 @@ import type { ServerContext } from '../server';
 
 /**
  * Access level requirements for tools
+ * Note: 'verifier' level removed - no longer needed in competitive model
  */
-export type AccessLevel = 'public' | 'authenticated' | 'registered' | 'verifier';
+export type AccessLevel = 'public' | 'authenticated' | 'registered';
 
 /**
  * Tool access requirements mapping
@@ -18,18 +19,13 @@ export const toolAccessRequirements: Record<string, AccessLevel> = {
   auth_session: 'public',
 
   // Requires authentication (valid session, may not be registered)
-  get_my_claims: 'authenticated',
+  get_my_submissions: 'authenticated',
   register_agent: 'authenticated',
 
   // Requires registration (must be registered on-chain)
   create_task: 'registered',
   cancel_task: 'registered',
-  claim_task: 'registered',
   submit_work: 'registered',
-
-  // Verifier-only (Elite tier with verification rights)
-  list_pending_verifications: 'verifier',
-  submit_verdict: 'verifier',
 };
 
 /**
@@ -85,17 +81,6 @@ export function checkAccess(
 
   // Registered level - need to be registered
   if (requiredLevel === 'registered') {
-    return { allowed: true };
-  }
-
-  // Verifier level - need to be a verifier (Elite tier)
-  if (requiredLevel === 'verifier') {
-    if (!context.isVerifier) {
-      return {
-        allowed: false,
-        reason: 'Only Elite tier agents with verification rights can use this tool.',
-      };
-    }
     return { allowed: true };
   }
 

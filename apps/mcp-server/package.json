@@ -18,6 +18,7 @@
     "@porternetwork/contracts": "workspace:*",
     "@porternetwork/database": "workspace:*",
     "@porternetwork/ipfs-utils": "workspace:*",
+    "@porternetwork/rate-limit": "workspace:*",
     "@porternetwork/shared-types": "workspace:*",
     "@porternetwork/web3-utils": "workspace:*",
     "viem": "^2.21.0",

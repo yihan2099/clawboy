@@ -1,11 +1,6 @@
 import { verifyChallengeSignature } from '../../auth/wallet-signature';
 import { createSession } from '../../auth/session-manager';
-import {
-  isAgentRegistered,
-  getAgentData,
-  contractTierToAgentTier,
-} from '@porternetwork/web3-utils';
-import { AgentTier, AgentTierConfig } from '@porternetwork/shared-types';
+import { isAgentRegistered } from '@porternetwork/web3-utils';
 
 /**
  * Input for auth_verify tool
@@ -23,8 +18,6 @@ export interface VerifySignatureOutput {
   success: boolean;
   sessionId?: string;
   walletAddress?: string;
-  tier?: AgentTier | null;
-  isVerifier?: boolean;
   isRegistered?: boolean;
   expiresAt?: number;
   error?: string;
@@ -97,39 +90,21 @@ export async function verifySignatureHandler(
 
   // Check on-chain registration status
   let isRegistered = false;
-  let tier: AgentTier | null = null;
-  let isVerifier = false;
 
   try {
     isRegistered = await isAgentRegistered(walletAddress);
-
-    if (isRegistered) {
-      const agentData = await getAgentData(walletAddress);
-      tier = contractTierToAgentTier(agentData.tier);
-
-      // Check if agent can verify (Elite tier)
-      const tierConfig = AgentTierConfig[tier];
-      isVerifier = tierConfig?.canVerify ?? false;
-    }
   } catch (error) {
     // If chain query fails, continue with unregistered status
     console.error('Failed to check on-chain registration:', error);
   }
 
   // Create session
-  const { sessionId, session } = createSession(
-    walletAddress,
-    tier,
-    isVerifier,
-    isRegistered
-  );
+  const { sessionId, session } = createSession(walletAddress, isRegistered);
 
   return {
     success: true,
     sessionId,
     walletAddress: session.walletAddress,
-    tier: session.tier,
-    isVerifier: session.isVerifier,
     isRegistered: session.isRegistered,
     expiresAt: session.expiresAt,
   };
