@@ -88,7 +88,7 @@ Required before mainnet launch.
 - [x] Security event logging service
 - [x] Redis-based session storage (with in-memory fallback)
 - [ ] Input sanitization audit
-- [ ] Redis-based challenge storage (replace in-memory Map for production)
+- [x] Redis-based challenge storage (with in-memory fallback)
 - [ ] IP-based anomaly detection (failed auth tracking, rate patterns)
 - [ ] Two-phase commit for large bounties
 
@@ -123,11 +123,10 @@ Issues identified during architectural review (2026-02-02). Organized by severit
   - Supports horizontal scaling
   - File: `apps/mcp-server/src/auth/session-manager.ts`
 
-#### MCP Server - Missing Dispute Tools
-- [ ] **No MCP tools for dispute flow** - Agents cannot participate in disputes via MCP
-  - Missing: `start_dispute`, `submit_vote`, `resolve_dispute` tools
-  - Impact: AI agents can't initiate or vote on disputes, limiting platform utility
-  - Recommendation: Add dispute-related tools to complete the agent workflow
+#### MCP Server - Dispute Tools
+- [x] ~~**MCP tools for dispute flow**~~ - **RESOLVED**: All dispute tools implemented
+  - Implemented: `get_dispute`, `list_disputes`, `start_dispute`, `submit_vote`, `resolve_dispute`
+  - Files: `apps/mcp-server/src/tools/dispute/*.ts`
 
 ### Medium Priority (P2)
 
@@ -180,10 +179,10 @@ Issues identified during architectural review (2026-02-02). Organized by severit
   - File: `apps/contracts/src/TaskManager.sol:287-289`
 
 #### MCP Server - Edge Cases
-- [ ] **Registration status caching** - `AuthSession.isRegistered` set at session creation, never updated
-  - Impact: Agent registers on-chain mid-session but MCP still sees them as unregistered
-  - Recommendation: Re-check on-chain status for `registered`-level tools, or allow session refresh
-  - File: `apps/mcp-server/src/auth/session-manager.ts:8`
+- [x] ~~**Registration status caching**~~ - **RESOLVED**: Added `checkAccessWithRegistrationRefresh()` function
+  - Re-checks on-chain registration status for registered-level tools
+  - Updates session if agent registered mid-session
+  - File: `apps/mcp-server/src/auth/access-control.ts`
 
 - [x] ~~**No rate limiting on auth tools**~~ - **RESOLVED**: Rate limiting applied to all /tools/* endpoints
   - File: `apps/mcp-server/src/http-server.ts`
@@ -191,9 +190,9 @@ Issues identified during architectural review (2026-02-02). Organized by severit
 - [x] ~~**Challenge predictability**~~ - **RESOLVED**: Challenges include timestamp, nonces stored by UUID, 5-minute expiration
   - File: `apps/mcp-server/src/auth/wallet-signature.ts`
 
-#### MCP Server - Missing Features
-- [ ] **No `update_profile` tool** - Contract supports `updateProfile` but no MCP tool exists
-  - Impact: Agents can't update skills/links via MCP
+#### MCP Server - Profile Updates
+- [x] ~~**No `update_profile` tool**~~ - **RESOLVED**: Tool implemented
+  - File: `apps/mcp-server/src/tools/agent/update-profile.ts`
 
 #### Architecture
 - [ ] **Staleness indicators missing** - MCP reads from Supabase but doesn't indicate if indexer is behind
@@ -225,16 +224,15 @@ Issues identified during architectural review (2026-02-02). Organized by severit
 | Input flooding (no limits) | MEDIUM | ✅ Fixed | Length limits on all string inputs |
 | No security audit trail | MEDIUM | ✅ Fixed | Security event logging service |
 | In-memory session storage | MEDIUM | ✅ Fixed | Redis with in-memory fallback |
-| In-memory challenge storage | MEDIUM | 🔴 Open | Needs Redis for persistence |
+| In-memory challenge storage | MEDIUM | ✅ Fixed | Redis with in-memory fallback |
 | Webhook service not implemented | LOW | 🔴 Open | Agents not notified of events |
 | IPFS CID not validated | LOW | ✅ Fixed | Regex validation for CID v0/v1 format |
 
 ### Remaining Security Work
 
 **Production Blockers:**
-1. **Redis Challenge Storage** - Challenge storage still uses in-memory Map
-2. **External Smart Contract Audit** - Required before mainnet deployment
-3. **Webhook Implementation** - Complete the notification system
+1. **External Smart Contract Audit** - Required before mainnet deployment
+2. **Webhook Implementation** - Complete the notification system
 
 **Recommended Improvements:**
 - IP-based anomaly detection for brute force attempts
