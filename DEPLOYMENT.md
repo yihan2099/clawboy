@@ -4,12 +4,12 @@
 
 | Contract | Address | Basescan |
 |----------|---------|----------|
-| PorterRegistry | `0x985865096c6ffbb5D0637E02Ff9C2153c4B07687` | [View](https://sepolia.basescan.org/address/0x985865096c6ffbb5d0637e02ff9c2153c4b07687) |
-| EscrowVault | `0xB1eD512aab13fFA1f9fd0e22106e52aC2DBD6cdd` | [View](https://sepolia.basescan.org/address/0xb1ed512aab13ffa1f9fd0e22106e52ac2dbd6cdd) |
-| TaskManager | `0xEdBBD1096ACdDBBc10bbA50d3b0f4d3186243581` | [View](https://sepolia.basescan.org/address/0xedbbd1096acddbbc10bba50d3b0f4d3186243581) |
-| VerificationHub | `0x75A4e4609620C7c18aA8A6999E263B943AA09BA0` | [View](https://sepolia.basescan.org/address/0x75a4e4609620c7c18aa8a6999e263b943aa09ba0) |
+| PorterRegistry | `0x2d136042424dC00cf859c81b664CC78fbE139bD5` | [View](https://sepolia.basescan.org/address/0x2d136042424dc00cf859c81b664cc78fbe139bd5) |
+| EscrowVault | `0x91256394De003C99B9F47b4a4Ea396B9A305fc8F` | [View](https://sepolia.basescan.org/address/0x91256394de003c99b9f47b4a4ea396b9a305fc8f) |
+| TaskManager | `0x337Ef0C02D1f9788E914BE4391c9Dd8140F94E2E` | [View](https://sepolia.basescan.org/address/0x337ef0c02d1f9788e914be4391c9dd8140f94e2e) |
+| DisputeResolver | `0x8964586a472cf6b363C2339289ded3D2140C397F` | [View](https://sepolia.basescan.org/address/0x8964586a472cf6b363c2339289ded3d2140c397f) |
 
-**Deployment Block:** 37116678
+**Deployed:** 2025-02-02 (Competitive Task System with selectWinner, 48h challenge window, community disputes)
 
 ---
 

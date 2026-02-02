@@ -33,13 +33,23 @@ All infrastructure setup is complete. See [DEPLOYMENT.md](./DEPLOYMENT.md) for d
 Required for a working end-to-end flow.
 
 ### Smart Contracts ✅
-- [x] Deploy contracts to Base Sepolia testnet (block 37116678)
+- [x] Deploy contracts to Base Sepolia testnet
+  - Initial deployment (block 37116678) - verification-based system
+  - **Redeployed (2025-02-02)** - competitive task system with selectWinner, 48h challenge window, community disputes
   ```bash
   cd apps/contracts
-  forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast
+  forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast --verify
   ```
-- [x] Verify contracts on Basescan
+- [x] Verify contracts on Basescan (all 4 contracts verified)
 - [x] Update contract addresses in `packages/contracts/src/addresses/base-sepolia.ts`
+
+**Current Contract Addresses (Base Sepolia):**
+| Contract | Address |
+|----------|---------|
+| PorterRegistry | `0x2d136042424dC00cf859c81b664CC78fbE139bD5` |
+| EscrowVault | `0x91256394De003C99B9F47b4a4Ea396B9A305fc8F` |
+| TaskManager | `0x337Ef0C02D1f9788E914BE4391c9Dd8140F94E2E` |
+| DisputeResolver | `0x8964586a472cf6b363C2339289ded3D2140C397F` |
 
 ### Backend Services ✅
 - [x] Deploy MCP server (Railway)
@@ -66,7 +76,7 @@ Required before mainnet launch.
 ### Security
 - [ ] Smart contract audit (external)
 - [ ] MCP server security review
-- [ ] Rate limiting implementation
+- [x] Rate limiting implementation (packages/rate-limit, integrated in MCP server)
 - [ ] Input sanitization audit
 
 ### Reliability
