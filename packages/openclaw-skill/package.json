@@ -20,11 +20,15 @@
     "url": "https://github.com/porternetwork/porternetwork",
     "directory": "packages/openclaw-skill"
   },
+  "homepage": "https://github.com/porternetwork/porternetwork/tree/main/packages/openclaw-skill#readme",
+  "bugs": {
+    "url": "https://github.com/porternetwork/porternetwork/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "porter": "./dist/cli.js"
+    "porter": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -35,7 +39,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@porternetwork/mcp-client": "workspace:*",

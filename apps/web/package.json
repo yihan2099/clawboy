@@ -10,7 +10,10 @@
     "clean": "rm -rf .next node_modules"
   },
   "dependencies": {
+    "@porternetwork/rate-limit": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.3",
     "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

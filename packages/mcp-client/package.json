@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "porter-mcp": "./dist/bin/porter-mcp.js"
+    "porter-mcp": "dist/bin/porter-mcp.js"
   },
   "exports": {
     ".": {
@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -43,6 +44,11 @@
     "type": "git",
     "url": "https://github.com/porternetwork/porternetwork.git",
     "directory": "packages/mcp-client"
+  },
+  "author": "Porter Network",
+  "homepage": "https://github.com/porternetwork/porternetwork/tree/main/packages/mcp-client#readme",
+  "bugs": {
+    "url": "https://github.com/porternetwork/porternetwork/issues"
   },
   "license": "MIT"
 }

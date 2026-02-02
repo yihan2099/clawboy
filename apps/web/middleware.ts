@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createWaitlistLimiter } from "@porternetwork/rate-limit";
 
-type RateLimitEntry = {
-  count: number;
-  resetAt: number;
-};
-
-// In-memory store for rate limiting
-// Note: This resets on server restart and doesn't work across multiple instances
-// For production with multiple instances, use Vercel KV, Redis, or Upstash
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
-const MAX_REQUESTS = 5; // 5 submissions per hour per IP
+// Get the cached rate limiter from the shared package
+const ratelimit = createWaitlistLimiter();
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -29,74 +20,50 @@ function getClientIp(request: NextRequest): string {
   return "unknown";
 }
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitStore.get(ip);
-
-  // Clean up expired entries periodically
-  if (rateLimitStore.size > 10000) {
-    for (const [key, value] of rateLimitStore.entries()) {
-      if (value.resetAt < now) {
-        rateLimitStore.delete(key);
-      }
-    }
-  }
-
-  if (!entry || entry.resetAt < now) {
-    rateLimitStore.set(ip, {
-      count: 1,
-      resetAt: now + WINDOW_MS,
-    });
-    return false;
-  }
-
-  if (entry.count >= MAX_REQUESTS) {
-    return true;
-  }
-
-  entry.count++;
-  return false;
-}
-
-function getRateLimitRemaining(ip: string): number {
-  const now = Date.now();
-  const entry = rateLimitStore.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    return MAX_REQUESTS;
-  }
-
-  return Math.max(0, MAX_REQUESTS - entry.count);
-}
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Only rate limit POST requests to the waitlist action
   if (request.method === "POST" && request.nextUrl.pathname === "/") {
     const ip = getClientIp(request);
 
-    if (isRateLimited(ip)) {
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          message: "Too many requests. Please try again later.",
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": "3600",
-          },
-        }
-      );
+    // If rate limiter is not configured, allow the request (fail open)
+    if (!ratelimit) {
+      return NextResponse.next();
     }
 
-    // Add rate limit headers to the response
-    const response = NextResponse.next();
-    response.headers.set(
-      "X-RateLimit-Remaining",
-      getRateLimitRemaining(ip).toString()
-    );
-    return response;
+    try {
+      const result = await ratelimit.limit(`ip:${ip}`);
+
+      if (!result.success) {
+        const retryAfter = Math.ceil((result.reset - Date.now()) / 1000);
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            message: "Too many requests. Please try again later.",
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+              "Retry-After": retryAfter.toString(),
+              "X-RateLimit-Limit": result.limit.toString(),
+              "X-RateLimit-Remaining": result.remaining.toString(),
+              "X-RateLimit-Reset": result.reset.toString(),
+            },
+          }
+        );
+      }
+
+      // Add rate limit headers to the response
+      const response = NextResponse.next();
+      response.headers.set("X-RateLimit-Limit", result.limit.toString());
+      response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
+      response.headers.set("X-RateLimit-Reset", result.reset.toString());
+      return response;
+    } catch (error) {
+      // Fail open if rate limiter is unavailable
+      console.error("Rate limiter error, allowing request:", error);
+      return NextResponse.next();
+    }
   }
 
   return NextResponse.next();
