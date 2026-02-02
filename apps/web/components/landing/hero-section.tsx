@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-const npxConfig = `{
+const mcpConfig = `{
   "mcpServers": {
     "porter-network": {
       "command": "npx",
@@ -15,31 +15,22 @@ const npxConfig = `{
   }
 }`;
 
-const installedConfig = `{
-  "mcpServers": {
-    "porter-network": {
-      "command": "porter-mcp",
-      "env": {
-        "PORTER_WALLET_PRIVATE_KEY": "0x..."
-      }
-    }
-  }
-}`;
+const openclawInstall = `curl -fsSL https://raw.githubusercontent.com/porternetwork/porternetwork/main/packages/openclaw-skill/install.sh | bash`;
 
 export function HeroSection() {
-  const [copiedNpx, setCopiedNpx] = useState(false);
-  const [copiedInstalled, setCopiedInstalled] = useState(false);
+  const [copiedMcp, setCopiedMcp] = useState(false);
+  const [copiedClaw, setCopiedClaw] = useState(false);
 
-  const copyNpx = async () => {
-    await navigator.clipboard.writeText(npxConfig);
-    setCopiedNpx(true);
-    setTimeout(() => setCopiedNpx(false), 2000);
+  const copyMcp = async () => {
+    await navigator.clipboard.writeText(mcpConfig);
+    setCopiedMcp(true);
+    setTimeout(() => setCopiedMcp(false), 2000);
   };
 
-  const copyInstalled = async () => {
-    await navigator.clipboard.writeText(installedConfig);
-    setCopiedInstalled(true);
-    setTimeout(() => setCopiedInstalled(false), 2000);
+  const copyClaw = async () => {
+    await navigator.clipboard.writeText(openclawInstall);
+    setCopiedClaw(true);
+    setTimeout(() => setCopiedClaw(false), 2000);
   };
 
   return (
@@ -54,21 +45,21 @@ export function HeroSection() {
           </p>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2 text-left">
-            {/* Quick start with npx */}
+            {/* MCP Config */}
             <div>
               <p className="text-sm text-white/50 mb-3">
-                Quick start with npx:
+                MCP compatible hosts:
               </p>
               <div className="relative">
-                <pre className="p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-mono text-white/80 overflow-x-auto h-full">
-                  {npxConfig}
+                <pre className="p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-mono text-white/80 overflow-x-auto">
+                  {mcpConfig}
                 </pre>
                 <button
-                  onClick={copyNpx}
+                  onClick={copyMcp}
                   className="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                   aria-label="Copy to clipboard"
                 >
-                  {copiedNpx ? (
+                  {copiedMcp ? (
                     <Check className="w-4 h-4 text-green-400" />
                   ) : (
                     <Copy className="w-4 h-4 text-white/60" />
@@ -77,22 +68,21 @@ export function HeroSection() {
               </div>
             </div>
 
-            {/* Installed package */}
+            {/* OpenClaw Skill */}
             <div>
               <p className="text-sm text-white/50 mb-3">
-                Or install the package:
+                OpenClaw skill:
               </p>
               <div className="relative">
-                <pre className="p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-mono text-white/80 overflow-x-auto">
-                  <span className="text-white/40"># npm install -g @porternetwork/mcp-client</span>
-                  {"\n\n"}{installedConfig}
+                <pre className="p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-sm font-mono text-white/80 overflow-x-auto whitespace-pre-wrap break-all">
+                  {openclawInstall}
                 </pre>
                 <button
-                  onClick={copyInstalled}
+                  onClick={copyClaw}
                   className="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                   aria-label="Copy to clipboard"
                 >
-                  {copiedInstalled ? (
+                  {copiedClaw ? (
                     <Check className="w-4 h-4 text-green-400" />
                   ) : (
                     <Copy className="w-4 h-4 text-white/60" />
