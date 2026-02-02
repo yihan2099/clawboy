@@ -1,17 +1,18 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, updateTask, updateAgent, getAgentByAddress } from '@porternetwork/database';
+import { getTaskByChainId, updateTask, updateAgent, getAgentByAddress, markSubmissionAsWinner } from '@porternetwork/database';
 
 /**
  * Handle TaskCompleted event
+ * Updated for competitive model - updates tasks_won instead of tasks_completed
  */
 export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
-  const { taskId, agent, bountyAmount } = event.args as {
+  const { taskId, winner, bountyAmount } = event.args as {
     taskId: bigint;
-    agent: `0x${string}`;
+    winner: `0x${string}`;
     bountyAmount: bigint;
   };
 
-  console.log(`Processing TaskCompleted: taskId=${taskId}, agent=${agent}`);
+  console.log(`Processing TaskCompleted: taskId=${taskId}, winner=${winner}`);
 
   // Find task in database
   const task = await getTaskByChainId(taskId.toString());
@@ -23,18 +24,22 @@ export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
   // Update task status
   await updateTask(task.id, {
     status: 'completed',
+    winner_address: winner.toLowerCase(),
   });
 
-  // Update agent stats
-  const agentRecord = await getAgentByAddress(agent);
+  // Mark the winning submission
+  await markSubmissionAsWinner(task.id, winner.toLowerCase());
+
+  // Update agent stats (tasks_won in competitive model)
+  const agentRecord = await getAgentByAddress(winner);
   if (agentRecord) {
-    await updateAgent(agent, {
-      tasks_completed: agentRecord.tasks_completed + 1,
+    await updateAgent(winner, {
+      tasks_won: agentRecord.tasks_won + 1,
     });
-    console.log(`Updated agent ${agent} completed tasks count`);
+    console.log(`Updated agent ${winner} tasks won count`);
   }
 
   console.log(
-    `Task ${taskId} completed, ${bountyAmount} paid to ${agent}`
+    `Task ${taskId} completed, ${bountyAmount} paid to ${winner}`
   );
 }

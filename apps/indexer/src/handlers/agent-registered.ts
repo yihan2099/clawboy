@@ -4,6 +4,7 @@ import { fetchAgentProfile } from '@porternetwork/ipfs-utils';
 
 /**
  * Handle AgentRegistered event
+ * Updated for competitive model (no tiers)
  */
 export async function handleAgentRegistered(event: IndexerEvent): Promise<void> {
   const { agent, profileCid } = event.args as {
@@ -25,10 +26,9 @@ export async function handleAgentRegistered(event: IndexerEvent): Promise<void> 
     console.warn(`Failed to fetch agent profile for CID ${profileCid}:`, error);
   }
 
-  // Create or update agent in database
+  // Create or update agent in database (no tier in competitive model)
   await upsertAgent({
     address: agent.toLowerCase(),
-    tier: 'newcomer',
     profile_cid: profileCid,
     name,
     skills,

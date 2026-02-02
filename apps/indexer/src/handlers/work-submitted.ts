@@ -1,8 +1,9 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, updateTask } from '@porternetwork/database';
+import { getTaskByChainId, createSubmission, updateSubmission, getSubmissionByTaskAndAgent } from '@porternetwork/database';
 
 /**
  * Handle WorkSubmitted event
+ * Updated for competitive model - creates submissions in the submissions table
  */
 export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
   const { taskId, agent, submissionCid } = event.args as {
@@ -20,20 +21,33 @@ export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
     return;
   }
 
-  // Verify the submitter is the one who claimed the task
-  if (task.claimed_by?.toLowerCase() !== agent.toLowerCase()) {
-    console.error(
-      `Work submitted by ${agent} but task was claimed by ${task.claimed_by}`
+  // Check if agent already has a submission for this task
+  const existingSubmission = await getSubmissionByTaskAndAgent(task.id, agent.toLowerCase());
+
+  const now = new Date().toISOString();
+
+  if (existingSubmission) {
+    // Update existing submission
+    await updateSubmission(existingSubmission.id, {
+      submission_cid: submissionCid,
+      updated_at: now,
+    });
+    console.log(`Submission updated for task ${taskId} by agent ${agent}`);
+  } else {
+    // Get submission count for this task to determine index
+    const { total } = await import('@porternetwork/database').then(m =>
+      m.getSubmissionsByTaskId(task.id)
     );
-    return;
+
+    // Create new submission
+    await createSubmission({
+      task_id: task.id,
+      agent_address: agent.toLowerCase(),
+      submission_cid: submissionCid,
+      submission_index: total,
+      submitted_at: now,
+      updated_at: now,
+    });
+    console.log(`New submission created for task ${taskId} by agent ${agent}`);
   }
-
-  // Update task status
-  await updateTask(task.id, {
-    status: 'submitted',
-    submission_cid: submissionCid,
-    submitted_at: new Date().toISOString(),
-  });
-
-  console.log(`Work submitted for task ${taskId}, CID: ${submissionCid}`);
 }

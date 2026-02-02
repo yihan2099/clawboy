@@ -1,5 +1,5 @@
 import { getPublicClient, getBlockNumber } from '@porternetwork/web3-utils';
-import { TaskManagerABI, getContractAddresses } from '@porternetwork/contracts';
+import { TaskManagerABI, DisputeResolverABI, getContractAddresses } from '@porternetwork/contracts';
 import { getLastSyncedBlock, updateSyncState } from '@porternetwork/database';
 import type { Log } from 'viem';
 
@@ -19,6 +19,7 @@ export interface IndexerEvent {
 
 /**
  * Create an event listener for blockchain events
+ * Updated for competitive task system
  */
 export function createEventListener(
   chainId: number = 84532,
@@ -58,7 +59,9 @@ export function createEventListener(
         return; // No new blocks
       }
 
-      // Get TaskManager events
+      // ============ TaskManager Events ============
+
+      // TaskCreated
       const taskCreatedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -77,21 +80,7 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      const taskClaimedLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskClaimed',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
-            { name: 'claimDeadline', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock: lastProcessedBlock + 1n,
-        toBlock: currentBlock,
-      });
-
+      // WorkSubmitted (new or updated submission)
       const workSubmittedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -107,6 +96,38 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
+      // WinnerSelected (creator picks winner)
+      const winnerSelectedLogs = await publicClient.getLogs({
+        address: addresses.taskManager,
+        event: {
+          type: 'event',
+          name: 'WinnerSelected',
+          inputs: [
+            { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'winner', type: 'address', indexed: true },
+            { name: 'challengeDeadline', type: 'uint256', indexed: false },
+          ],
+        },
+        fromBlock: lastProcessedBlock + 1n,
+        toBlock: currentBlock,
+      });
+
+      // AllSubmissionsRejected (creator rejects all)
+      const submissionsRejectedLogs = await publicClient.getLogs({
+        address: addresses.taskManager,
+        event: {
+          type: 'event',
+          name: 'AllSubmissionsRejected',
+          inputs: [
+            { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'reason', type: 'string', indexed: false },
+          ],
+        },
+        fromBlock: lastProcessedBlock + 1n,
+        toBlock: currentBlock,
+      });
+
+      // TaskCompleted (bounty released to winner)
       const taskCompletedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -114,7 +135,7 @@ export function createEventListener(
           name: 'TaskCompleted',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
+            { name: 'winner', type: 'address', indexed: true },
             { name: 'bountyAmount', type: 'uint256', indexed: false },
           ],
         },
@@ -122,6 +143,23 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
+      // TaskRefunded (bounty returned to creator)
+      const taskRefundedLogs = await publicClient.getLogs({
+        address: addresses.taskManager,
+        event: {
+          type: 'event',
+          name: 'TaskRefunded',
+          inputs: [
+            { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'creator', type: 'address', indexed: true },
+            { name: 'refundAmount', type: 'uint256', indexed: false },
+          ],
+        },
+        fromBlock: lastProcessedBlock + 1n,
+        toBlock: currentBlock,
+      });
+
+      // TaskCancelled (creator cancels)
       const taskCancelledLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -137,50 +175,24 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      const taskFailedLogs = await publicClient.getLogs({
+      // TaskDisputed (task enters dispute)
+      const taskDisputedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
           type: 'event',
-          name: 'TaskFailed',
+          name: 'TaskDisputed',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
-            { name: 'refundAmount', type: 'uint256', indexed: false },
+            { name: 'disputer', type: 'address', indexed: true },
           ],
         },
         fromBlock: lastProcessedBlock + 1n,
         toBlock: currentBlock,
       });
 
-      const taskReopenedLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskReopenedForRevision',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
-          ],
-        },
-        fromBlock: lastProcessedBlock + 1n,
-        toBlock: currentBlock,
-      });
+      // ============ PorterRegistry Events ============
 
-      const taskExpiredLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskExpiredFromClaim',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
-          ],
-        },
-        fromBlock: lastProcessedBlock + 1n,
-        toBlock: currentBlock,
-      });
-
-      // Get PorterRegistry events
+      // AgentRegistered
       const agentRegisteredLogs = await publicClient.getLogs({
         address: addresses.porterRegistry,
         event: {
@@ -195,18 +207,55 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      // Get VerificationHub events
-      const verdictSubmittedLogs = await publicClient.getLogs({
-        address: addresses.verificationHub,
+      // ============ DisputeResolver Events ============
+
+      // DisputeStarted
+      const disputeStartedLogs = await publicClient.getLogs({
+        address: addresses.disputeResolver,
         event: {
           type: 'event',
-          name: 'VerdictSubmitted',
+          name: 'DisputeStarted',
           inputs: [
+            { name: 'disputeId', type: 'uint256', indexed: true },
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'verifier', type: 'address', indexed: true },
-            { name: 'outcome', type: 'uint8', indexed: false },
-            { name: 'score', type: 'uint8', indexed: false },
-            { name: 'feedbackCid', type: 'string', indexed: false },
+            { name: 'disputer', type: 'address', indexed: true },
+            { name: 'stake', type: 'uint256', indexed: false },
+            { name: 'votingDeadline', type: 'uint256', indexed: false },
+          ],
+        },
+        fromBlock: lastProcessedBlock + 1n,
+        toBlock: currentBlock,
+      });
+
+      // VoteSubmitted
+      const voteSubmittedLogs = await publicClient.getLogs({
+        address: addresses.disputeResolver,
+        event: {
+          type: 'event',
+          name: 'VoteSubmitted',
+          inputs: [
+            { name: 'disputeId', type: 'uint256', indexed: true },
+            { name: 'voter', type: 'address', indexed: true },
+            { name: 'supportsDisputer', type: 'bool', indexed: false },
+            { name: 'weight', type: 'uint256', indexed: false },
+          ],
+        },
+        fromBlock: lastProcessedBlock + 1n,
+        toBlock: currentBlock,
+      });
+
+      // DisputeResolved
+      const disputeResolvedLogs = await publicClient.getLogs({
+        address: addresses.disputeResolver,
+        event: {
+          type: 'event',
+          name: 'DisputeResolved',
+          inputs: [
+            { name: 'disputeId', type: 'uint256', indexed: true },
+            { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'disputerWon', type: 'bool', indexed: false },
+            { name: 'votesFor', type: 'uint256', indexed: false },
+            { name: 'votesAgainst', type: 'uint256', indexed: false },
           ],
         },
         fromBlock: lastProcessedBlock + 1n,
@@ -216,15 +265,17 @@ export function createEventListener(
       // Process all events
       const allEvents = [
         ...taskCreatedLogs.map((l) => parseEvent(l, 'TaskCreated')),
-        ...taskClaimedLogs.map((l) => parseEvent(l, 'TaskClaimed')),
         ...workSubmittedLogs.map((l) => parseEvent(l, 'WorkSubmitted')),
+        ...winnerSelectedLogs.map((l) => parseEvent(l, 'WinnerSelected')),
+        ...submissionsRejectedLogs.map((l) => parseEvent(l, 'AllSubmissionsRejected')),
         ...taskCompletedLogs.map((l) => parseEvent(l, 'TaskCompleted')),
+        ...taskRefundedLogs.map((l) => parseEvent(l, 'TaskRefunded')),
         ...taskCancelledLogs.map((l) => parseEvent(l, 'TaskCancelled')),
-        ...taskFailedLogs.map((l) => parseEvent(l, 'TaskFailed')),
-        ...taskReopenedLogs.map((l) => parseEvent(l, 'TaskReopenedForRevision')),
-        ...taskExpiredLogs.map((l) => parseEvent(l, 'TaskExpiredFromClaim')),
+        ...taskDisputedLogs.map((l) => parseEvent(l, 'TaskDisputed')),
         ...agentRegisteredLogs.map((l) => parseEvent(l, 'AgentRegistered')),
-        ...verdictSubmittedLogs.map((l) => parseEvent(l, 'VerdictSubmitted')),
+        ...disputeStartedLogs.map((l) => parseEvent(l, 'DisputeStarted')),
+        ...voteSubmittedLogs.map((l) => parseEvent(l, 'VoteSubmitted')),
+        ...disputeResolvedLogs.map((l) => parseEvent(l, 'DisputeResolved')),
       ];
 
       // Sort by block number and log index
