@@ -25,7 +25,7 @@ export async function getTaskCount(chainId?: number): Promise<bigint> {
 }
 
 /**
- * Get task by ID from contract
+ * Get task by ID from contract (updated for competitive model)
  */
 export async function getTask(
   taskId: bigint,
@@ -37,11 +37,11 @@ export async function getTask(
   bountyAmount: bigint;
   bountyToken: `0x${string}`;
   specificationCid: string;
-  claimedBy: `0x${string}`;
-  claimedAt: bigint;
-  submissionCid: string;
   createdAtBlock: bigint;
   deadline: bigint;
+  selectedWinner: `0x${string}`;
+  selectedAt: bigint;
+  challengeDeadline: bigint;
 }> {
   const publicClient = getPublicClient(chainId);
   const addresses = getContractAddresses(chainId || 84532);
@@ -55,17 +55,17 @@ export async function getTask(
 
   // Viem returns tuple as array
   const task = result as unknown as readonly [
-    bigint,
-    `0x${string}`,
-    number,
-    bigint,
-    `0x${string}`,
-    string,
-    `0x${string}`,
-    bigint,
-    string,
-    bigint,
-    bigint
+    bigint,         // id
+    `0x${string}`,  // creator
+    number,         // status
+    bigint,         // bountyAmount
+    `0x${string}`,  // bountyToken
+    string,         // specificationCid
+    bigint,         // createdAtBlock
+    bigint,         // deadline
+    `0x${string}`,  // selectedWinner
+    bigint,         // selectedAt
+    bigint          // challengeDeadline
   ];
 
   return {
@@ -75,27 +75,25 @@ export async function getTask(
     bountyAmount: task[3],
     bountyToken: task[4],
     specificationCid: task[5],
-    claimedBy: task[6],
-    claimedAt: task[7],
-    submissionCid: task[8],
-    createdAtBlock: task[9],
-    deadline: task[10],
+    createdAtBlock: task[6],
+    deadline: task[7],
+    selectedWinner: task[8],
+    selectedAt: task[9],
+    challengeDeadline: task[10],
   };
 }
 
 /**
- * Convert contract status number to TaskStatus enum
+ * Convert contract status number to TaskStatus enum (updated for competitive model)
  */
 export function contractStatusToTaskStatus(status: number): TaskStatus {
   const statusMap: Record<number, TaskStatus> = {
     0: 'open' as TaskStatus,
-    1: 'claimed' as TaskStatus,
-    2: 'submitted' as TaskStatus,
-    3: 'under_verification' as TaskStatus,
-    4: 'completed' as TaskStatus,
-    5: 'disputed' as TaskStatus,
-    6: 'cancelled' as TaskStatus,
-    7: 'expired' as TaskStatus,
+    1: 'in_review' as TaskStatus,
+    2: 'completed' as TaskStatus,
+    3: 'disputed' as TaskStatus,
+    4: 'refunded' as TaskStatus,
+    5: 'cancelled' as TaskStatus,
   };
 
   return statusMap[status] ?? ('open' as TaskStatus);

@@ -1,6 +1,5 @@
 import { PorterRegistryABI, getContractAddresses } from '@porternetwork/contracts';
 import { getPublicClient } from '../client/public-client';
-import type { AgentTier } from '@porternetwork/shared-types';
 
 /**
  * Get PorterRegistry contract address
@@ -29,17 +28,16 @@ export async function isAgentRegistered(
 }
 
 /**
- * Get agent data from contract
+ * Get agent data from contract (updated for competitive model - no tiers)
  */
 export async function getAgentData(
   address: `0x${string}`,
   chainId?: number
 ): Promise<{
-  tier: number;
   reputation: bigint;
-  tasksCompleted: bigint;
-  tasksFailed: bigint;
-  stakedAmount: bigint;
+  tasksWon: bigint;
+  disputesWon: bigint;
+  disputesLost: bigint;
   profileCid: string;
   registeredAt: bigint;
   isActive: boolean;
@@ -56,32 +54,31 @@ export async function getAgentData(
 
   // Viem returns tuple as array
   const agent = result as unknown as readonly [
-    number,
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-    string,
-    bigint,
-    boolean
+    bigint,  // reputation
+    bigint,  // tasksWon
+    bigint,  // disputesWon
+    bigint,  // disputesLost
+    string,  // profileCid
+    bigint,  // registeredAt
+    boolean  // isActive
   ];
 
   return {
-    tier: agent[0],
-    reputation: agent[1],
-    tasksCompleted: agent[2],
-    tasksFailed: agent[3],
-    stakedAmount: agent[4],
-    profileCid: agent[5],
-    registeredAt: agent[6],
-    isActive: agent[7],
+    reputation: agent[0],
+    tasksWon: agent[1],
+    disputesWon: agent[2],
+    disputesLost: agent[3],
+    profileCid: agent[4],
+    registeredAt: agent[5],
+    isActive: agent[6],
   };
 }
 
 /**
- * Get agent's staked amount
+ * Get agent's vote weight for disputes
+ * Weight = max(1, floor(log2(reputation + 1)))
  */
-export async function getAgentStake(
+export async function getAgentVoteWeight(
   address: `0x${string}`,
   chainId?: number
 ): Promise<bigint> {
@@ -91,21 +88,25 @@ export async function getAgentStake(
   return publicClient.readContract({
     address: addresses.porterRegistry,
     abi: PorterRegistryABI,
-    functionName: 'getStake',
+    functionName: 'getVoteWeight',
     args: [address],
   }) as Promise<bigint>;
 }
 
 /**
- * Convert contract tier number to AgentTier enum
+ * Get agent's reputation score
  */
-export function contractTierToAgentTier(tier: number): AgentTier {
-  const tierMap: Record<number, AgentTier> = {
-    0: 'newcomer' as AgentTier,
-    1: 'established' as AgentTier,
-    2: 'verified' as AgentTier,
-    3: 'elite' as AgentTier,
-  };
+export async function getAgentReputation(
+  address: `0x${string}`,
+  chainId?: number
+): Promise<bigint> {
+  const publicClient = getPublicClient(chainId);
+  const addresses = getContractAddresses(chainId || 84532);
 
-  return tierMap[tier] ?? ('newcomer' as AgentTier);
+  return publicClient.readContract({
+    address: addresses.porterRegistry,
+    abi: PorterRegistryABI,
+    functionName: 'getReputation',
+    args: [address],
+  }) as Promise<bigint>;
 }

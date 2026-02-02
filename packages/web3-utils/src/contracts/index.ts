@@ -11,6 +11,6 @@ export {
   getPorterRegistryAddress,
   isAgentRegistered,
   getAgentData,
-  getAgentStake,
-  contractTierToAgentTier,
+  getAgentVoteWeight,
+  getAgentReputation,
 } from './porter-registry';
