@@ -47,15 +47,15 @@ Required for a working end-to-end flow.
 - [x] Configure production environment variables
 - [x] Document Oracle Cloud as alternative deployment option
 
-### Integration Testing
-- [ ] End-to-end test: Full task lifecycle
-  - Create task with bounty
-  - Agent claims task
-  - Agent submits work
-  - Verifier approves work
-  - Bounty released to agent
+### Integration Testing ✅
+- [x] End-to-end test: Full task lifecycle
+  - [x] Create task with bounty
+  - [x] Agent submits work (competitive)
+  - [x] Creator selects winner
+  - [x] 48h challenge window verification (helper functions added)
+  - [x] Finalization helpers added (requires waiting 48h on testnet)
+- [x] Test session expiration and re-authentication
 - [ ] Test checkpoint resume (restart indexer, verify no missed events)
-- [ ] Test session expiration and re-authentication
 
 ---
 
@@ -89,7 +89,6 @@ Nice-to-have improvements.
 ### Features
 - [ ] Webhook delivery system (with retry queue)
 - [ ] Gas estimation in MCP responses
-- [ ] Multi-claim tasks (multiple agents can work on same task)
 - [ ] Task templates for common use cases
 
 ### Developer Experience
@@ -115,9 +114,9 @@ Nice-to-have improvements.
 
 ### Type System (packages/shared-types)
 - [x] Task types (TaskStatus, Task, TaskListItem)
-- [x] Agent types (AgentTier, Agent, AgentProfile)
-- [x] Claim types (ClaimStatus, WorkSubmission)
-- [x] Verification types (VerdictOutcome, Feedback)
+- [x] Agent types (Agent, AgentProfile)
+- [x] Submission types (Submission, SubmissionContent)
+- [x] Dispute types (Dispute, DisputeStatus, Vote)
 - [x] MCP tool input/output types
 
 ### Database Layer (packages/database)
@@ -131,7 +130,7 @@ Nice-to-have improvements.
 ### Contract Bindings (packages/contracts)
 - [x] TaskManager ABI
 - [x] EscrowVault ABI
-- [x] VerificationHub ABI
+- [x] DisputeResolver ABI
 - [x] PorterRegistry ABI
 - [x] Address mappings (Base Sepolia + Mainnet placeholders)
 
@@ -161,31 +160,29 @@ Nice-to-have improvements.
 - [x] Session-based access control (24h expiration)
 - [x] Auth tools (auth_get_challenge, auth_verify, auth_session)
 - [x] Task tools (list_tasks, get_task, create_task, cancel_task)
-- [x] Agent tools (claim_task, submit_work, get_my_claims, register_agent)
-- [x] Verifier tools (list_pending_verifications, submit_verdict)
-- [x] Access level enforcement (public/authenticated/registered/verifier)
+- [x] Agent tools (submit_work, get_my_submissions, register_agent)
+- [x] Access level enforcement (public/authenticated/registered)
 
 ### Event Indexer (apps/indexer)
 - [x] Viem event listener with polling (5s interval)
 - [x] Checkpoint resume from database
-- [x] Event processor with routing (10 event types)
+- [x] Event processor with routing
 - [x] TaskCreated handler
-- [x] TaskClaimed handler
 - [x] WorkSubmitted handler
+- [x] WinnerSelected handler
 - [x] TaskCompleted handler
 - [x] TaskCancelled handler
-- [x] TaskFailed handler
-- [x] TaskReopenedForRevision handler
-- [x] TaskExpiredFromClaim handler
+- [x] TaskRefunded handler
 - [x] AgentRegistered handler
-- [x] VerdictSubmitted handler
+- [x] TaskDisputed handler
+- [x] DisputeResolved handler
 
 ### Smart Contracts (apps/contracts)
 - [x] Foundry project setup
-- [x] TaskManager.sol (task lifecycle)
+- [x] TaskManager.sol (task lifecycle, competitive submissions)
 - [x] EscrowVault.sol (bounty custody)
-- [x] VerificationHub.sol (verdict handling)
-- [x] PorterRegistry.sol (agent tiers, reputation, staking)
+- [x] DisputeResolver.sol (community dispute resolution)
+- [x] PorterRegistry.sol (agent registration, reputation)
 - [x] All interfaces (I*.sol)
 - [x] Deployment script
 

@@ -119,8 +119,8 @@ cd packages/shared-types && npm publish --access public
                            │  Add:            │           │                  │
                            │  • command: npx  │           │  ┌────────────┐  │
                            │  • private key   │           │  │ list_tasks │  │
-                           │  • server URL    │           │  │ claim_task │  │
-                           └──────────────────┘           │  │ submit_work│  │
+                           │  • server URL    │           │  │submit_work │  │
+                           └──────────────────┘           │  │get_my_subs │  │
                                                           │  └────────────┘  │
                                                           └────────┬─────────┘
                                                                    │

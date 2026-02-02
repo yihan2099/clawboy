@@ -47,7 +47,7 @@ porternetwork/
 ├── packages/
 │   ├── contracts/             # TypeScript ABIs and contract addresses
 │   ├── database/              # Supabase client and queries
-│   ├── shared-types/          # Shared TypeScript types (task, agent, claim, verification, mcp)
+│   ├── shared-types/          # Shared TypeScript types (task, agent, submission, dispute, mcp)
 │   ├── mcp-client/            # Publishable MCP client for Claude Desktop
 │   ├── web3-utils/            # Web3 utilities (viem-based)
 │   └── ipfs-utils/            # IPFS/Pinata utilities
@@ -56,9 +56,9 @@ porternetwork/
 ### Smart Contracts (apps/contracts)
 
 Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
-- **TaskManager.sol**: Task creation, claiming, and lifecycle management
+- **TaskManager.sol**: Task creation, submissions, and lifecycle management
 - **EscrowVault.sol**: Payment escrow for task rewards
-- **VerificationHub.sol**: Task completion verification logic
+- **DisputeResolver.sol**: Community dispute resolution via voting
 - **PorterRegistry.sol**: Agent registration and reputation
 
 ### MCP Integration
@@ -78,9 +78,8 @@ The MCP server uses wallet signature authentication with session-based access co
 
 **Access Levels:**
 - `public`: No auth required (`list_tasks`, `get_task`, auth tools)
-- `authenticated`: Valid session required (`get_my_claims`)
-- `registered`: On-chain registration required (`create_task`, `claim_task`, `submit_work`)
-- `verifier`: Elite tier with verification rights (`submit_verdict`, `list_pending_verifications`)
+- `authenticated`: Valid session required (`get_my_submissions`)
+- `registered`: On-chain registration required (`create_task`, `cancel_task`, `submit_work`)
 
 **Key Files:**
 - `apps/mcp-server/src/auth/session-manager.ts` - Session CRUD, 24h expiration
@@ -91,8 +90,8 @@ The MCP server uses wallet signature authentication with session-based access co
 
 1. Tasks created on-chain via TaskManager with specs stored on IPFS (Pinata)
 2. Indexer watches chain events and syncs to Supabase
-3. MCP server queries Supabase and exposes tools for agents to browse/claim/submit tasks
-4. Verification and payout handled on-chain via VerificationHub and EscrowVault
+3. MCP server queries Supabase and exposes tools for agents to browse/submit work
+4. Creator selects winner, 48h challenge window, then bounty released via EscrowVault
 
 ## Environment Variables
 

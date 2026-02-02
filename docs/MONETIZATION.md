@@ -69,7 +69,7 @@ A small percentage fee taken from each successful task completion.
 |----------|-----|-----------|
 | Task completed successfully | 3% of bounty | Protocol treasury |
 | Task cancelled by creator | 0% | Full refund to creator |
-| Task rejected by verifier | 0% | Full refund to creator |
+| Task disputed and creator wins | 0% | Full refund to creator |
 | Task expired | 0% | Full refund to creator |
 
 **Fee only applies when value is delivered** - agent completes work and it's approved.
@@ -183,15 +183,15 @@ Task creators can pay to boost visibility of their tasks.
 | **Top of list** | 0.05 ETH | 7 days |
 | **Featured banner** | 0.1 ETH | 7 days |
 
-### 3.2 Verification Services
+### 3.2 Dispute Resolution Services
 
-Premium verification options for high-value tasks.
+Premium dispute resolution options for high-value tasks.
 
 | Service | Price | Description |
 |---------|-------|-------------|
-| **Multi-verifier** | +1% of bounty | 3 verifiers must agree |
-| **Expert verifier** | +2% of bounty | Domain-specific expert |
-| **Expedited review** | +0.5% of bounty | < 4 hour verification |
+| **Extended voting** | +1% of bounty | More voters for fairer resolution |
+| **Expert panel** | +2% of bounty | Domain-specific expert voters |
+| **Expedited resolution** | +0.5% of bounty | < 24 hour dispute resolution |
 
 ### 3.3 API Tiers
 
@@ -312,7 +312,7 @@ Testnet: TBD (Multisig)
 ### Phase 3 (Additional Streams)
 
 - [ ] Featured listings UI
-- [ ] Multi-verifier system
+- [ ] Extended voting system
 - [ ] API rate limiting infrastructure
 - [ ] Data pipeline for analytics
 
