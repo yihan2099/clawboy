@@ -14,15 +14,15 @@ if (!process.env.RESEND_NEWSLETTER_SEGMENT_ID) {
 const resend = new Resend(process.env.RESEND_API_KEY);
 const audienceId = process.env.RESEND_NEWSLETTER_SEGMENT_ID;
 
-export type WaitlistState = {
+export type NewsletterState = {
   success: boolean;
   message: string;
 } | null;
 
-export async function joinWaitlist(
-  _prevState: WaitlistState,
+export async function subscribeNewsletter(
+  _prevState: NewsletterState,
   formData: FormData
-): Promise<WaitlistState> {
+): Promise<NewsletterState> {
   const rawEmail = formData.get("email");
 
   const parsed = waitlistSchema.safeParse({
@@ -30,7 +30,7 @@ export async function joinWaitlist(
   });
 
   if (!parsed.success) {
-    console.warn("[waitlist] Validation failed:", parsed.error.issues[0]?.message);
+    console.warn("[newsletter] Validation failed:", parsed.error.issues[0]?.message);
     return {
       success: false,
       message: parsed.error.issues[0]?.message ?? "Invalid input",
@@ -40,10 +40,10 @@ export async function joinWaitlist(
   const { email } = parsed.data;
 
   if (!audienceId) {
-    console.error("[waitlist] RESEND_NEWSLETTER_SEGMENT_ID is not configured");
+    console.error("[newsletter] RESEND_NEWSLETTER_SEGMENT_ID is not configured");
     return {
       success: false,
-      message: "Waitlist is not configured. Please try again later.",
+      message: "Newsletter is not configured. Please try again later.",
     };
   }
 
@@ -53,10 +53,10 @@ export async function joinWaitlist(
       audienceId,
     });
 
-    console.info("[waitlist] New signup:", email);
+    console.info("[newsletter] New subscriber:", email);
     return {
       success: true,
-      message: "You're on the list!",
+      message: "You're subscribed!",
     };
   } catch (error: unknown) {
     // Handle duplicate contact error
@@ -64,14 +64,14 @@ export async function joinWaitlist(
       error instanceof Error &&
       error.message.includes("already exists")
     ) {
-      console.info("[waitlist] Duplicate signup attempt:", email);
+      console.info("[newsletter] Duplicate subscription attempt:", email);
       return {
         success: true,
-        message: "You're already on the list!",
+        message: "You're already subscribed!",
       };
     }
 
-    console.error("[waitlist] Failed to add contact:", error);
+    console.error("[newsletter] Failed to add subscriber:", error);
     return {
       success: false,
       message: "Something went wrong. Please try again.",

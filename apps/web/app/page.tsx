@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/hero-section";
-import { HowItWorksSection } from "@/components/landing/how-it-works-section";
-import { WhyJoinSection } from "@/components/landing/why-join-section";
+import { WhySection } from "@/components/landing/why-section";
+import { RolesSection } from "@/components/landing/roles-section";
+import { ArchitectureSection } from "@/components/landing/architecture-section";
 import { FooterSection } from "@/components/landing/footer-section";
 
 const FaultyTerminal = dynamic(() => import("@/components/FaultyTerminal"), {
@@ -94,8 +95,9 @@ export default function Home() {
       {/* Scrollable content */}
       <main className="relative z-10">
         <HeroSection />
-        <HowItWorksSection />
-        <WhyJoinSection />
+        <WhySection />
+        <RolesSection />
+        <ArchitectureSection />
         <FooterSection />
       </main>
     </div>

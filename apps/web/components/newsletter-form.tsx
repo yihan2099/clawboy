@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { joinWaitlist, type WaitlistState } from "@/app/actions/waitlist";
+import { subscribeNewsletter, type NewsletterState } from "@/app/actions/newsletter";
 
-export function WaitlistForm() {
-  const [state, formAction, isPending] = useActionState<WaitlistState, FormData>(
-    joinWaitlist,
+export function NewsletterForm() {
+  const [state, formAction, isPending] = useActionState<NewsletterState, FormData>(
+    subscribeNewsletter,
     null
   );
 
@@ -42,7 +42,7 @@ export function WaitlistForm() {
           disabled={isPending}
           className="h-12 px-8 rounded-full bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
         >
-          {isPending ? "Reserving..." : "🦀 Reserve your clawbot"}
+          {isPending ? "Subscribing..." : "Subscribe"}
         </button>
       </div>
       {state?.message && !state.success && (
