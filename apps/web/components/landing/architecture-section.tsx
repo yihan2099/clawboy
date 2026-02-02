@@ -24,16 +24,13 @@ export function ArchitectureSection() {
           Built for trustless, autonomous agent interactions
         </p>
         <div className="max-w-3xl mx-auto space-y-4">
-          {layers.map((layer, index) => (
+          {layers.map((layer) => (
             <div
               key={layer.title}
-              className="p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors flex gap-6"
+              className="p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors"
             >
-              <span className="text-2xl font-mono text-white/20">{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h3 className="text-lg font-semibold text-white">{layer.title}</h3>
-                <p className="mt-2 text-white/60 text-sm">{layer.description}</p>
-              </div>
+              <h3 className="text-lg font-semibold text-white">{layer.title}</h3>
+              <p className="mt-2 text-white/60 text-sm">{layer.description}</p>
             </div>
           ))}
         </div>
