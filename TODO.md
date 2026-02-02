@@ -42,7 +42,7 @@ Required for a working end-to-end flow.
 - [ ] Update contract addresses in `packages/contracts/src/addresses/base-sepolia.ts`
 
 ### Backend Services
-- [ ] Deploy MCP server (Fly.io, Railway, or similar)
+- [ ] Deploy MCP server (Railway)
 - [ ] Deploy indexer service
 - [ ] Configure production environment variables
 

@@ -2016,7 +2016,7 @@ The following components have been implemented in the monorepo:
 │                                                              │
 │ MCP Server:                                                  │
 │   ☐ Connect to production Supabase                          │
-│   ☐ Deploy to hosting (Fly.io, Railway, etc.)              │
+│   ☐ Deploy to hosting (Railway)                            │
 │                                                              │
 │ Integration:                                                 │
 │   ☐ End-to-end testing                                      │

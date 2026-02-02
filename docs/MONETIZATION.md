@@ -345,7 +345,7 @@ A: Gas fees are separate and paid by the transaction initiator (creator for task
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
 │  │  Frontend   │  │  MCP Server │  │  Indexer    │  │  Database   │        │
-│  │  (Vercel)   │  │  (Fly.io)   │  │  (Fly.io)   │  │  (Supabase) │        │
+│  │  (Vercel)   │  │  (Railway)  │  │  (Railway)  │  │  (Supabase) │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
@@ -363,8 +363,8 @@ A: Gas fees are separate and paid by the transaction initiator (creator for task
 | Service | Provider | Tier | Monthly Cost |
 |---------|----------|------|--------------|
 | Frontend | Vercel | Free | $0 |
-| MCP Server | Fly.io | Free (3 shared VMs) | $0 |
-| Indexer | Fly.io | Free | $0 |
+| MCP Server | Railway | Free ($5 credit) | $0 |
+| Indexer | Railway | Free | $0 |
 | Database | Supabase | Free (500MB) | $0 |
 | IPFS Storage | Pinata | Free (1GB) | $0 |
 | RPC | Alchemy | Free (300M compute) | $0 |
@@ -376,8 +376,8 @@ A: Gas fees are separate and paid by the transaction initiator (creator for task
 | Service | Provider | Tier | Monthly Cost |
 |---------|----------|------|--------------|
 | Frontend | Vercel | Pro | $20 |
-| MCP Server | Fly.io | 1x shared-cpu-1x (1GB) | $5 |
-| Indexer | Fly.io | 1x shared-cpu-1x (1GB) | $5 |
+| MCP Server | Railway | Hobby (1GB) | $5 |
+| Indexer | Railway | Hobby (1GB) | $5 |
 | Database | Supabase | Pro (8GB) | $25 |
 | IPFS Storage | Pinata | Picnic (10GB) | $20 |
 | RPC | Alchemy | Growth | $49 |
@@ -390,8 +390,8 @@ A: Gas fees are separate and paid by the transaction initiator (creator for task
 | Service | Provider | Tier | Monthly Cost |
 |---------|----------|------|--------------|
 | Frontend | Vercel | Pro | $20 |
-| MCP Server | Fly.io | 2x dedicated-cpu-1x (2GB) | $60 |
-| Indexer | Fly.io | 1x dedicated-cpu-1x (2GB) | $30 |
+| MCP Server | Railway | Pro (2GB) x2 | $60 |
+| Indexer | Railway | Pro (2GB) | $30 |
 | Database | Supabase | Pro (50GB) + Read replicas | $75 |
 | IPFS Storage | Pinata | Submarine (100GB) | $100 |
 | RPC | Alchemy | Scale | $199 |
@@ -405,8 +405,8 @@ A: Gas fees are separate and paid by the transaction initiator (creator for task
 | Service | Provider | Tier | Monthly Cost |
 |---------|----------|------|--------------|
 | Frontend | Vercel | Enterprise | $500 |
-| MCP Server | Fly.io | 4x dedicated-cpu-2x (4GB) + LB | $300 |
-| Indexer | Fly.io | 2x dedicated-cpu-2x (4GB) | $120 |
+| MCP Server | Railway | Pro (4GB) x4 + LB | $300 |
+| Indexer | Railway | Pro (4GB) x2 | $120 |
 | Database | Supabase | Team (500GB) + HA | $400 |
 | IPFS Storage | Pinata | Enterprise | $500 |
 | RPC | Alchemy | Enterprise | $500 |

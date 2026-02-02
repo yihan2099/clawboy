@@ -19,6 +19,7 @@
   "devDependencies": {
     "@porternetwork/contracts": "workspace:*",
     "@porternetwork/shared-types": "workspace:*",
+    "@types/node": "^22.10.0",
     "typescript": "^5.7.3"
   }
 }

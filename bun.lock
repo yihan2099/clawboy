@@ -126,6 +126,22 @@
         "typescript": "^5.7.3",
       },
     },
+    "packages/openclaw-skill": {
+      "name": "@porternetwork/openclaw-skill",
+      "version": "0.1.0",
+      "bin": {
+        "porter": "./dist/cli.js",
+      },
+      "dependencies": {
+        "@porternetwork/mcp-client": "workspace:*",
+        "commander": "^12.1.0",
+        "viem": "^2.21.0",
+      },
+      "devDependencies": {
+        "@types/node": "^22.10.0",
+        "typescript": "^5.7.2",
+      },
+    },
     "packages/shared-types": {
       "name": "@porternetwork/shared-types",
       "version": "0.0.1",
@@ -146,6 +162,7 @@
       "devDependencies": {
         "@porternetwork/contracts": "workspace:*",
         "@porternetwork/shared-types": "workspace:*",
+        "@types/node": "^22.10.0",
         "typescript": "^5.7.3",
       },
     },
@@ -348,6 +365,8 @@
     "@porternetwork/mcp-client": ["@porternetwork/mcp-client@workspace:packages/mcp-client"],
 
     "@porternetwork/mcp-server": ["@porternetwork/mcp-server@workspace:apps/mcp-server"],
+
+    "@porternetwork/openclaw-skill": ["@porternetwork/openclaw-skill@workspace:packages/openclaw-skill"],
 
     "@porternetwork/shared-types": ["@porternetwork/shared-types@workspace:packages/shared-types"],
 
@@ -582,6 +601,8 @@
     "color-convert": ["color-convert@2.0.1", "", { "dependencies": { "color-name": "~1.1.4" } }, "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ=="],
 
     "color-name": ["color-name@1.1.4", "", {}, "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA=="],
+
+    "commander": ["commander@12.1.0", "", {}, "sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA=="],
 
     "concat-map": ["concat-map@0.0.1", "", {}, "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg=="],
 

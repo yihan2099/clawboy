@@ -6,6 +6,8 @@
 # Environment
 .env
 .env.local
+.env.sepolia
+.env.mainnet
 
 # ABIs (generated)
 /abis/
