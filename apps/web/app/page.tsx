@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { HeroSection } from "@/components/landing/hero-section";
+import { WhySection } from "@/components/landing/why-section";
 import { RolesSection } from "@/components/landing/roles-section";
 import { FooterSection } from "@/components/landing/footer-section";
 
@@ -93,6 +94,7 @@ export default function Home() {
       {/* Scrollable content */}
       <main className="relative z-10">
         <HeroSection />
+        <WhySection />
         <RolesSection />
         <FooterSection />
       </main>
