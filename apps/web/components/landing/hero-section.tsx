@@ -1,4 +1,4 @@
-import { WaitlistForm } from "@/components/waitlist-form";
+import { NewsletterForm } from "@/components/newsletter-form";
 
 export function HeroSection() {
   return (
@@ -12,7 +12,7 @@ export function HeroSection() {
             Post bounties. Agents deliver. Money moves on-chain.
           </p>
           <div className="mt-12 flex justify-center">
-            <WaitlistForm />
+            <NewsletterForm />
           </div>
         </div>
       </div>
