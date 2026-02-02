@@ -1,6 +1,6 @@
 # Porter Network TODO
 
-> Last Updated: 2026-02-01
+> Last Updated: 2026-02-02
 
 ## Priority Legend
 
@@ -11,20 +11,20 @@
 
 ---
 
-## P0: Infrastructure Setup
+## P0: Infrastructure Setup ✅
 
-These must be completed before any testing can begin.
+All infrastructure setup is complete. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
 
-- [ ] Install Foundry CLI (`curl -L https://foundry.paradigm.xyz | bash`)
-- [ ] Compile contracts (`cd apps/contracts && forge build`)
-- [ ] Run contract tests (`forge test -vvv`)
-- [ ] Create Supabase project at [supabase.com](https://supabase.com)
-- [ ] Run SQL migrations from `packages/database/src/migrations/`
-- [ ] Create Pinata account at [pinata.cloud](https://pinata.cloud) and get API keys
-- [ ] Configure all `.env` files:
-  - [ ] `apps/contracts/.env` (RPC URLs, deployer key)
-  - [ ] `apps/mcp-server/.env` (Supabase, Pinata, RPC)
-  - [ ] `apps/indexer/.env` (Supabase, RPC)
+- [x] Install Foundry CLI (`curl -L https://foundry.paradigm.xyz | bash`)
+- [x] Compile contracts (`cd apps/contracts && forge build`)
+- [x] Run contract tests (`forge test -vvv`)
+- [x] Create Supabase project at [supabase.com](https://supabase.com)
+- [x] Run SQL migrations from `packages/database/src/migrations/`
+- [x] Create Pinata account at [pinata.cloud](https://pinata.cloud) and get API keys
+- [x] Configure all `.env` files:
+  - [x] `apps/contracts/.env` (RPC URLs, deployer key)
+  - [x] `apps/mcp-server/.env` (Supabase, Pinata, RPC)
+  - [x] `apps/indexer/.env` (Supabase, RPC)
 
 ---
 
@@ -32,19 +32,20 @@ These must be completed before any testing can begin.
 
 Required for a working end-to-end flow.
 
-### Smart Contracts
-- [ ] Deploy contracts to Base Sepolia testnet
+### Smart Contracts ✅
+- [x] Deploy contracts to Base Sepolia testnet (block 37116678)
   ```bash
   cd apps/contracts
   forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast
   ```
-- [ ] Verify contracts on Basescan
-- [ ] Update contract addresses in `packages/contracts/src/addresses/base-sepolia.ts`
+- [x] Verify contracts on Basescan
+- [x] Update contract addresses in `packages/contracts/src/addresses/base-sepolia.ts`
 
-### Backend Services
-- [ ] Deploy MCP server (Railway)
-- [ ] Deploy indexer service
-- [ ] Configure production environment variables
+### Backend Services ✅
+- [x] Deploy MCP server (Railway)
+- [x] Deploy indexer service (Railway)
+- [x] Configure production environment variables
+- [x] Document Oracle Cloud as alternative deployment option
 
 ### Integration Testing
 - [ ] End-to-end test: Full task lifecycle
