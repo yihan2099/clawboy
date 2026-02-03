@@ -37,6 +37,7 @@ import {
   submitWorkOnChain,
   selectWinnerOnChain,
   finalizeTaskOnChain,
+  cancelTaskOnChain,
   getTaskChallengeDeadline,
   getTaskFromChain,
   waitForTaskInDB,
@@ -52,6 +53,7 @@ import {
 import { registerAgentTool } from '../../tools/agent/register-agent';
 import { createTaskTool } from '../../tools/task/create-task';
 import { submitWorkTool } from '../../tools/agent/submit-work';
+import { cancelTaskTool } from '../../tools/task/cancel-task';
 
 // Test configuration
 const TEST_BOUNTY_ETH = '0.001'; // Small bounty for testing
@@ -198,7 +200,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(`Agent registered on-chain: ${nowRegistered}`);
 
       expect(nowRegistered).toBe(true);
-      expect(agentProfileCid).toMatch(/^Qm|^bafy/); // IPFS CID format
+      expect(agentProfileCid).toMatch(/^Qm|^baf/); // IPFS CID format (CIDv0: Qm, CIDv1: baf*)
     },
     TEST_TIMEOUT
   );
@@ -266,7 +268,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(
         `Waiting for indexer to sync (up to ${INDEXER_SYNC_WAIT_MS / 1000}s)...`
       );
-      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
 
       dbTaskId = dbTask!.id;
       console.log(`Database task ID: ${dbTaskId}`);
@@ -364,7 +366,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       const dbTask = await waitForTaskStatus(
         chainTaskId,
         'in_review',
-        INDEXER_SYNC_WAIT_MS
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
       );
       console.log(`Database status: ${dbTask!.status}`);
       console.log(`Database winner: ${dbTask!.winner_address}`);
@@ -393,7 +397,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(`  Spec CID: ${onChainTask.specificationCid}`);
 
       // Database verification
-      const dbTask = await waitForTaskInDB(chainTaskId);
+      const dbTask = await waitForTaskInDB(chainTaskId, 30000, 2000, creatorWallet.address);
       console.log('\nDatabase state:');
       console.log(`  ID: ${dbTask!.id}`);
       console.log(`  Chain ID: ${dbTask!.chain_task_id}`);
@@ -432,6 +436,278 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     TEST_TIMEOUT
   );
 
+});
+
+/**
+ * Task Cancellation Tests
+ *
+ * These tests run independently and create separate tasks for cancellation testing
+ */
+describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () => {
+  let creatorWallet: TestWallet;
+  let agentWallet: TestWallet;
+  let creatorSessionId: string;
+  let agentSessionId: string;
+
+  beforeAll(async () => {
+    console.log('\n========================================');
+    console.log('E2E Task Cancellation Test - Base Sepolia');
+    console.log('========================================\n');
+
+    resetClients();
+
+    creatorWallet = createTestWallet(CREATOR_PRIVATE_KEY!);
+    agentWallet = createTestWallet(AGENT_PRIVATE_KEY!);
+
+    console.log(`Creator wallet: ${creatorWallet.address}`);
+    console.log(`Agent wallet: ${agentWallet.address}`);
+
+    // Authenticate wallets
+    const creatorAuth = await authenticateWallet(creatorWallet);
+    creatorSessionId = creatorAuth.sessionId;
+
+    const agentAuth = await authenticateWallet(agentWallet);
+    agentSessionId = agentAuth.sessionId;
+
+    // Ensure agent is registered
+    const isRegistered = await checkAgentRegistered(agentWallet.address);
+    if (!isRegistered) {
+      const profileResult = await registerAgentTool.handler(
+        {
+          name: `E2E Cancel Test Agent ${Date.now()}`,
+          description: 'Test agent for cancellation tests',
+          skills: ['testing'],
+          preferredTaskTypes: ['code'],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await registerAgentOnChain(agentWallet, profileResult.profileCid);
+    }
+  });
+
+  test(
+    'Test 8: Creator cancels task before submissions',
+    async () => {
+      console.log('\n--- Test 8: Creator cancels task before submissions ---\n');
+
+      // Create a new task for cancellation
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E Cancellation Test Task ${Date.now()}`,
+          description: 'Task to be cancelled - testing cancellation flow',
+          deliverables: [
+            {
+              type: 'document' as const,
+              description: 'Test output',
+              format: 'text',
+            },
+          ],
+          bountyAmount: TEST_BOUNTY_ETH,
+          tags: ['test', 'cancel'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      const { hash, taskId: chainTaskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        TEST_BOUNTY_ETH
+      );
+      console.log(`Task created: ${chainTaskId}`);
+
+      // Wait for indexer sync
+      await sleep(3000);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+      console.log(`Database task ID: ${dbTask!.id}`);
+      console.log(`Database status: ${dbTask!.status}`);
+
+      expect(dbTask!.status).toBe('open');
+
+      // Call MCP cancel_task tool
+      console.log('Calling MCP cancel_task tool...');
+      const cancelResult = await cancelTaskTool.handler(
+        { taskId: dbTask!.id, reason: 'E2E test - testing cancellation flow' },
+        { callerAddress: creatorWallet.address }
+      );
+      console.log(`MCP result: ${cancelResult.message}`);
+
+      expect(cancelResult.nextStep).toBeDefined();
+
+      // Cancel on-chain
+      console.log('Cancelling task on-chain...');
+      const cancelTxHash = await cancelTaskOnChain(creatorWallet, chainTaskId);
+      console.log(`Cancel tx: ${cancelTxHash}`);
+
+      // Wait for state propagation
+      await sleep(3000);
+
+      // Verify on-chain state
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+
+      expect(onChainTask.status).toBe(TaskStatus.Cancelled);
+
+      // Wait for indexer to sync the cancelled status
+      const updatedDbTask = await waitForTaskStatus(
+        chainTaskId,
+        'cancelled',
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
+      );
+      console.log(`Database status after cancel: ${updatedDbTask!.status}`);
+
+      expect(updatedDbTask!.status).toBe('cancelled');
+
+      console.log('Task successfully cancelled');
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Test 9: Cannot cancel task after submission',
+    async () => {
+      console.log('\n--- Test 9: Cannot cancel task after submission ---\n');
+
+      // Create a task
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E No-Cancel After Submit ${Date.now()}`,
+          description: 'Task that will receive a submission before cancel attempt',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Test output',
+              format: 'text',
+            },
+          ],
+          bountyAmount: TEST_BOUNTY_ETH,
+          tags: ['test'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      const { taskId: chainTaskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        TEST_BOUNTY_ETH
+      );
+      console.log(`Task created: ${chainTaskId}`);
+
+      await sleep(3000);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+
+      // Submit work
+      console.log('Agent submitting work...');
+      const submitResult = await submitWorkTool.handler(
+        {
+          taskId: dbTask!.id,
+          summary: 'Test submission to prevent cancellation',
+          description: 'Work submitted',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Output',
+              url: 'https://example.com/test',
+            },
+          ],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await submitWorkOnChain(agentWallet, chainTaskId, submitResult.submissionCid);
+      console.log('Work submitted on-chain');
+
+      // Task is still open but has submissions
+      // Contract should reject cancellation
+      console.log('Attempting to cancel task with submissions...');
+
+      try {
+        await cancelTaskOnChain(creatorWallet, chainTaskId);
+        // If we get here, the contract allowed cancellation (unexpected)
+        console.log('Warning: Contract allowed cancellation after submission');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log(`Expected error: ${errorMessage.substring(0, 100)}...`);
+        // Expected - contract should reject
+        expect(
+          errorMessage.includes('revert') ||
+            errorMessage.includes('fail') ||
+            errorMessage.includes('submission')
+        ).toBe(true);
+      }
+
+      // Verify task is still open
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`Task status (should be Open): ${taskStatusToString(onChainTask.status)}`);
+      expect(onChainTask.status).toBe(TaskStatus.Open);
+
+      console.log('Cancellation correctly rejected after submission');
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Test 10: Non-creator cannot cancel',
+    async () => {
+      console.log('\n--- Test 10: Non-creator cannot cancel ---\n');
+
+      // Create a task as creator
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E Non-Creator Cancel Test ${Date.now()}`,
+          description: 'Task that agent will try to cancel',
+          deliverables: [
+            {
+              type: 'document' as const,
+              description: 'Test',
+            },
+          ],
+          bountyAmount: TEST_BOUNTY_ETH,
+          tags: ['test'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      const { taskId: chainTaskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        TEST_BOUNTY_ETH
+      );
+      console.log(`Task created by creator: ${chainTaskId}`);
+
+      await sleep(3000);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+
+      // Agent tries to cancel via MCP tool
+      console.log('Agent attempting to cancel creator task via MCP...');
+
+      try {
+        await cancelTaskTool.handler(
+          { taskId: dbTask!.id },
+          { callerAddress: agentWallet.address }
+        );
+        expect(true).toBe(false); // Should not reach here
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log(`Expected MCP error: ${errorMessage}`);
+        expect(errorMessage).toContain('Only the task creator can cancel');
+      }
+
+      // Verify task is unchanged
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      expect(onChainTask.status).toBe(TaskStatus.Open);
+
+      console.log('Non-creator correctly denied cancellation');
+    },
+    TEST_TIMEOUT
+  );
+
+  test('Final summary', async () => {
+    console.log('\n========================================');
+    console.log('Task Cancellation Tests Complete!');
+    console.log('========================================\n');
+  });
+
   // Note: The following test can only be run after the 48h challenge period
   // This is commented out because it requires waiting 48h on testnet
   // For a complete test, either:
@@ -467,7 +743,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     const dbTask = await waitForTaskStatus(
       chainTaskId,
       'completed',
-      INDEXER_SYNC_WAIT_MS
+      INDEXER_SYNC_WAIT_MS,
+      2000,
+      creatorWallet.address
     );
     console.log(`Database status: ${dbTask!.status}`);
 

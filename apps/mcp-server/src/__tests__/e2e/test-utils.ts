@@ -8,6 +8,9 @@
  * - Database queries
  *
  * Updated for competitive task system (no claims, direct submissions)
+ *
+ * Supports both Base Sepolia (chainId 84532) and local Anvil (chainId 31337)
+ * Set CHAIN_ID environment variable to switch between them.
  */
 
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
@@ -20,6 +23,7 @@ import {
   type Transport,
   parseEther,
   formatEther,
+  defineChain,
 } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import {
@@ -35,9 +39,33 @@ import {
 } from '@clawboy/contracts';
 import { getTaskByChainId } from '@clawboy/database';
 
-// Contract addresses on Base Sepolia
-const CHAIN_ID = 84532;
+// Chain configuration - supports both Base Sepolia and local Anvil
+const CHAIN_ID = parseInt(process.env.CHAIN_ID || '84532', 10);
 const addresses = getContractAddresses(CHAIN_ID);
+
+// Define local Anvil chain
+const localAnvil = defineChain({
+  id: 31337,
+  name: 'Local Anvil',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['http://localhost:8545'] },
+  },
+});
+
+// Get the appropriate chain and RPC URL based on CHAIN_ID
+function getChainConfig(): { chain: Chain; rpcUrl: string } {
+  if (CHAIN_ID === 31337) {
+    return {
+      chain: localAnvil,
+      rpcUrl: process.env.RPC_URL || 'http://localhost:8545',
+    };
+  }
+  return {
+    chain: baseSepolia,
+    rpcUrl: process.env.RPC_URL || 'https://sepolia.base.org',
+  };
+}
 
 // Zero address for native ETH
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -61,10 +89,11 @@ export interface TestWallet {
  */
 export function createTestWallet(privateKey: `0x${string}`): TestWallet {
   const account = privateKeyToAccount(privateKey);
+  const { chain, rpcUrl } = getChainConfig();
   const walletClient = createWalletClient({
     account,
-    chain: baseSepolia,
-    transport: http('https://sepolia.base.org'),
+    chain,
+    transport: http(rpcUrl),
   });
 
   return {
@@ -216,14 +245,16 @@ export async function createTaskOnChain(
     value: bountyWei, // Send ETH with the transaction
   });
 
-  const receipt = await waitForTransaction(hash, CHAIN_ID);
-  if (receipt.status !== 'success') {
+  // Wait for transaction receipt with retries
+  const publicClient = getPublicClient(CHAIN_ID);
+  const txReceipt = await publicClient.waitForTransactionReceipt({
+    hash,
+    timeout: 60_000, // 60 second timeout
+  });
+
+  if (txReceipt.status !== 'success') {
     throw new Error('Task creation transaction failed');
   }
-
-  // Get the task ID from the transaction logs
-  const publicClient = getPublicClient(CHAIN_ID);
-  const txReceipt = await publicClient.getTransactionReceipt({ hash });
 
   // Parse TaskCreated event to get taskId
   let taskId: bigint | undefined;
@@ -318,7 +349,22 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
     args: [taskId],
   });
 
-  // viem returns tuple as object with named properties matching ABI
+  // viem can return as array or object depending on version/config
+  // Handle both cases for robustness
+  if (Array.isArray(result)) {
+    // Array format: [id, creator, status, bountyAmount, bountyToken, specificationCid, createdAtBlock, deadline, selectedWinner, selectedAt, challengeDeadline]
+    return {
+      id: result[0] as bigint,
+      creator: result[1] as `0x${string}`,
+      status: result[2] as number,
+      bountyAmount: result[3] as bigint,
+      specificationCid: result[5] as string,
+      selectedWinner: result[8] as `0x${string}`,
+      submissionCount: 0n,
+    };
+  }
+
+  // Object format with named properties matching ABI
   const task = result as {
     id: bigint;
     creator: `0x${string}`;
@@ -340,7 +386,7 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
     bountyAmount: task.bountyAmount,
     specificationCid: task.specificationCid,
     selectedWinner: task.selectedWinner,
-    submissionCount: 0n, // Would need separate call to get submission count
+    submissionCount: 0n,
   };
 }
 
@@ -350,50 +396,70 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
 
 /**
  * Wait for a task to appear in the database (after indexer sync)
+ * Filters by both chainTaskId and chainId to properly separate tasks from different chains
  */
 export async function waitForTaskInDB(
   chainTaskId: bigint,
   maxWaitMs: number = 30000,
-  pollIntervalMs: number = 2000
+  pollIntervalMs: number = 2000,
+  creatorAddress?: `0x${string}`
 ): Promise<Awaited<ReturnType<typeof getTaskByChainId>>> {
   const startTime = Date.now();
   const chainTaskIdStr = chainTaskId.toString();
 
   while (Date.now() - startTime < maxWaitMs) {
-    const task = await getTaskByChainId(chainTaskIdStr);
+    // Pass CHAIN_ID to filter by chain, avoiding cross-chain collisions
+    const task = await getTaskByChainId(chainTaskIdStr, CHAIN_ID);
     if (task) {
-      return task;
+      // Optionally verify creator if provided (extra safety check)
+      if (creatorAddress) {
+        if (task.creator_address.toLowerCase() === creatorAddress.toLowerCase()) {
+          return task;
+        }
+        // Task found but wrong creator - keep waiting for the right one
+      } else {
+        return task;
+      }
     }
     await sleep(pollIntervalMs);
   }
 
   throw new Error(
-    `Task ${chainTaskIdStr} not found in database after ${maxWaitMs}ms`
+    `Task ${chainTaskIdStr} (chain: ${CHAIN_ID})${creatorAddress ? ` (creator: ${creatorAddress})` : ''} not found in database after ${maxWaitMs}ms`
   );
 }
 
 /**
  * Wait for a task status to update in the database
+ * Filters by chainId to properly separate tasks from different chains
  */
 export async function waitForTaskStatus(
   chainTaskId: bigint,
   expectedStatus: string,
   maxWaitMs: number = 30000,
-  pollIntervalMs: number = 2000
+  pollIntervalMs: number = 2000,
+  creatorAddress?: `0x${string}`
 ): Promise<Awaited<ReturnType<typeof getTaskByChainId>>> {
   const startTime = Date.now();
   const chainTaskIdStr = chainTaskId.toString();
 
   while (Date.now() - startTime < maxWaitMs) {
-    const task = await getTaskByChainId(chainTaskIdStr);
-    if (task && task.status === expectedStatus) {
-      return task;
+    // Pass CHAIN_ID to filter by chain
+    const task = await getTaskByChainId(chainTaskIdStr, CHAIN_ID);
+    if (task) {
+      // Optionally verify creator if provided (extra safety check)
+      const creatorMatches = !creatorAddress ||
+        task.creator_address.toLowerCase() === creatorAddress.toLowerCase();
+
+      if (creatorMatches && task.status === expectedStatus) {
+        return task;
+      }
     }
     await sleep(pollIntervalMs);
   }
 
   throw new Error(
-    `Task ${chainTaskIdStr} did not reach status "${expectedStatus}" after ${maxWaitMs}ms`
+    `Task ${chainTaskIdStr} (chain: ${CHAIN_ID})${creatorAddress ? ` (creator: ${creatorAddress})` : ''} did not reach status "${expectedStatus}" after ${maxWaitMs}ms`
   );
 }
 
@@ -413,6 +479,27 @@ export function sleep(ms: number): Promise<void> {
  */
 export function resetClients(): void {
   resetPublicClient();
+}
+
+/**
+ * Get the current chain ID being used for tests
+ */
+export function getTestChainId(): number {
+  return CHAIN_ID;
+}
+
+/**
+ * Check if tests are running against local Anvil
+ */
+export function isLocalAnvil(): boolean {
+  return CHAIN_ID === 31337;
+}
+
+/**
+ * Get chain name for logging
+ */
+export function getChainName(): string {
+  return CHAIN_ID === 31337 ? 'Local Anvil' : 'Base Sepolia';
 }
 
 /**
@@ -537,4 +624,97 @@ export async function waitForChallengeDeadline(
   }
 
   console.log('Challenge deadline has passed!');
+}
+
+// ============================================================================
+// Additional Contract Interactions for E2E Testing
+// ============================================================================
+
+/**
+ * Cancel a task on-chain (creator only, before submissions)
+ */
+export async function cancelTaskOnChain(
+  wallet: TestWallet,
+  taskId: bigint
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.taskManager,
+    abi: TaskManagerABI,
+    functionName: 'cancelTask',
+    args: [taskId],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Cancel task transaction failed');
+  }
+
+  return hash;
+}
+
+/**
+ * Update agent profile on-chain
+ */
+export async function updateProfileOnChain(
+  wallet: TestWallet,
+  newProfileCid: string
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.clawboyRegistry,
+    abi: ClawboyRegistryABI,
+    functionName: 'updateProfile',
+    args: [newProfileCid],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Update profile transaction failed');
+  }
+
+  return hash;
+}
+
+/**
+ * Get agent profile CID from chain
+ */
+export async function getAgentProfileCid(
+  address: `0x${string}`
+): Promise<string | null> {
+  const publicClient = getPublicClient(CHAIN_ID);
+
+  try {
+    // First check if registered
+    const isRegistered = await publicClient.readContract({
+      address: addresses.clawboyRegistry,
+      abi: ClawboyRegistryABI,
+      functionName: 'isRegistered',
+      args: [address],
+    }) as boolean;
+
+    if (!isRegistered) {
+      return null;
+    }
+
+    // Get agent data using getAgent
+    const agent = await publicClient.readContract({
+      address: addresses.clawboyRegistry,
+      abi: ClawboyRegistryABI,
+      functionName: 'getAgent',
+      args: [address],
+    });
+
+    // getAgent returns tuple: (reputation, tasksWon, disputesWon, disputesLost, profileCid, registeredAt, isActive)
+    const agentData = agent as {
+      reputation: bigint;
+      tasksWon: bigint;
+      disputesWon: bigint;
+      disputesLost: bigint;
+      profileCid: string;
+      registeredAt: bigint;
+      isActive: boolean;
+    };
+    return agentData.profileCid;
+  } catch {
+    return null;
+  }
 }

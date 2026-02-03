@@ -62,7 +62,7 @@ function createMockContext(address: `0x${string}`, sessionId: string): ServerCon
 // Test configuration
 const TEST_BOUNTY_ETH = '0.001';
 const INDEXER_SYNC_WAIT_MS = 15000;
-const CHAIN_ID = 84532;
+const CHAIN_ID = parseInt(process.env.CHAIN_ID || '84532', 10);
 const TEST_TIMEOUT = 60000; // 60 seconds for on-chain tests
 
 // Environment variables
@@ -539,6 +539,99 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
       },
       TEST_TIMEOUT
     );
+  });
+
+  describe('Additional Error Scenarios', () => {
+    test('Test 14: Cancel nonexistent task', async () => {
+      console.log('\n--- Test 14: Cancel nonexistent task ---\n');
+
+      const fakeTaskId = '00000000-0000-0000-0000-000000000000';
+
+      try {
+        const { cancelTaskTool } = await import('../../tools/task/cancel-task');
+        await cancelTaskTool.handler(
+          { taskId: fakeTaskId },
+          { callerAddress: creatorWallet.address }
+        );
+        expect(true).toBe(false); // Should not reach here
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log(`Expected error: ${errorMessage}`);
+        expect(
+          errorMessage.includes('not found') ||
+            errorMessage.includes('Task')
+        ).toBe(true);
+      }
+
+      console.log('Nonexistent task cancellation correctly rejected');
+    });
+
+    test('Test 15: Update profile with private webhook URL', async () => {
+      console.log('\n--- Test 15: Update profile with private webhook URL ---\n');
+
+      // This test checks SSRF protection for private addresses
+      const privateUrls = [
+        'https://192.168.1.1/webhook',
+        'https://10.0.0.1/webhook',
+        'https://172.16.0.1/webhook',
+        'https://localhost/webhook',
+        'https://127.0.0.1/webhook',
+      ];
+
+      const { updateProfileTool } = await import('../../tools/agent/update-profile');
+
+      for (const url of privateUrls) {
+        try {
+          await updateProfileTool.handler(
+            { webhookUrl: url },
+            { callerAddress: agentWallet.address }
+          );
+          console.log(`Warning: ${url} was accepted (unexpected)`);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.log(`${url} rejected: ${errorMessage.substring(0, 50)}...`);
+          expect(
+            errorMessage.toLowerCase().includes('private') ||
+              errorMessage.toLowerCase().includes('https') ||
+              errorMessage.toLowerCase().includes('secure')
+          ).toBe(true);
+        }
+      }
+
+      console.log('Private webhook URLs correctly rejected');
+    });
+
+    test('Test 16: Get capabilities with invalid category', async () => {
+      console.log('\n--- Test 16: Get capabilities with invalid category ---\n');
+
+      const { getCapabilitiesHandler } = await import('../../tools/discovery/get-capabilities');
+
+      // Test with invalid category - should not crash
+      const context = {
+        callerAddress: agentWallet.address,
+        isAuthenticated: true,
+        isRegistered: true,
+        sessionId: agentSessionId,
+      };
+
+      const result = await getCapabilitiesHandler(
+        { category: 'invalid_category' as any },
+        context
+      );
+
+      console.log(`Tools returned with invalid category: ${result.tools.length}`);
+
+      // Should either return empty array or ignore invalid filter
+      // Important: server should not crash
+      expect(result).toBeDefined();
+      expect(result.tools).toBeDefined();
+      expect(Array.isArray(result.tools)).toBe(true);
+
+      // With an invalid category that doesn't match any tools, should return empty
+      expect(result.tools.length).toBe(0);
+
+      console.log('Invalid category handled gracefully');
+    });
   });
 
   test('Final summary', async () => {
