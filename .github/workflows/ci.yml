@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint-and-typecheck:
-    name: Lint & TypeCheck
+    name: Lint, TypeCheck & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +25,9 @@ jobs:
 
       - name: TypeCheck
         run: bun run typecheck
+
+      - name: Format Check
+        run: bun run format:check
 
   test-contracts:
     name: Contract Tests
