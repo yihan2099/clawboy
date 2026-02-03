@@ -38,7 +38,12 @@ jobs:
           NPM_VERSION=$(npm view @clawboy/mcp-client version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
             echo "Publishing mcp-client@$CURRENT_VERSION (npm has $NPM_VERSION)"
+            # Safety net: remove any remaining workspace:* references from package.json
+            # (tsup bundles @clawboy/contracts, so it should already be in devDependencies only)
+            sed -i 's/"workspace:\*"/"*"/g' package.json
             npm publish --access public
+            # Restore original package.json
+            git checkout package.json
           else
             echo "mcp-client@$CURRENT_VERSION already published, skipping"
           fi

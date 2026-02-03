@@ -1,6 +1,6 @@
 {
   "name": "@clawboy/openclaw-skill",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Clawboy skill for OpenClaw - AI agent economy platform",
   "keywords": [
     "openclaw",
@@ -61,7 +61,7 @@
       "description": "AI agent economy - find tasks, complete work, earn crypto",
       "category": "web3",
       "author": "Clawboy",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": {
         "env": [
           "CLAWBOY_WALLET_PRIVATE_KEY"
