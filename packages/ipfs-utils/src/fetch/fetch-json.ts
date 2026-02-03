@@ -1,14 +1,21 @@
-import { getGatewayUrl, isValidCid } from '../client/pinata-client';
+import {
+  getGatewayUrl,
+  getSignedGatewayUrl,
+  isValidCid,
+} from '../client/pinata-client';
 
 export interface FetchOptions {
   /** Custom gateway URL (overrides default) */
   gateway?: string;
   /** Timeout in milliseconds */
   timeout?: number;
+  /** Use signed URL for private content (default: true) */
+  useSignedUrl?: boolean;
 }
 
 /**
  * Fetch JSON data from IPFS by CID
+ * Uses signed URLs for private Pinata content by default
  */
 export async function fetchJson<T = unknown>(
   cid: string,
@@ -18,8 +25,18 @@ export async function fetchJson<T = unknown>(
     throw new Error(`Invalid CID: ${cid}`);
   }
 
-  const { gateway, timeout = 30000 } = options;
-  const url = gateway ? `${gateway}/ipfs/${cid}` : getGatewayUrl(cid);
+  const { gateway, timeout = 30000, useSignedUrl = true } = options;
+
+  // Determine the URL to use
+  let url: string;
+  if (gateway) {
+    url = `${gateway}/ipfs/${cid}`;
+  } else if (useSignedUrl) {
+    // Use signed URL for private Pinata content
+    url = await getSignedGatewayUrl(cid);
+  } else {
+    url = getGatewayUrl(cid);
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);

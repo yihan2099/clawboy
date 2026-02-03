@@ -44,6 +44,21 @@ export function getGatewayUrl(cid: string): string {
 }
 
 /**
+ * Get a signed URL for private content access
+ * Expires in 5 minutes by default
+ */
+export async function getSignedGatewayUrl(
+  cid: string,
+  expiresSeconds: number = 300
+): Promise<string> {
+  const pinata = getPinataClient();
+  return pinata.gateways.createSignedURL({
+    cid,
+    expires: expiresSeconds,
+  });
+}
+
+/**
  * Check if a CID is valid
  */
 export function isValidCid(cid: string): boolean {

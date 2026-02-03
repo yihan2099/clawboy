@@ -1,1 +1,1 @@
-export { getPinataClient, resetPinataClient, getGatewayUrl, isValidCid } from './pinata-client';
+export { getPinataClient, resetPinataClient, getGatewayUrl, getSignedGatewayUrl, isValidCid } from './pinata-client';
