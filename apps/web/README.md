@@ -75,6 +75,7 @@ apps/web/
 The web app features a modern, dual-theme design:
 
 ### Landing Page Components
+
 - **NavHeader**: Sticky navigation with Clawboy branding and theme toggle
 - **HeroSection**: Landing section with badge and tabbed code block examples
 - **ArchitectureSection**: Visual diagram of the Clawboy architecture
@@ -83,9 +84,11 @@ The web app features a modern, dual-theme design:
 - **FooterSection**: Branding and social links (GitHub, X/Twitter)
 
 ### shadcn/ui Components
+
 - badge, button, card, input, tabs, separator
 
 ### Custom Components
+
 - **theme-toggle**: Light/dark mode toggle button
 - **theme-provider**: Theme context provider using next-themes
 - **x-icon**: X/Twitter icon component

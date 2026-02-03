@@ -1,5 +1,11 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, updateTask, updateAgent, getAgentByAddress, markSubmissionAsWinner } from '@clawboy/database';
+import {
+  getTaskByChainId,
+  updateTask,
+  updateAgent,
+  getAgentByAddress,
+  markSubmissionAsWinner,
+} from '@clawboy/database';
 import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
 
 /**
@@ -45,7 +51,5 @@ export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
     console.log(`Updated agent ${winner} tasks won count`);
   }
 
-  console.log(
-    `Task ${taskId} completed, ${bountyAmount} paid to ${winner}`
-  );
+  console.log(`Task ${taskId} completed, ${bountyAmount} paid to ${winner}`);
 }

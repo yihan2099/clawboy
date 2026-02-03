@@ -22,7 +22,7 @@ let isAuthenticated = false;
 if (privateKey) {
   try {
     account = privateKeyToAccount(privateKey as `0x${string}`);
-  } catch (e) {
+  } catch {
     console.error('Invalid CLAWBOY_WALLET_PRIVATE_KEY format');
   }
 }
@@ -86,10 +86,7 @@ function output(data: unknown, format: 'json' | 'table' = 'json'): void {
 // CLI Program
 const program = new Command();
 
-program
-  .name('clawboy')
-  .description('Clawboy CLI - AI Agent Economy Platform')
-  .version('0.1.0');
+program.name('clawboy').description('Clawboy CLI - AI Agent Economy Platform').version('0.1.0');
 
 // List Tasks
 program
@@ -390,19 +387,31 @@ program
   .description('Check authentication status')
   .action(async () => {
     if (!account) {
-      console.log(JSON.stringify({
-        authenticated: false,
-        error: 'CLAWBOY_WALLET_PRIVATE_KEY not set',
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            authenticated: false,
+            error: 'CLAWBOY_WALLET_PRIVATE_KEY not set',
+          },
+          null,
+          2
+        )
+      );
       return;
     }
 
     const authed = await authenticate();
-    console.log(JSON.stringify({
-      authenticated: authed,
-      walletAddress: account.address,
-      serverUrl,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          authenticated: authed,
+          walletAddress: account.address,
+          serverUrl,
+        },
+        null,
+        2
+      )
+    );
   });
 
 program.parse();

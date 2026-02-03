@@ -46,7 +46,7 @@ import {
   type TestWallet,
 } from './test-utils';
 
-import { getContractAddresses, DisputeResolverABI, TaskManagerABI } from '@clawboy/contracts';
+import { getContractAddresses, DisputeResolverABI } from '@clawboy/contracts';
 import { getPublicClient, waitForTransaction } from '@clawboy/web3-utils';
 
 // MCP Tool handlers
@@ -55,7 +55,7 @@ import { createTaskTool } from '../../tools/task/create-task';
 import { submitWorkTool } from '../../tools/agent/submit-work';
 import { startDisputeTool } from '../../tools/dispute/start-dispute';
 import { submitVoteTool } from '../../tools/dispute/submit-vote';
-import { resolveDisputeTool } from '../../tools/dispute/resolve-dispute';
+// import { resolveDisputeTool } from '../../tools/dispute/resolve-dispute';
 import type { ServerContext } from '../../server';
 
 /**
@@ -167,7 +167,8 @@ async function submitVoteOnChain(
 /**
  * Resolve a dispute on-chain
  */
-async function resolveDisputeOnChain(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _resolveDisputeOnChain(
   wallet: TestWallet,
   disputeId: bigint
 ): Promise<`0x${string}`> {
@@ -298,7 +299,7 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     if (!creatorBalance.sufficient || !agentBalance.sufficient || !voterBalance.sufficient) {
       throw new Error(
         'All wallets need sufficient ETH for dispute flow testing. ' +
-        'Get testnet ETH from https://www.alchemy.com/faucets/base-sepolia'
+          'Get testnet ETH from https://www.alchemy.com/faucets/base-sepolia'
       );
     }
 
@@ -402,7 +403,7 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
       );
 
       // Create task on-chain
-      const { hash, taskId } = await createTaskOnChain(
+      const { taskId } = await createTaskOnChain(
         creatorWallet,
         taskResult.specificationCid,
         TEST_BOUNTY_ETH
@@ -491,9 +492,7 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     TEST_TIMEOUT
   );
 
-  test(
-    'Step 5: Start dispute via MCP tool (validation)',
-    async () => {
+  test('Step 5: Start dispute via MCP tool (validation)', async () => {
     console.log('\n--- Step 5: Start Dispute (MCP Validation) ---\n');
 
     // Voter already submitted work in Step 3, so they can now dispute
@@ -533,7 +532,9 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     // Verify dispute state
     const dispute = await getDisputeFromChain(disputeId);
     console.log(`Dispute status: ${dispute.status}`); // 0 = Active
-    console.log(`Voting deadline: ${new Date(Number(dispute.votingDeadline) * 1000).toISOString()}`);
+    console.log(
+      `Voting deadline: ${new Date(Number(dispute.votingDeadline) * 1000).toISOString()}`
+    );
 
     expect(dispute.id).toBe(disputeId);
     expect(dispute.taskId).toBe(chainTaskId);
@@ -602,12 +603,12 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     console.log(`Vote submitted: ${txHash}`);
 
     // Check if vote was actually recorded
-    const hasVoted = await publicClient.readContract({
+    const hasVoted = (await publicClient.readContract({
       address: addresses.disputeResolver,
       abi: DisputeResolverABI,
       functionName: 'hasVoted',
       args: [disputeId, agentWallet.address],
-    }) as boolean;
+    })) as boolean;
     console.log(`Vote recorded: ${hasVoted}`);
 
     // Verify dispute state
@@ -640,7 +641,9 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     console.log(`  Status: ${dispute.status}`);
     console.log(`  Votes For: ${dispute.votesForDisputer}`);
     console.log(`  Votes Against: ${dispute.votesAgainstDisputer}`);
-    console.log(`  Voting Deadline: ${new Date(Number(dispute.votingDeadline) * 1000).toISOString()}`);
+    console.log(
+      `  Voting Deadline: ${new Date(Number(dispute.votingDeadline) * 1000).toISOString()}`
+    );
 
     // Get task state
     const task = await getTaskFromChain(chainTaskId);

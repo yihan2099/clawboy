@@ -70,10 +70,7 @@ export class ClawboyApiClient {
   /**
    * Call a tool on the Clawboy MCP Server
    */
-  async callTool<T = unknown>(
-    toolName: string,
-    args: Record<string, unknown> = {}
-  ): Promise<T> {
+  async callTool<T = unknown>(toolName: string, args: Record<string, unknown> = {}): Promise<T> {
     const response = await this.fetch(`/tools/${toolName}`, {
       method: 'POST',
       headers: {
@@ -87,9 +84,7 @@ export class ClawboyApiClient {
 
     if (!response.ok) {
       const error = data as ApiError;
-      const message = error.reason
-        ? `${error.error}: ${error.reason}`
-        : error.error;
+      const message = error.reason ? `${error.error}: ${error.reason}` : error.error;
       throw new Error(message);
     }
 
@@ -99,10 +94,7 @@ export class ClawboyApiClient {
   /**
    * Internal fetch wrapper with timeout
    */
-  private async fetch(
-    path: string,
-    init: RequestInit
-  ): Promise<Response> {
+  private async fetch(path: string, init: RequestInit): Promise<Response> {
     const url = `${this.baseUrl}${path}`;
 
     const controller = new AbortController();

@@ -21,19 +21,16 @@ export async function handleAgentRegistered(event: IndexerEvent): Promise<void> 
   let skills: string[] = [];
   let ipfsFetchFailed = false;
 
-  const fetchResult = await withRetryResult(
-    () => fetchAgentProfile(profileCid),
-    {
-      maxAttempts: 3,
-      initialDelayMs: 1000,
-      maxDelayMs: 10000,
-      onRetry: (attempt, error, delayMs) => {
-        console.warn(
-          `IPFS fetch attempt ${attempt} failed for profile CID ${profileCid}: ${error.message}. Retrying in ${delayMs}ms...`
-        );
-      },
-    }
-  );
+  const fetchResult = await withRetryResult(() => fetchAgentProfile(profileCid), {
+    maxAttempts: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 10000,
+    onRetry: (attempt, error, delayMs) => {
+      console.warn(
+        `IPFS fetch attempt ${attempt} failed for profile CID ${profileCid}: ${error.message}. Retrying in ${delayMs}ms...`
+      );
+    },
+  });
 
   if (fetchResult.success && fetchResult.data) {
     name = fetchResult.data.name || name;
@@ -57,5 +54,7 @@ export async function handleAgentRegistered(event: IndexerEvent): Promise<void> 
     ipfs_fetch_failed: ipfsFetchFailed,
   });
 
-  console.log(`Agent ${agent} registered: ${name} (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`);
+  console.log(
+    `Agent ${agent} registered: ${name} (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`
+  );
 }

@@ -53,9 +53,7 @@ export const verifySignatureToolDef = {
 /**
  * Handler for auth_verify tool
  */
-export async function verifySignatureHandler(
-  args: unknown
-): Promise<VerifySignatureOutput> {
+export async function verifySignatureHandler(args: unknown): Promise<VerifySignatureOutput> {
   const input = args as VerifySignatureInput;
 
   // SECURITY: Validate wallet address using viem's isAddress for proper hex validation
@@ -75,11 +73,7 @@ export async function verifySignatureHandler(
   const signature = input.signature as `0x${string}`;
 
   // Verify the signature
-  const verifyResult = await verifyChallengeSignature(
-    walletAddress,
-    signature,
-    input.challenge
-  );
+  const verifyResult = await verifyChallengeSignature(walletAddress, signature, input.challenge);
 
   if (!verifyResult.valid) {
     return {

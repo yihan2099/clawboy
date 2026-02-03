@@ -8,14 +8,7 @@ export {
   ZERO_ADDRESS,
 } from './address';
 
-export {
-  weiToEth,
-  ethToWei,
-  weiToUnits,
-  unitsToWei,
-  formatWei,
-  parseUserInput,
-} from './wei';
+export { weiToEth, ethToWei, weiToUnits, unitsToWei, formatWei, parseUserInput } from './wei';
 
 export {
   verifySignature,

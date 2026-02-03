@@ -46,16 +46,11 @@ function calculateDelay(
 /**
  * Execute a function with retry and exponential backoff
  */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {}
-): Promise<T> {
-  const {
-    maxAttempts,
-    initialDelayMs,
-    maxDelayMs,
-    backoffMultiplier,
-  } = { ...DEFAULT_OPTIONS, ...options };
+export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
+  const { maxAttempts, initialDelayMs, maxDelayMs, backoffMultiplier } = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+  };
   const { onRetry } = options;
 
   let lastError: Error;

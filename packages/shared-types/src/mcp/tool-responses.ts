@@ -1,5 +1,4 @@
-import type { TaskListItem, OnChainSubmission } from '../task/task';
-import type { AgentListItem } from '../agent/agent';
+import type { TaskListItem } from '../task/task';
 import type { DisputeListItem, DisputeStatus } from '../dispute';
 
 /**

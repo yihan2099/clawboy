@@ -53,13 +53,11 @@ export function shortenAddress(
  */
 export function isZeroAddress(address: string): boolean {
   return (
-    isAddress(address) &&
-    address.toLowerCase() === '0x0000000000000000000000000000000000000000'
+    isAddress(address) && address.toLowerCase() === '0x0000000000000000000000000000000000000000'
   );
 }
 
 /**
  * Zero address constant
  */
-export const ZERO_ADDRESS: `0x${string}` =
-  '0x0000000000000000000000000000000000000000';
+export const ZERO_ADDRESS: `0x${string}` = '0x0000000000000000000000000000000000000000';

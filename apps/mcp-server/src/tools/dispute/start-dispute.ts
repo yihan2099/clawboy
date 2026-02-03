@@ -12,7 +12,8 @@ export type StartDisputeInput = z.infer<typeof startDisputeSchema>;
 
 export const startDisputeTool = {
   name: 'start_dispute',
-  description: 'Start a dispute on a task in review. Requires staking ETH. You must be a submitter on the task.',
+  description:
+    'Start a dispute on a task in review. Requires staking ETH. You must be a submitter on the task.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -47,14 +48,16 @@ export const startDisputeTool = {
     };
 
     const task = {
-      creator: (r[1] as `0x${string}`) ?? r.creator ?? '0x0' as `0x${string}`,
+      creator: (r[1] as `0x${string}`) ?? r.creator ?? ('0x0' as `0x${string}`),
       bountyAmount: (r[3] as bigint) ?? r.bountyAmount ?? 0n,
       status: (r[2] as number) ?? r.status ?? 0,
     };
 
     // TaskStatus.InReview = 1
     if (task.status !== 1) {
-      throw new Error('Task must be in review status to dispute. Current status does not allow disputes.');
+      throw new Error(
+        'Task must be in review status to dispute. Current status does not allow disputes.'
+      );
     }
 
     // Check if caller has submitted to this task
@@ -82,21 +85,21 @@ export const startDisputeTool = {
     }
 
     // Calculate required stake
-    const minStake = await publicClient.readContract({
+    const minStake = (await publicClient.readContract({
       address: addresses.disputeResolver,
       abi: DisputeResolverABI,
       functionName: 'MIN_DISPUTE_STAKE',
-    }) as bigint;
+    })) as bigint;
 
     const percentStake = task.bountyAmount / 100n; // 1%
     const requiredStake = percentStake > minStake ? percentStake : minStake;
 
     // Get voting period
-    const votingPeriod = await publicClient.readContract({
+    const votingPeriod = (await publicClient.readContract({
       address: addresses.disputeResolver,
       abi: DisputeResolverABI,
       functionName: 'VOTING_PERIOD',
-    }) as bigint;
+    })) as bigint;
 
     return {
       message: 'Ready to start dispute. Submit the transaction with the required stake.',

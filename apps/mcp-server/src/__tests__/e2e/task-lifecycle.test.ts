@@ -36,7 +36,6 @@ import {
   createTaskOnChain,
   submitWorkOnChain,
   selectWinnerOnChain,
-  finalizeTaskOnChain,
   cancelTaskOnChain,
   getTaskChallengeDeadline,
   getTaskFromChain,
@@ -61,12 +60,8 @@ const TEST_BOUNTY_ETH = '0.001'; // Small bounty for testing
 const INDEXER_SYNC_WAIT_MS = 15000; // Wait for indexer to sync
 
 // Skip test if environment variables are not set
-const CREATOR_PRIVATE_KEY = process.env.E2E_CREATOR_PRIVATE_KEY as
-  | `0x${string}`
-  | undefined;
-const AGENT_PRIVATE_KEY = process.env.E2E_AGENT_PRIVATE_KEY as
-  | `0x${string}`
-  | undefined;
+const CREATOR_PRIVATE_KEY = process.env.E2E_CREATOR_PRIVATE_KEY as `0x${string}` | undefined;
+const AGENT_PRIVATE_KEY = process.env.E2E_AGENT_PRIVATE_KEY as `0x${string}` | undefined;
 
 const shouldSkipTests =
   !CREATOR_PRIVATE_KEY ||
@@ -107,10 +102,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     console.log('');
 
     // Check balances
-    const creatorBalance = await checkWalletBalance(
-      creatorWallet.address,
-      'creator'
-    );
+    const creatorBalance = await checkWalletBalance(creatorWallet.address, 'creator');
     const agentBalance = await checkWalletBalance(agentWallet.address, 'agent');
 
     console.log(`Creator: ${formatBalanceCheck(creatorBalance)}`);
@@ -153,12 +145,8 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
     expect(creatorSessionId).toBeDefined();
     expect(agentSessionId).toBeDefined();
-    expect(creatorAuth.walletAddress.toLowerCase()).toBe(
-      creatorWallet.address.toLowerCase()
-    );
-    expect(agentAuth.walletAddress.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
+    expect(creatorAuth.walletAddress.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
+    expect(agentAuth.walletAddress.toLowerCase()).toBe(agentWallet.address.toLowerCase());
   });
 
   test(
@@ -236,11 +224,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       // Create task on-chain
       console.log(`Creating task on-chain with ${TEST_BOUNTY_ETH} ETH bounty...`);
-      const { hash, taskId } = await createTaskOnChain(
-        creatorWallet,
-        taskSpecCid,
-        TEST_BOUNTY_ETH
-      );
+      const { hash, taskId } = await createTaskOnChain(creatorWallet, taskSpecCid, TEST_BOUNTY_ETH);
       chainTaskId = taskId;
       console.log(`Creation tx: ${hash}`);
       console.log(`Chain task ID: ${chainTaskId}`);
@@ -253,9 +237,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
 
       expect(onChainTask.status).toBe(TaskStatus.Open);
-      expect(onChainTask.creator.toLowerCase()).toBe(
-        creatorWallet.address.toLowerCase()
-      );
+      expect(onChainTask.creator.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
       expect(onChainTask.specificationCid).toBe(taskSpecCid);
     },
     TEST_TIMEOUT
@@ -266,10 +248,13 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     async () => {
       console.log('\n--- Step 4: Indexer Sync ---\n');
 
-      console.log(
-        `Waiting for indexer to sync (up to ${INDEXER_SYNC_WAIT_MS / 1000}s)...`
+      console.log(`Waiting for indexer to sync (up to ${INDEXER_SYNC_WAIT_MS / 1000}s)...`);
+      const dbTask = await waitForTaskInDB(
+        chainTaskId,
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
       );
-      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
 
       dbTaskId = dbTask!.id;
       console.log(`Database task ID: ${dbTaskId}`);
@@ -279,9 +264,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       expect(dbTask).toBeDefined();
       expect(dbTask!.chain_task_id).toBe(chainTaskId.toString());
       expect(dbTask!.status).toBe('open');
-      expect(dbTask!.creator_address.toLowerCase()).toBe(
-        creatorWallet.address.toLowerCase()
-      );
+      expect(dbTask!.creator_address.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
     },
     TEST_TIMEOUT
   );
@@ -297,8 +280,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
         {
           taskId: dbTaskId,
           summary: 'E2E test work completed successfully',
-          description:
-            'This submission demonstrates the complete task lifecycle workflow.',
+          description: 'This submission demonstrates the complete task lifecycle workflow.',
           deliverables: [
             {
               type: 'code' as const,
@@ -317,11 +299,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       // Submit on-chain
       console.log('Submitting work on-chain...');
-      const txHash = await submitWorkOnChain(
-        agentWallet,
-        chainTaskId,
-        submissionCid
-      );
+      const txHash = await submitWorkOnChain(agentWallet, chainTaskId, submissionCid);
       console.log(`Submit tx: ${txHash}`);
 
       // Verify on-chain state (task should still be open until creator selects winner)
@@ -341,11 +319,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       // Select winner on-chain (agent who submitted)
       console.log('Selecting winner on-chain...');
-      const txHash = await selectWinnerOnChain(
-        creatorWallet,
-        chainTaskId,
-        agentWallet.address
-      );
+      const txHash = await selectWinnerOnChain(creatorWallet, chainTaskId, agentWallet.address);
       console.log(`Select winner tx: ${txHash}`);
 
       // Wait for state to propagate (RPC can be slow to update)
@@ -358,9 +332,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       // Task should now be in review (48h challenge window)
       expect(onChainTask.status).toBe(TaskStatus.InReview);
-      expect(onChainTask.selectedWinner.toLowerCase()).toBe(
-        agentWallet.address.toLowerCase()
-      );
+      expect(onChainTask.selectedWinner.toLowerCase()).toBe(agentWallet.address.toLowerCase());
 
       // Wait for indexer to sync
       console.log('\nWaiting for indexer to sync winner selection...');
@@ -375,9 +347,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(`Database winner: ${dbTask!.winner_address}`);
 
       expect(dbTask!.status).toBe('in_review');
-      expect(dbTask!.winner_address?.toLowerCase()).toBe(
-        agentWallet.address.toLowerCase()
-      );
+      expect(dbTask!.winner_address?.toLowerCase()).toBe(agentWallet.address.toLowerCase());
     },
     TEST_TIMEOUT
   );
@@ -414,18 +384,14 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log(`  Passed: ${deadline.isPassed}`);
       if (!deadline.isPassed) {
         const hours = Math.floor(deadline.remainingMs / (60 * 60 * 1000));
-        const minutes = Math.floor(
-          (deadline.remainingMs % (60 * 60 * 1000)) / (60 * 1000)
-        );
+        const minutes = Math.floor((deadline.remainingMs % (60 * 60 * 1000)) / (60 * 1000));
         console.log(`  Remaining: ${hours}h ${minutes}m`);
       }
 
       // Assertions
       expect(onChainTask.status).toBe(TaskStatus.InReview);
       expect(dbTask!.status).toBe('in_review');
-      expect(dbTask!.winner_address?.toLowerCase()).toBe(
-        agentWallet.address.toLowerCase()
-      );
+      expect(dbTask!.winner_address?.toLowerCase()).toBe(agentWallet.address.toLowerCase());
 
       console.log('\n========================================');
       console.log('E2E Test Complete!');
@@ -436,7 +402,6 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     },
     TEST_TIMEOUT
   );
-
 });
 
 /**
@@ -447,8 +412,10 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () => {
   let creatorWallet: TestWallet;
   let agentWallet: TestWallet;
-  let creatorSessionId: string;
-  let agentSessionId: string;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let _creatorSessionId: string;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let _agentSessionId: string;
 
   beforeAll(async () => {
     console.log('\n========================================');
@@ -465,10 +432,10 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
 
     // Authenticate wallets
     const creatorAuth = await authenticateWallet(creatorWallet);
-    creatorSessionId = creatorAuth.sessionId;
+    _creatorSessionId = creatorAuth.sessionId;
 
     const agentAuth = await authenticateWallet(agentWallet);
-    agentSessionId = agentAuth.sessionId;
+    _agentSessionId = agentAuth.sessionId;
 
     // Ensure agent is registered
     const isRegistered = await checkAgentRegistered(agentWallet.address);
@@ -509,7 +476,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
         { callerAddress: creatorWallet.address }
       );
 
-      const { hash, taskId: chainTaskId } = await createTaskOnChain(
+      const { taskId: chainTaskId } = await createTaskOnChain(
         creatorWallet,
         taskResult.specificationCid,
         TEST_BOUNTY_ETH
@@ -518,7 +485,12 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
 
       // Wait for indexer sync
       await sleep(3000);
-      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+      const dbTask = await waitForTaskInDB(
+        chainTaskId,
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
+      );
       console.log(`Database task ID: ${dbTask!.id}`);
       console.log(`Database status: ${dbTask!.status}`);
 
@@ -596,7 +568,12 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
       console.log(`Task created: ${chainTaskId}`);
 
       await sleep(3000);
-      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+      const dbTask = await waitForTaskInDB(
+        chainTaskId,
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
+      );
 
       // Submit work
       console.log('Agent submitting work...');
@@ -677,7 +654,12 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
       console.log(`Task created by creator: ${chainTaskId}`);
 
       await sleep(3000);
-      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS, 2000, creatorWallet.address);
+      const dbTask = await waitForTaskInDB(
+        chainTaskId,
+        INDEXER_SYNC_WAIT_MS,
+        2000,
+        creatorWallet.address
+      );
 
       // Agent tries to cancel via MCP tool
       console.log('Agent attempting to cancel creator task via MCP...');

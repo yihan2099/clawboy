@@ -52,10 +52,7 @@ export interface AccessCheckResult {
 /**
  * Check if a context has access to a tool (synchronous check)
  */
-export function checkAccess(
-  toolName: string,
-  context: ServerContext
-): AccessCheckResult {
+export function checkAccess(toolName: string, context: ServerContext): AccessCheckResult {
   const requiredLevel = toolAccessRequirements[toolName];
 
   // Unknown tool - deny by default

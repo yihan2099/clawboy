@@ -19,11 +19,7 @@ export interface PromptDefinition {
   }>;
 }
 
-export const allPrompts: PromptDefinition[] = [
-  creatorPrompt,
-  agentPrompt,
-  voterPrompt,
-];
+export const allPrompts: PromptDefinition[] = [creatorPrompt, agentPrompt, voterPrompt];
 
 export const promptContents: Record<string, string> = {
   clawboy_creator: creatorPromptContent,

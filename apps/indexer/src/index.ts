@@ -30,9 +30,7 @@ function serializeBigInts(obj: unknown): unknown {
     return obj.map(serializeBigInts);
   }
   if (obj !== null && typeof obj === 'object') {
-    return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => [k, serializeBigInts(v)])
-    );
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, serializeBigInts(v)]));
   }
   return obj;
 }
@@ -42,11 +40,7 @@ function serializeBigInts(obj: unknown): unknown {
  */
 async function processEventWithIdempotency(event: IndexerEvent): Promise<void> {
   // Check if already processed (idempotency)
-  const alreadyProcessed = await isEventProcessed(
-    chainId,
-    event.transactionHash,
-    event.logIndex
-  );
+  const alreadyProcessed = await isEventProcessed(chainId, event.transactionHash, event.logIndex);
 
   if (alreadyProcessed) {
     console.log(
@@ -68,9 +62,7 @@ async function processEventWithIdempotency(event: IndexerEvent): Promise<void> {
       eventName: event.name,
     });
 
-    console.log(
-      `Successfully processed and marked: ${event.name} (block: ${event.blockNumber})`
-    );
+    console.log(`Successfully processed and marked: ${event.name} (block: ${event.blockNumber})`);
   } catch (error) {
     // Add to dead-letter queue
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -125,6 +117,7 @@ async function processRetryableEvents(): Promise<void> {
       // Reconstruct the event
       const event: IndexerEvent = {
         name: failedEvent.event_name,
+        chainId: failedEvent.chain_id,
         blockNumber: BigInt(failedEvent.block_number),
         transactionHash: failedEvent.tx_hash as `0x${string}`,
         logIndex: failedEvent.log_index,

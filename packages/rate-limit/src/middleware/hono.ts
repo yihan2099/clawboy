@@ -3,11 +3,7 @@
  */
 
 import type { Context, Next, MiddlewareHandler } from 'hono';
-import {
-  getOperationType,
-  getMcpLimiter,
-  getGlobalLimiter,
-} from '../config/mcp-config';
+import { getOperationType, getMcpLimiter, getGlobalLimiter } from '../config/mcp-config';
 
 /**
  * Get client IP from Hono context
@@ -83,10 +79,7 @@ export function createMcpRateLimitMiddleware(): MiddlewareHandler {
 
           // Add rate limit headers
           c.res.headers.set('X-RateLimit-Limit', opResult.limit.toString());
-          c.res.headers.set(
-            'X-RateLimit-Remaining',
-            opResult.remaining.toString()
-          );
+          c.res.headers.set('X-RateLimit-Remaining', opResult.remaining.toString());
           c.res.headers.set('X-RateLimit-Reset', opResult.reset.toString());
 
           if (!opResult.success) {

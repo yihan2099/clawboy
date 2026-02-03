@@ -60,10 +60,7 @@ export class ClawboyClient {
   /**
    * Call a tool on the MCP server
    */
-  async callTool<T = unknown>(
-    name: string,
-    args: Record<string, unknown>
-  ): Promise<T> {
+  async callTool<T = unknown>(name: string, args: Record<string, unknown>): Promise<T> {
     const result = await this.client.callTool({ name, arguments: args });
     return result as T;
   }

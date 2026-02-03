@@ -12,7 +12,8 @@ export type SubmitVoteInput = z.infer<typeof submitVoteSchema>;
 
 export const submitVoteTool = {
   name: 'submit_vote',
-  description: 'Submit a vote on an active dispute. You cannot vote on disputes where you are the disputer or task creator.',
+  description:
+    'Submit a vote on an active dispute. You cannot vote on disputes where you are the disputer or task creator.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -56,7 +57,7 @@ export const submitVoteTool = {
     const dispute = {
       id: (r[0] as bigint) ?? r.id ?? 0n,
       taskId: (r[1] as bigint) ?? r.taskId ?? 0n,
-      disputer: (r[2] as `0x${string}`) ?? r.disputer ?? '0x0' as `0x${string}`,
+      disputer: (r[2] as `0x${string}`) ?? r.disputer ?? ('0x0' as `0x${string}`),
       votingDeadline: (r[4] as bigint) ?? r.votingDeadline ?? 0n,
       status: (r[5] as number) ?? r.status ?? 0,
       votesForDisputer: (r[7] as bigint) ?? r.votesForDisputer ?? 0n,
@@ -98,7 +99,7 @@ export const submitVoteTool = {
       creator?: `0x${string}`;
     };
     const task = {
-      creator: (taskR[1] as `0x${string}`) ?? taskR.creator ?? '0x0' as `0x${string}`,
+      creator: (taskR[1] as `0x${string}`) ?? taskR.creator ?? ('0x0' as `0x${string}`),
     };
 
     if (context.callerAddress.toLowerCase() === task.creator.toLowerCase()) {

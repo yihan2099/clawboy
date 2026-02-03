@@ -1,8 +1,4 @@
-import {
-  getGatewayUrl,
-  getSignedGatewayUrl,
-  isValidCid,
-} from '../client/pinata-client';
+import { getGatewayUrl, getSignedGatewayUrl, isValidCid } from '../client/pinata-client';
 
 export interface FetchOptions {
   /** Custom gateway URL (overrides default) */
@@ -17,10 +13,7 @@ export interface FetchOptions {
  * Fetch JSON data from IPFS by CID
  * Uses signed URLs for private Pinata content by default
  */
-export async function fetchJson<T = unknown>(
-  cid: string,
-  options: FetchOptions = {}
-): Promise<T> {
+export async function fetchJson<T = unknown>(cid: string, options: FetchOptions = {}): Promise<T> {
   if (!isValidCid(cid)) {
     throw new Error(`Invalid CID: ${cid}`);
   }

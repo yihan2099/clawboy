@@ -1,5 +1,11 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, createSubmission, updateSubmission, getSubmissionByTaskAndAgent, getSubmissionsByTaskId } from '@clawboy/database';
+import {
+  getTaskByChainId,
+  createSubmission,
+  updateSubmission,
+  getSubmissionByTaskAndAgent,
+  getSubmissionsByTaskId,
+} from '@clawboy/database';
 
 /**
  * Handle WorkSubmitted event

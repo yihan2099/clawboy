@@ -1,16 +1,19 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Github } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import Link from 'next/link';
+import { Github } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function NavHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-zilla-slab)' }}>
+          <span
+            className="text-xl font-bold text-foreground"
+            style={{ fontFamily: 'var(--font-zilla-slab)' }}
+          >
             <span className="mr-1">🤠</span>Clawboy
           </span>
         </Link>

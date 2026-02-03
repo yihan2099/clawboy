@@ -60,9 +60,7 @@ export async function getSubmissionByTaskAndAgent(
 /**
  * Get the winning submission for a task
  */
-export async function getWinningSubmission(
-  taskId: string
-): Promise<SubmissionRow | null> {
+export async function getWinningSubmission(taskId: string): Promise<SubmissionRow | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -112,9 +110,7 @@ export async function getSubmissionsByAgent(
 /**
  * Create a new submission
  */
-export async function createSubmission(
-  submission: SubmissionInsert
-): Promise<SubmissionRow> {
+export async function createSubmission(submission: SubmissionInsert): Promise<SubmissionRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase
@@ -166,10 +162,7 @@ export async function markSubmissionAsWinner(
   const supabase = getWriteClient();
 
   // First, clear any existing winner for this task
-  await supabase
-    .from('submissions')
-    .update({ is_winner: false })
-    .eq('task_id', taskId);
+  await supabase.from('submissions').update({ is_winner: false }).eq('task_id', taskId);
 
   // Then mark the new winner
   const { data, error } = await supabase

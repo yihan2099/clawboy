@@ -63,6 +63,7 @@ clawboy/
 ### Smart Contracts (apps/contracts)
 
 Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
+
 - **TaskManager.sol**: Task creation, submissions, and lifecycle management
 - **EscrowVault.sol**: Payment escrow for task rewards
 - **DisputeResolver.sol**: Community dispute resolution via voting
@@ -76,12 +77,14 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 #### Discovery Tools
 
 The MCP server provides discovery tools for agents to explore available capabilities:
+
 - `get_capabilities`: Returns available tools based on session state (public/authenticated/registered)
 - `get_workflow_guide`: Returns step-by-step workflows for roles (agent, creator, voter)
 
 #### MCP Resources
 
 The server exposes MCP resources for detailed documentation:
+
 - `clawboy://guides/agent` - Agent documentation and workflows
 - `clawboy://guides/creator` - Creator documentation and workflows
 - `clawboy://guides/voter` - Voter documentation and workflows
@@ -91,17 +94,20 @@ The server exposes MCP resources for detailed documentation:
 The MCP server uses wallet signature authentication with session-based access control:
 
 **Auth Flow:**
+
 1. Agent calls `auth_get_challenge` → receives challenge message
 2. Agent signs challenge with wallet private key
 3. Agent calls `auth_verify` with signature → receives sessionId
 4. Subsequent tool calls include sessionId for authentication
 
 **Access Levels:**
+
 - `public`: No auth required (`get_capabilities`, `get_workflow_guide`, `list_tasks`, `get_task`, `get_dispute`, `list_disputes`, auth tools)
 - `authenticated`: Valid session required (`get_my_submissions`, `register_agent`, `resolve_dispute`)
 - `registered`: On-chain registration required (`create_task`, `cancel_task`, `submit_work`, `update_profile`, `start_dispute`, `submit_vote`)
 
 **Key Files:**
+
 - `apps/mcp-server/src/auth/session-manager.ts` - Session CRUD with Redis storage (in-memory fallback), 24h TTL
 - `apps/mcp-server/src/auth/access-control.ts` - Tool access requirements with registration refresh
 - `apps/mcp-server/src/auth/wallet-signature.ts` - Challenge generation with Redis storage
@@ -112,6 +118,7 @@ The MCP server uses wallet signature authentication with session-based access co
 - `apps/mcp-server/src/resources/` - MCP resources for role-based guides
 
 **Security Features:**
+
 - Redis-based session and challenge storage (with in-memory fallback)
 - Registration refresh for mid-session on-chain registration
 - Security event logging service for audit trails
@@ -128,6 +135,7 @@ The MCP server uses wallet signature authentication with session-based access co
 ### E2E Testing
 
 Full lifecycle tests require:
+
 - Two funded wallets on Base Sepolia (creator + agent)
 - MCP server running (`bun run dev:mcp`)
 - Indexer running (`bun run dev:indexer`)
@@ -157,6 +165,7 @@ cd apps/mcp-server && source .env.anvil && bun test src/__tests__/e2e/
 ```
 
 **Local Anvil addresses** (deterministic, same every deployment):
+
 ```
 ClawboyRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
 EscrowVault:      0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
@@ -181,29 +190,33 @@ The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/index
 
 ### Environment Files by App
 
-| App | Files | Notes |
-|-----|-------|-------|
-| **contracts** | `.env.example`, `.env.anvil`, `.env.sepolia` | Source chain-specific file before forge commands |
+| App            | Files                                            | Notes                                                |
+| -------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| **contracts**  | `.env.example`, `.env.anvil`, `.env.sepolia`     | Source chain-specific file before forge commands     |
 | **mcp-server** | `.env.example`, `.env`, `.env.anvil`, `.env.e2e` | Bun auto-loads `.env`; source `.env.anvil` for local |
-| **indexer** | `.env.example`, `.env`, `.env.anvil` | Bun auto-loads `.env`; source `.env.anvil` for local |
-| **web** | `.env.example`, `.env.local` | Next.js auto-loads `.env.local` |
+| **indexer**    | `.env.example`, `.env`, `.env.anvil`             | Bun auto-loads `.env`; source `.env.anvil` for local |
+| **web**        | `.env.example`, `.env.local`                     | Next.js auto-loads `.env.local`                      |
 
 ### Key Variables
 
 **apps/web** (`.env.local`):
+
 - `RESEND_API_KEY`, `RESEND_NEWSLETTER_SEGMENT_ID` - Waitlist email functionality
 
 **apps/contracts** (`.env.sepolia` / `.env.anvil`):
+
 - `BASE_SEPOLIA_RPC_URL`, `BASE_MAINNET_RPC_URL` - RPC endpoints
 - `DEPLOYER_PRIVATE_KEY` - For contract deployment
 - `BASESCAN_API_KEY` - For contract verification
 
 **apps/indexer** and **apps/mcp-server** (`.env` / `.env.anvil`):
+
 - `RPC_URL`, `CHAIN_ID` - Blockchain connection (84532 = Base Sepolia, 31337 = local Anvil)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` - Database
 - `PINATA_JWT`, `PINATA_GATEWAY` - IPFS for task specs
 
 **Local Anvil testing** (`.env.anvil` files):
+
 - Pre-configured for `CHAIN_ID=31337` and `RPC_URL=http://localhost:8545`
 - Uses Anvil's deterministic test accounts (pre-funded with 10000 ETH each)
 

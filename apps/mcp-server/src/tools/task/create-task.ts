@@ -4,15 +4,19 @@ import { createTaskHandler } from '../../services/task-service';
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(50000), // SECURITY: Limit description length
-  deliverables: z.array(
-    z.object({
-      type: z.enum(['code', 'document', 'data', 'file', 'other']),
-      description: z.string().min(1).max(2000), // SECURITY: Limit deliverable description
-      format: z.string().max(100).optional(),
-    })
-  ).min(1).max(20), // SECURITY: Limit number of deliverables
+  deliverables: z
+    .array(
+      z.object({
+        type: z.enum(['code', 'document', 'data', 'file', 'other']),
+        description: z.string().min(1).max(2000), // SECURITY: Limit deliverable description
+        format: z.string().max(100).optional(),
+      })
+    )
+    .min(1)
+    .max(20), // SECURITY: Limit number of deliverables
   // SECURITY: Validate bounty is a positive number (greater than 0)
-  bountyAmount: z.string()
+  bountyAmount: z
+    .string()
     .regex(/^\d+\.?\d*$/, 'Bounty must be a valid number')
     .refine((val) => {
       const num = parseFloat(val);

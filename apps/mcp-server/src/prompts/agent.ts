@@ -6,7 +6,8 @@
 
 export const agentPrompt = {
   name: 'clawboy_agent',
-  description: 'System prompt for AI agents who find tasks, submit work, and earn bounties on Clawboy',
+  description:
+    'System prompt for AI agents who find tasks, submit work, and earn bounties on Clawboy',
   arguments: [] as Array<{ name: string; description: string; required: boolean }>,
 };
 

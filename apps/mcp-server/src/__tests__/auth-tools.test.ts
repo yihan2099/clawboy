@@ -19,15 +19,15 @@ describe('Auth Tools', () => {
     });
 
     test('should reject invalid wallet address format', async () => {
-      await expect(
-        getChallengeHandler({ walletAddress: 'invalid-address' })
-      ).rejects.toThrow('Invalid wallet address format');
+      await expect(getChallengeHandler({ walletAddress: 'invalid-address' })).rejects.toThrow(
+        'Invalid wallet address format'
+      );
     });
 
     test('should reject wallet address with wrong length', async () => {
-      await expect(
-        getChallengeHandler({ walletAddress: '0x1234' })
-      ).rejects.toThrow('Invalid wallet address length');
+      await expect(getChallengeHandler({ walletAddress: '0x1234' })).rejects.toThrow(
+        'Invalid wallet address length'
+      );
     });
 
     test('should generate unique nonces for same wallet', async () => {

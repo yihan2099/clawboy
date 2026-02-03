@@ -16,11 +16,7 @@ const getWriteClient = () => getSupabaseAdminClient();
 export async function getDisputeById(id: string): Promise<DisputeRow | null> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('disputes')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from('disputes').select('*').eq('id', id).single();
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -35,9 +31,7 @@ export async function getDisputeById(id: string): Promise<DisputeRow | null> {
 /**
  * Get a dispute by its on-chain dispute ID
  */
-export async function getDisputeByChainId(
-  chainDisputeId: string
-): Promise<DisputeRow | null> {
+export async function getDisputeByChainId(chainDisputeId: string): Promise<DisputeRow | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -59,9 +53,7 @@ export async function getDisputeByChainId(
 /**
  * Get the dispute for a task
  */
-export async function getDisputeByTaskId(
-  taskId: string
-): Promise<DisputeRow | null> {
+export async function getDisputeByTaskId(taskId: string): Promise<DisputeRow | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -150,10 +142,7 @@ export async function createDispute(dispute: DisputeInsert): Promise<DisputeRow>
 /**
  * Update a dispute
  */
-export async function updateDispute(
-  id: string,
-  updates: DisputeUpdate
-): Promise<DisputeRow> {
+export async function updateDispute(id: string, updates: DisputeUpdate): Promise<DisputeRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase
@@ -175,9 +164,7 @@ export async function updateDispute(
 /**
  * Get all votes for a dispute
  */
-export async function getDisputeVotes(
-  disputeId: string
-): Promise<DisputeVoteRow[]> {
+export async function getDisputeVotes(disputeId: string): Promise<DisputeVoteRow[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -222,10 +209,7 @@ export async function getDisputeVote(
 /**
  * Check if a voter has voted on a dispute
  */
-export async function hasVoted(
-  disputeId: string,
-  voterAddress: string
-): Promise<boolean> {
+export async function hasVoted(disputeId: string, voterAddress: string): Promise<boolean> {
   const vote = await getDisputeVote(disputeId, voterAddress);
   return vote !== null;
 }
@@ -233,9 +217,7 @@ export async function hasVoted(
 /**
  * Create a new dispute vote
  */
-export async function createDisputeVote(
-  vote: DisputeVoteInsert
-): Promise<DisputeVoteRow> {
+export async function createDisputeVote(vote: DisputeVoteInsert): Promise<DisputeVoteRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase

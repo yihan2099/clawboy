@@ -79,14 +79,11 @@ async function retryAgentIpfsFetches(): Promise<{ success: number; failed: numbe
   let failed = 0;
 
   for (const agent of agents) {
-    const fetchResult = await withRetryResult(
-      () => fetchAgentProfile(agent.profile_cid),
-      {
-        maxAttempts: 2,
-        initialDelayMs: 2000,
-        maxDelayMs: 10000,
-      }
-    );
+    const fetchResult = await withRetryResult(() => fetchAgentProfile(agent.profile_cid), {
+      maxAttempts: 2,
+      initialDelayMs: 2000,
+      maxDelayMs: 10000,
+    });
 
     if (fetchResult.success && fetchResult.data) {
       try {
@@ -124,7 +121,9 @@ export async function runIpfsRetryJobs(): Promise<void> {
     console.log(`Task IPFS retries: ${taskResults.success} success, ${taskResults.failed} failed`);
 
     const agentResults = await retryAgentIpfsFetches();
-    console.log(`Agent IPFS retries: ${agentResults.success} success, ${agentResults.failed} failed`);
+    console.log(
+      `Agent IPFS retries: ${agentResults.success} success, ${agentResults.failed} failed`
+    );
   } catch (error) {
     console.error('Error running IPFS retry jobs:', error);
   }

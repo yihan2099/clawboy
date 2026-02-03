@@ -29,11 +29,7 @@ import {
   submitVoteTool,
   resolveDisputeTool,
 } from './tools/dispute';
-import {
-  getChallengeHandler,
-  verifySignatureHandler,
-  getSessionHandler,
-} from './tools/auth';
+import { getChallengeHandler, verifySignatureHandler, getSessionHandler } from './tools/auth';
 import { allTools } from './tools';
 import { logAccessDenied, logSecurityEvent } from './services/security-logger';
 
@@ -41,28 +37,37 @@ const app = new Hono();
 
 // SECURITY: Configure CORS with allowed origins from environment
 const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
   : ['*']; // Default to all for development
 
-app.use('/*', cors({
-  origin: (origin) => {
-    // Allow requests with no origin (same-origin, curl, etc.)
-    if (!origin) return '*';
+app.use(
+  '/*',
+  cors({
+    origin: (origin) => {
+      // Allow requests with no origin (same-origin, curl, etc.)
+      if (!origin) return '*';
 
-    // If wildcard is allowed, permit all origins
-    if (allowedOrigins.includes('*')) return origin;
+      // If wildcard is allowed, permit all origins
+      if (allowedOrigins.includes('*')) return origin;
 
-    // Check if origin is in allowlist
-    if (allowedOrigins.includes(origin)) return origin;
+      // Check if origin is in allowlist
+      if (allowedOrigins.includes(origin)) return origin;
 
-    // Reject unknown origins by returning null
-    return null;
-  },
-  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'X-Session-Id', 'mcp-session-id', 'Last-Event-ID', 'mcp-protocol-version'],
-  exposeHeaders: ['mcp-session-id', 'mcp-protocol-version'],
-  maxAge: 86400, // Cache preflight for 24 hours
-}));
+      // Reject unknown origins by returning null
+      return null;
+    },
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowHeaders: [
+      'Content-Type',
+      'X-Session-Id',
+      'mcp-session-id',
+      'Last-Event-ID',
+      'mcp-protocol-version',
+    ],
+    exposeHeaders: ['mcp-session-id', 'mcp-protocol-version'],
+    maxAge: 86400, // Cache preflight for 24 hours
+  })
+);
 
 // SECURITY: Add security headers to all responses
 app.use('/*', async (c, next) => {
@@ -92,9 +97,10 @@ app.use('/*', async (c, next) => {
 // SECURITY: Request logging middleware
 app.use('/tools/*', async (c, next) => {
   const start = Date.now();
-  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-    || c.req.header('x-real-ip')
-    || 'unknown';
+  const ip =
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+    c.req.header('x-real-ip') ||
+    'unknown';
   const toolName = c.req.path.replace('/tools/', '');
   const sessionId = c.req.header('X-Session-Id');
 
@@ -264,9 +270,10 @@ app.post('/tools/:toolName', async (c) => {
     const accessCheck = await checkAccessWithRegistrationRefresh(toolName, context);
     if (!accessCheck.allowed) {
       // SECURITY: Log access denial
-      const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
-        || c.req.header('x-real-ip')
-        || 'unknown';
+      const ip =
+        c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+        c.req.header('x-real-ip') ||
+        'unknown';
       logAccessDenied(ip, toolName, accessCheck.reason || 'Unknown', sessionId || undefined);
 
       return c.json(

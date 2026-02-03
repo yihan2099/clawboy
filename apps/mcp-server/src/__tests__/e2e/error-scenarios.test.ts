@@ -20,7 +20,7 @@
  */
 
 import { describe, test, expect, beforeAll } from 'bun:test';
-import { parseEther, formatEther } from 'viem';
+import { formatEther } from 'viem';
 import {
   createTestWallet,
   authenticateWallet,
@@ -29,15 +29,12 @@ import {
   createTaskOnChain,
   submitWorkOnChain,
   selectWinnerOnChain,
-  getTaskFromChain,
   waitForTaskInDB,
   resetClients,
-  TaskStatus,
   type TestWallet,
 } from './test-utils';
 import { generatePrivateKey } from 'viem/accounts';
-import { getContractAddresses, TaskManagerABI, DisputeResolverABI } from '@clawboy/contracts';
-import { getPublicClient, getBalance } from '@clawboy/web3-utils';
+import { getBalance } from '@clawboy/web3-utils';
 
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';
@@ -79,7 +76,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
   let creatorWallet: TestWallet;
   let agentWallet: TestWallet;
   let unfundedWallet: TestWallet;
-  let creatorSessionId: string;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let _creatorSessionId: string;
   let agentSessionId: string;
 
   beforeAll(async () => {
@@ -104,7 +102,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
 
     // Authenticate main wallets
     const creatorAuth = await authenticateWallet(creatorWallet);
-    creatorSessionId = creatorAuth.sessionId;
+    _creatorSessionId = creatorAuth.sessionId;
 
     const agentAuth = await authenticateWallet(agentWallet);
     agentSessionId = agentAuth.sessionId;
@@ -157,8 +155,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         // viem throws error for insufficient funds
         expect(
           errorMessage.includes('insufficient') ||
-          errorMessage.includes('balance') ||
-          errorMessage.includes('gas')
+            errorMessage.includes('balance') ||
+            errorMessage.includes('gas')
         ).toBe(true);
       }
     });
@@ -258,7 +256,9 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
             taskId: fakeTaskId,
             summary: 'Test submission',
             description: 'This should fail',
-            deliverables: [{ type: 'document' as const, description: 'Test', url: 'https://test.com' }],
+            deliverables: [
+              { type: 'document' as const, description: 'Test', url: 'https://test.com' },
+            ],
           },
           { callerAddress: agentWallet.address }
         );
@@ -268,8 +268,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         console.log(`Expected error: ${errorMessage}`);
         expect(
           errorMessage.includes('not found') ||
-          errorMessage.includes('does not exist') ||
-          errorMessage.includes('Task')
+            errorMessage.includes('does not exist') ||
+            errorMessage.includes('Task')
         ).toBe(true);
       }
     });
@@ -288,8 +288,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         // Contract will revert
         expect(
           errorMessage.includes('revert') ||
-          errorMessage.includes('fail') ||
-          errorMessage.includes('invalid')
+            errorMessage.includes('fail') ||
+            errorMessage.includes('invalid')
         ).toBe(true);
       }
     });
@@ -332,7 +332,9 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
           taskId: testDbTaskId,
           summary: 'Test submission',
           description: 'Work for auth testing',
-          deliverables: [{ type: 'document' as const, description: 'Output', url: 'https://test.com' }],
+          deliverables: [
+            { type: 'document' as const, description: 'Output', url: 'https://test.com' },
+          ],
         },
         { callerAddress: agentWallet.address }
       );
@@ -351,8 +353,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         console.log(`Expected error: ${errorMessage}`);
         expect(
           errorMessage.includes('creator') ||
-          errorMessage.includes('authorized') ||
-          errorMessage.includes('revert')
+            errorMessage.includes('authorized') ||
+            errorMessage.includes('revert')
         ).toBe(true);
       }
     });
@@ -372,8 +374,8 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         console.log(`Expected error: ${errorMessage}`);
         expect(
           errorMessage.includes('submitter') ||
-          errorMessage.includes('submit') ||
-          errorMessage.includes('revert')
+            errorMessage.includes('submit') ||
+            errorMessage.includes('revert')
         ).toBe(true);
       }
     });
@@ -414,7 +416,9 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
             taskId: dbTask!.id,
             summary: 'Submission',
             description: 'Work',
-            deliverables: [{ type: 'document' as const, description: 'Output', url: 'https://test.com' }],
+            deliverables: [
+              { type: 'document' as const, description: 'Output', url: 'https://test.com' },
+            ],
           },
           { callerAddress: agentWallet.address }
         );
@@ -430,10 +434,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.log(`Expected error: ${errorMessage}`);
-          expect(
-            errorMessage.includes('review') ||
-            errorMessage.includes('status')
-          ).toBe(true);
+          expect(errorMessage.includes('review') || errorMessage.includes('status')).toBe(true);
         }
       },
       TEST_TIMEOUT
@@ -451,10 +452,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.log(`Expected error: ${errorMessage}`);
-        expect(
-          errorMessage.includes('not found') ||
-          errorMessage.includes('Dispute')
-        ).toBe(true);
+        expect(errorMessage.includes('not found') || errorMessage.includes('Dispute')).toBe(true);
       }
     });
   });
@@ -488,34 +486,38 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
 
         const dbTask = await waitForTaskInDB(taskId, INDEXER_SYNC_WAIT_MS);
 
-      // First submission
-      const firstSubmit = await submitWorkTool.handler(
-        {
-          taskId: dbTask!.id,
-          summary: 'First submission',
-          description: 'Initial work',
-          deliverables: [{ type: 'document' as const, description: 'v1', url: 'https://test.com/v1' }],
-        },
-        { callerAddress: agentWallet.address }
-      );
-      console.log(`First submission CID: ${firstSubmit.submissionCid}`);
-      console.log(`First submission isUpdate: ${firstSubmit.isUpdate}`);
+        // First submission
+        const firstSubmit = await submitWorkTool.handler(
+          {
+            taskId: dbTask!.id,
+            summary: 'First submission',
+            description: 'Initial work',
+            deliverables: [
+              { type: 'document' as const, description: 'v1', url: 'https://test.com/v1' },
+            ],
+          },
+          { callerAddress: agentWallet.address }
+        );
+        console.log(`First submission CID: ${firstSubmit.submissionCid}`);
+        console.log(`First submission isUpdate: ${firstSubmit.isUpdate}`);
 
-      // Submit on-chain
-      await submitWorkOnChain(agentWallet, taskId, firstSubmit.submissionCid);
+        // Submit on-chain
+        await submitWorkOnChain(agentWallet, taskId, firstSubmit.submissionCid);
 
-      // Second submission (should update)
-      const secondSubmit = await submitWorkTool.handler(
-        {
-          taskId: dbTask!.id,
-          summary: 'Updated submission',
-          description: 'Improved work',
-          deliverables: [{ type: 'document' as const, description: 'v2', url: 'https://test.com/v2' }],
-        },
-        { callerAddress: agentWallet.address }
-      );
-      console.log(`Second submission CID: ${secondSubmit.submissionCid}`);
-      console.log(`Second submission isUpdate: ${secondSubmit.isUpdate}`);
+        // Second submission (should update)
+        const secondSubmit = await submitWorkTool.handler(
+          {
+            taskId: dbTask!.id,
+            summary: 'Updated submission',
+            description: 'Improved work',
+            deliverables: [
+              { type: 'document' as const, description: 'v2', url: 'https://test.com/v2' },
+            ],
+          },
+          { callerAddress: agentWallet.address }
+        );
+        console.log(`Second submission CID: ${secondSubmit.submissionCid}`);
+        console.log(`Second submission isUpdate: ${secondSubmit.isUpdate}`);
 
         // The MCP tool should indicate this is an update
         expect(secondSubmit.isUpdate).toBe(true);
@@ -557,10 +559,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.log(`Expected error: ${errorMessage}`);
-        expect(
-          errorMessage.includes('not found') ||
-            errorMessage.includes('Task')
-        ).toBe(true);
+        expect(errorMessage.includes('not found') || errorMessage.includes('Task')).toBe(true);
       }
 
       console.log('Nonexistent task cancellation correctly rejected');
@@ -615,6 +614,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
       };
 
       const result = await getCapabilitiesHandler(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { category: 'invalid_category' as any },
         context
       );

@@ -13,7 +13,9 @@ export async function handleTaskRefunded(event: IndexerEvent): Promise<void> {
     refundAmount: bigint;
   };
 
-  console.log(`Processing TaskRefunded: taskId=${taskId}, creator=${creator}, amount=${refundAmount}`);
+  console.log(
+    `Processing TaskRefunded: taskId=${taskId}, creator=${creator}, amount=${refundAmount}`
+  );
 
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);

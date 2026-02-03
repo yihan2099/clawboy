@@ -39,11 +39,13 @@ export function logSecurityEvent(event: SecurityEvent): void {
   };
 
   // Use structured logging format
-  console.log(JSON.stringify({
-    level: getLogLevel(event.type),
-    message: `[SECURITY] ${event.type}`,
-    ...logEntry,
-  }));
+  console.log(
+    JSON.stringify({
+      level: getLogLevel(event.type),
+      message: `[SECURITY] ${event.type}`,
+      ...logEntry,
+    })
+  );
 }
 
 /**
@@ -92,11 +94,7 @@ export function logAuthAttempt(
 /**
  * Log rate limit violation
  */
-export function logRateLimitExceeded(
-  ip: string,
-  toolName: string,
-  sessionId?: string
-): void {
+export function logRateLimitExceeded(ip: string, toolName: string, sessionId?: string): void {
   logSecurityEvent({
     type: 'rate_limit_exceeded',
     timestamp: new Date().toISOString(),

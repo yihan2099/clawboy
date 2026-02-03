@@ -9,7 +9,8 @@ export type GetTaskInput = z.infer<typeof getTaskSchema>;
 
 export const getTaskTool = {
   name: 'get_task',
-  description: 'Get detailed information about a specific task including deliverables and requirements',
+  description:
+    'Get detailed information about a specific task including deliverables and requirements',
   inputSchema: {
     type: 'object' as const,
     properties: {

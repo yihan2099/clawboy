@@ -1,9 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import {
-  checkAccess,
-  getToolAccessLevel,
-  isPublicTool,
-} from '../auth/access-control';
+import { checkAccess, getToolAccessLevel, isPublicTool } from '../auth/access-control';
 import type { ServerContext } from '../server';
 
 describe('Access Control', () => {

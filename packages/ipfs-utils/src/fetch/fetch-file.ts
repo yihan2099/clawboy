@@ -23,10 +23,7 @@ export interface FetchedFile {
 /**
  * Fetch a file from IPFS by CID
  */
-export async function fetchFile(
-  cid: string,
-  options: FetchFileOptions = {}
-): Promise<FetchedFile> {
+export async function fetchFile(cid: string, options: FetchFileOptions = {}): Promise<FetchedFile> {
   if (!isValidCid(cid)) {
     throw new Error(`Invalid CID: ${cid}`);
   }
@@ -64,10 +61,7 @@ export async function fetchFile(
 /**
  * Fetch a file and return as text
  */
-export async function fetchFileAsText(
-  cid: string,
-  options?: FetchFileOptions
-): Promise<string> {
+export async function fetchFileAsText(cid: string, options?: FetchFileOptions): Promise<string> {
   const file = await fetchFile(cid, options);
   return new TextDecoder().decode(file.arrayBuffer);
 }
@@ -75,10 +69,7 @@ export async function fetchFileAsText(
 /**
  * Fetch a file and return as data URL
  */
-export async function fetchFileAsDataUrl(
-  cid: string,
-  options?: FetchFileOptions
-): Promise<string> {
+export async function fetchFileAsDataUrl(cid: string, options?: FetchFileOptions): Promise<string> {
   const file = await fetchFile(cid, options);
 
   return new Promise((resolve, reject) => {
@@ -92,10 +83,7 @@ export async function fetchFileAsDataUrl(
 /**
  * Check if a CID exists on the gateway
  */
-export async function cidExists(
-  cid: string,
-  options: FetchFileOptions = {}
-): Promise<boolean> {
+export async function cidExists(cid: string, options: FetchFileOptions = {}): Promise<boolean> {
   if (!isValidCid(cid)) {
     return false;
   }

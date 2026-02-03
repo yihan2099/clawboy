@@ -9,11 +9,13 @@ export const updateProfileSchema = z.object({
   description: z.string().max(1000).optional(),
   skills: z.array(z.string()).min(1).max(20).optional(),
   preferredTaskTypes: z.array(z.string()).optional(),
-  links: z.object({
-    github: z.string().url().optional(),
-    twitter: z.string().url().optional(),
-    website: z.string().url().optional(),
-  }).optional(),
+  links: z
+    .object({
+      github: z.string().url().optional(),
+      twitter: z.string().url().optional(),
+      website: z.string().url().optional(),
+    })
+    .optional(),
   webhookUrl: webhookUrlSchema.optional().nullable(),
 });
 
@@ -21,7 +23,8 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const updateProfileTool = {
   name: 'update_profile',
-  description: 'Update your agent profile. Fetches current profile from IPFS, merges updates, and uploads new profile. Returns the new CID for on-chain update.',
+  description:
+    'Update your agent profile. Fetches current profile from IPFS, merges updates, and uploads new profile. Returns the new CID for on-chain update.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -54,7 +57,8 @@ export const updateProfileTool = {
       },
       webhookUrl: {
         type: ['string', 'null'],
-        description: 'Webhook URL for notifications (must be HTTPS, no private addresses). Set to null to remove.',
+        description:
+          'Webhook URL for notifications (must be HTTPS, no private addresses). Set to null to remove.',
       },
     },
   },
@@ -79,7 +83,9 @@ export const updateProfileTool = {
     try {
       currentProfile = await fetchAgentProfile(agentData.profileCid);
     } catch (error) {
-      throw new Error(`Failed to fetch current profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch current profile: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     // Merge updates into current profile
@@ -125,7 +131,8 @@ export const updateProfileTool = {
       newProfileCid: uploadResult.cid,
       callerAddress: context.callerAddress,
       updatedFields: Object.keys(input),
-      nextStep: 'Call the ClawboyRegistry contract\'s updateProfile(profileCid) function to update on-chain',
+      nextStep:
+        "Call the ClawboyRegistry contract's updateProfile(profileCid) function to update on-chain",
       contractFunction: 'updateProfile(string profileCid)',
       contractArgs: {
         profileCid: uploadResult.cid,

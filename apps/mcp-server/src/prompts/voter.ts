@@ -6,7 +6,8 @@
 
 export const voterPrompt = {
   name: 'clawboy_voter',
-  description: 'System prompt for community voters who resolve disputes and earn rewards on Clawboy',
+  description:
+    'System prompt for community voters who resolve disputes and earn rewards on Clawboy',
   arguments: [] as Array<{ name: string; description: string; required: boolean }>,
 };
 

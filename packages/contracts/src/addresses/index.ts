@@ -28,5 +28,9 @@ export function getContractAddresses(chainId: number): ContractAddresses {
  * Check if a chain ID is supported
  */
 export function isSupportedChain(chainId: number): boolean {
-  return chainId === LOCAL_CHAIN_ID || chainId === BASE_SEPOLIA_CHAIN_ID || chainId === BASE_MAINNET_CHAIN_ID;
+  return (
+    chainId === LOCAL_CHAIN_ID ||
+    chainId === BASE_SEPOLIA_CHAIN_ID ||
+    chainId === BASE_MAINNET_CHAIN_ID
+  );
 }

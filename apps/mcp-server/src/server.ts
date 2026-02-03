@@ -24,15 +24,8 @@ import {
   submitVoteTool,
   resolveDisputeTool,
 } from './tools/dispute';
-import {
-  getChallengeHandler,
-  verifySignatureHandler,
-  getSessionHandler,
-} from './tools/auth';
-import {
-  getCapabilitiesHandler,
-  getWorkflowGuideHandler,
-} from './tools/discovery';
+import { getChallengeHandler, verifySignatureHandler, getSessionHandler } from './tools/auth';
+import { getCapabilitiesHandler, getWorkflowGuideHandler } from './tools/discovery';
 import { getSession } from './auth/session-manager';
 import { checkAccessWithRegistrationRefresh } from './auth/access-control';
 import { allPrompts, getPromptContent } from './prompts';

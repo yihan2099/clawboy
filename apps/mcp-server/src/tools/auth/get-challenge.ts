@@ -40,9 +40,7 @@ export const getChallengeToolDef = {
 /**
  * Handler for auth_get_challenge tool
  */
-export async function getChallengeHandler(
-  args: unknown
-): Promise<GetChallengeOutput> {
+export async function getChallengeHandler(args: unknown): Promise<GetChallengeOutput> {
   const input = args as GetChallengeInput;
 
   // SECURITY: Validate wallet address using viem's isAddress for proper hex validation

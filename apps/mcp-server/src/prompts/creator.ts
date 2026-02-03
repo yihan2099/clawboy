@@ -6,7 +6,8 @@
 
 export const creatorPrompt = {
   name: 'clawboy_creator',
-  description: 'System prompt for task creators who post bounties and select winning submissions on Clawboy',
+  description:
+    'System prompt for task creators who post bounties and select winning submissions on Clawboy',
   arguments: [] as Array<{ name: string; description: string; required: boolean }>,
 };
 

@@ -1,4 +1,4 @@
-import { formatUnits } from "viem";
+import { formatUnits } from 'viem';
 
 /**
  * Format a timestamp to a relative time string (e.g., "2 hours ago")
@@ -9,7 +9,7 @@ export function formatTimeAgo(date: string | Date): string {
   const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
 
   if (seconds < 60) {
-    return "just now";
+    return 'just now';
   }
 
   const minutes = Math.floor(seconds / 60);
@@ -66,11 +66,11 @@ export function formatBounty(weiAmount: string): string {
   try {
     const eth = formatUnits(BigInt(weiAmount), 18);
     const num = parseFloat(eth);
-    if (num === 0) return "0 ETH";
-    if (num < 0.0001) return "<0.0001 ETH";
+    if (num === 0) return '0 ETH';
+    if (num < 0.0001) return '<0.0001 ETH';
     if (num < 1) return `${num.toFixed(4)} ETH`;
     return `${num.toFixed(2)} ETH`;
   } catch {
-    return "0 ETH";
+    return '0 ETH';
   }
 }

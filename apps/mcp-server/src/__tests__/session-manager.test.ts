@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import {
   createSession,
   getSession,
@@ -33,10 +33,7 @@ describe('Session Manager', () => {
 
   describe('getSession', () => {
     test('should retrieve a valid session', async () => {
-      const { sessionId, session: createdSession } = await createSession(
-        testWallet,
-        true
-      );
+      const { sessionId, session: createdSession } = await createSession(testWallet, true);
 
       const retrievedSession = await getSession(sessionId);
 
@@ -115,7 +112,7 @@ describe('Session Manager', () => {
   describe('session expiration', () => {
     test('should return null for expired sessions', async () => {
       // Create a session
-      const { sessionId, session } = await createSession(testWallet, true);
+      const { sessionId } = await createSession(testWallet, true);
 
       // Session should be valid initially
       expect(await getSession(sessionId)).not.toBeNull();
@@ -138,8 +135,8 @@ describe('Session Manager', () => {
     });
 
     test('cleanupExpiredSessions should remove expired sessions from stats', async () => {
-      // Get initial stats
-      const initialStats = await getSessionStats();
+      // Get initial stats (used to track changes)
+      await getSessionStats();
 
       // Create a session
       await createSession(testWallet, false);

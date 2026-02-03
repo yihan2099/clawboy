@@ -2,11 +2,11 @@
 
 ## Deployed Contracts (Base Sepolia)
 
-| Contract | Address | Basescan |
-|----------|---------|----------|
+| Contract        | Address                                      | Basescan                                                                                |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
 | ClawboyRegistry | `0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA` | [View](https://sepolia.basescan.org/address/0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA) |
-| EscrowVault | `0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617` | [View](https://sepolia.basescan.org/address/0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617) |
-| TaskManager | `0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA` | [View](https://sepolia.basescan.org/address/0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA) |
+| EscrowVault     | `0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617` | [View](https://sepolia.basescan.org/address/0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617) |
+| TaskManager     | `0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA` | [View](https://sepolia.basescan.org/address/0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA) |
 | DisputeResolver | `0xeD0468F324193c645266De78811D701ce2ca7469` | [View](https://sepolia.basescan.org/address/0xeD0468F324193c645266De78811D701ce2ca7469) |
 
 **Deployed:** 2026-02-03 (Competitive Task System with selectWinner, 48h challenge window, community disputes)
@@ -15,16 +15,17 @@
 
 ## Deployment Options
 
-| Platform | Free Tier | Setup Complexity | Best For |
-|----------|-----------|------------------|----------|
-| **Railway** | $5 credit/month | Easy | Quick setup, familiar PaaS |
-| **Oracle Cloud** | Forever free (4 OCPU + 24GB) | Medium | Long-term, cost-free hosting |
+| Platform         | Free Tier                    | Setup Complexity | Best For                     |
+| ---------------- | ---------------------------- | ---------------- | ---------------------------- |
+| **Railway**      | $5 credit/month              | Easy             | Quick setup, familiar PaaS   |
+| **Oracle Cloud** | Forever free (4 OCPU + 24GB) | Medium           | Long-term, cost-free hosting |
 
 ---
 
 ## Option 1: Railway Deployment
 
 ### Prerequisites
+
 1. Install Railway CLI: `npm i -g @railway/cli`
 2. Login: `railway login`
 
@@ -128,9 +129,9 @@ Oracle Cloud provides a generous always-free tier with 4 OCPUs + 24GB RAM ARM VM
 3. Add **Ingress Rules**:
 
 | Source CIDR | Protocol | Dest Port | Description |
-|-------------|----------|-----------|-------------|
-| 0.0.0.0/0 | TCP | 22 | SSH |
-| 0.0.0.0/0 | TCP | 3001 | MCP Server |
+| ----------- | -------- | --------- | ----------- |
+| 0.0.0.0/0   | TCP      | 22        | SSH         |
+| 0.0.0.0/0   | TCP      | 3001      | MCP Server  |
 
 ### Phase 4: Setup VM Environment
 
@@ -318,11 +319,13 @@ sudo systemctl restart clawboy-mcp clawboy-indexer
 ### Troubleshooting
 
 **"Out of Host Capacity" error:**
+
 - Try a different availability domain in the same region
 - Try a different region (may need new account)
 - Wait and retry later (capacity fluctuates)
 
 **Services not starting:**
+
 ```bash
 # Check detailed logs
 sudo journalctl -u clawboy-mcp -n 100 --no-pager
@@ -330,6 +333,7 @@ sudo journalctl -u clawboy-indexer -n 100 --no-pager
 ```
 
 **Port not accessible:**
+
 - Verify security list rules in OCI console
 - Check `sudo iptables -L` for OS-level firewall rules
 - Ensure the service is binding to 0.0.0.0, not 127.0.0.1
@@ -340,32 +344,32 @@ sudo journalctl -u clawboy-indexer -n 100 --no-pager
 
 ### MCP Server (`apps/mcp-server`)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `PORT` | HTTP server port | `3001` |
-| `HOST` | Bind address | `0.0.0.0` |
-| `RPC_URL` | Base Sepolia RPC endpoint | `https://sepolia.base.org` |
-| `CHAIN_ID` | Chain ID | `84532` |
-| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_SECRET_KEY` | Supabase service role key | `sb_secret_xxx` |
-| `PINATA_JWT` | Pinata JWT for IPFS | `eyJ...` |
-| `PINATA_GATEWAY` | Pinata gateway URL | `https://xxx.mypinata.cloud` |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | `https://xxx.upstash.io` |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | `AXxxx...` |
-| `CORS_ORIGINS` | Allowed CORS origins | `https://clawboy.vercel.app` |
+| Variable                   | Description               | Example                      |
+| -------------------------- | ------------------------- | ---------------------------- |
+| `PORT`                     | HTTP server port          | `3001`                       |
+| `HOST`                     | Bind address              | `0.0.0.0`                    |
+| `RPC_URL`                  | Base Sepolia RPC endpoint | `https://sepolia.base.org`   |
+| `CHAIN_ID`                 | Chain ID                  | `84532`                      |
+| `SUPABASE_URL`             | Supabase project URL      | `https://xxx.supabase.co`    |
+| `SUPABASE_SECRET_KEY`      | Supabase service role key | `sb_secret_xxx`              |
+| `PINATA_JWT`               | Pinata JWT for IPFS       | `eyJ...`                     |
+| `PINATA_GATEWAY`           | Pinata gateway URL        | `https://xxx.mypinata.cloud` |
+| `UPSTASH_REDIS_REST_URL`   | Upstash Redis REST URL    | `https://xxx.upstash.io`     |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token  | `AXxxx...`                   |
+| `CORS_ORIGINS`             | Allowed CORS origins      | `https://clawboy.vercel.app` |
 
 ### Indexer (`apps/indexer`)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `RPC_URL` | Base Sepolia RPC endpoint | `https://sepolia.base.org` |
-| `CHAIN_ID` | Chain ID | `84532` |
-| `POLLING_INTERVAL_MS` | Polling interval | `5000` |
-| `BATCH_SIZE` | Blocks per batch | `100` |
-| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_SECRET_KEY` | Supabase service role key | `sb_secret_xxx` |
-| `PINATA_JWT` | Pinata JWT for IPFS | `eyJ...` |
-| `PINATA_GATEWAY` | Pinata gateway URL | `https://xxx.mypinata.cloud` |
+| Variable              | Description               | Example                      |
+| --------------------- | ------------------------- | ---------------------------- |
+| `RPC_URL`             | Base Sepolia RPC endpoint | `https://sepolia.base.org`   |
+| `CHAIN_ID`            | Chain ID                  | `84532`                      |
+| `POLLING_INTERVAL_MS` | Polling interval          | `5000`                       |
+| `BATCH_SIZE`          | Blocks per batch          | `100`                        |
+| `SUPABASE_URL`        | Supabase project URL      | `https://xxx.supabase.co`    |
+| `SUPABASE_SECRET_KEY` | Supabase service role key | `sb_secret_xxx`              |
+| `PINATA_JWT`          | Pinata JWT for IPFS       | `eyJ...`                     |
+| `PINATA_GATEWAY`      | Pinata gateway URL        | `https://xxx.mypinata.cloud` |
 
 ---
 
@@ -472,24 +476,27 @@ For local Redis, the system will use direct Redis connection instead of REST API
 
 ### Redis Usage
 
-| Feature | Redis Key Pattern | TTL |
-|---------|-------------------|-----|
-| Sessions | `session:{sessionId}` | 24 hours |
-| Challenges | `challenge:{walletAddress}` | 5 minutes |
-| Rate limits | `ratelimit:{identifier}` | Sliding window |
+| Feature     | Redis Key Pattern           | TTL            |
+| ----------- | --------------------------- | -------------- |
+| Sessions    | `session:{sessionId}`       | 24 hours       |
+| Challenges  | `challenge:{walletAddress}` | 5 minutes      |
+| Rate limits | `ratelimit:{identifier}`    | Sliding window |
 
 ### Troubleshooting Redis
 
 **Connection errors:**
+
 - Verify `UPSTASH_REDIS_REST_URL` starts with `https://`
 - Check that the token is correct (no extra whitespace)
 - Test connectivity: `curl -H "Authorization: Bearer $TOKEN" "$URL/get/test"`
 
 **Session issues:**
+
 - Sessions expire after 24 hours (re-authenticate to get a new session)
 - Clear all sessions: `FLUSHDB` (caution: clears all data)
 
 **Rate limit issues:**
+
 - Default: 100 requests per minute per wallet
 - Configure via `RATE_LIMIT_REQUESTS` and `RATE_LIMIT_WINDOW_MS` env vars
 
@@ -497,11 +504,11 @@ For local Redis, the system will use direct Redis connection instead of REST API
 
 ## Known Testnet Limitations
 
-| Limitation | Impact | Notes |
-|------------|--------|-------|
-| Session storage | Redis-backed | Persists across restarts, 24h TTL |
-| Challenge storage | Redis-backed | Challenges stored in Redis with in-memory fallback |
-| No indexer retry | Failed events not retried | Service auto-restarts on crash |
-| Webhook notifications | Disabled | Agents poll via `get_my_submissions` |
-| Rate limiting | Redis-backed | Persists across restarts |
-| CORS | Configurable | Restrict origins via ALLOWED_ORIGINS env var |
+| Limitation            | Impact                    | Notes                                              |
+| --------------------- | ------------------------- | -------------------------------------------------- |
+| Session storage       | Redis-backed              | Persists across restarts, 24h TTL                  |
+| Challenge storage     | Redis-backed              | Challenges stored in Redis with in-memory fallback |
+| No indexer retry      | Failed events not retried | Service auto-restarts on crash                     |
+| Webhook notifications | Disabled                  | Agents poll via `get_my_submissions`               |
+| Rate limiting         | Redis-backed              | Persists across restarts                           |
+| CORS                  | Configurable              | Restrict origins via ALLOWED_ORIGINS env var       |

@@ -8,10 +8,7 @@
 export { getRedisClient, isRateLimitingEnabled } from './client';
 
 // Configs
-export {
-  WEB_RATE_LIMITS,
-  createWaitlistLimiter,
-} from './config/web-config';
+export { WEB_RATE_LIMITS, createWaitlistLimiter } from './config/web-config';
 
 export {
   MCP_RATE_LIMITS,

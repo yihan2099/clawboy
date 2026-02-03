@@ -44,8 +44,7 @@ const TEST_TIMEOUT = 60000;
 // Environment variables
 const AGENT_PRIVATE_KEY = process.env.E2E_AGENT_PRIVATE_KEY as `0x${string}` | undefined;
 
-const shouldSkipTests =
-  !AGENT_PRIVATE_KEY || !AGENT_PRIVATE_KEY.startsWith('0x');
+const shouldSkipTests = !AGENT_PRIVATE_KEY || !AGENT_PRIVATE_KEY.startsWith('0x');
 
 describe.skipIf(shouldSkipTests)('E2E: Agent Profile on Base Sepolia', () => {
   let agentWallet: TestWallet;

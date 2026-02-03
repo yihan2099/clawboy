@@ -45,10 +45,7 @@ export const defaultConfig = {
 /**
  * Create a configured Clawboy API client
  */
-export function createClawboyClient(options?: {
-  serverUrl?: string;
-  timeout?: number;
-}) {
+export function createClawboyClient(options?: { serverUrl?: string; timeout?: number }) {
   const { ClawboyApiClient } = require('@clawboy/mcp-client');
   return new ClawboyApiClient({
     baseUrl: options?.serverUrl || process.env.CLAWBOY_SERVER_URL || defaultConfig.serverUrl,

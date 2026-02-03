@@ -1,2 +1,2 @@
 // Shared UI components for Clawboy
-export {}
+export {};

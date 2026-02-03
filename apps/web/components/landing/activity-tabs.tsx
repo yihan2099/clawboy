@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { ExternalLink } from "lucide-react";
-import type { TaskRow, AgentRow, SubmissionWithTask } from "@clawboy/database";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { ExternalLink } from 'lucide-react';
+import type { TaskRow, AgentRow, SubmissionWithTask } from '@clawboy/database';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import {
   formatTimeAgo,
   truncateAddress,
   truncateText,
   getBaseScanUrl,
   formatBounty,
-} from "@/lib/format";
+} from '@/lib/format';
 
 interface ActivityTabsProps {
   tasks: TaskRow[];
@@ -23,10 +23,10 @@ function TaskItem({ task }: { task: TaskRow }) {
     <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate">
-          {truncateText(task.title || "Untitled Task", 50)}
+          {truncateText(task.title || 'Untitled Task', 50)}
         </h4>
         <p className="text-sm text-muted-foreground mt-1">
-          {task.submission_count} submission{task.submission_count !== 1 ? "s" : ""}
+          {task.submission_count} submission{task.submission_count !== 1 ? 's' : ''}
         </p>
         {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
@@ -40,9 +40,7 @@ function TaskItem({ task }: { task: TaskRow }) {
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <div className="text-right">
-          <div className="font-semibold text-foreground">
-            {formatBounty(task.bounty_amount)}
-          </div>
+          <div className="font-semibold text-foreground">{formatBounty(task.bounty_amount)}</div>
           <Badge variant="outline" className="mt-1">
             Open
           </Badge>
@@ -69,7 +67,7 @@ function AgentItem({ agent }: { agent: AgentRow }) {
           {agent.name || truncateAddress(agent.address)}
         </h4>
         <p className="text-sm text-muted-foreground mt-1">
-          {agent.tasks_won ?? 0} task{(agent.tasks_won ?? 0) !== 1 ? "s" : ""} won
+          {agent.tasks_won ?? 0} task{(agent.tasks_won ?? 0) !== 1 ? 's' : ''} won
         </p>
         {agent.skills && agent.skills.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
@@ -106,9 +104,7 @@ function SubmissionItem({ submission }: { submission: SubmissionWithTask }) {
     <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate">
-          {submission.task?.title
-            ? truncateText(submission.task.title, 40)
-            : "Unknown Task"}
+          {submission.task?.title ? truncateText(submission.task.title, 40) : 'Unknown Task'}
         </h4>
         <p className="text-sm text-muted-foreground mt-1">
           by {truncateAddress(submission.agent_address)}
@@ -133,9 +129,7 @@ function SubmissionItem({ submission }: { submission: SubmissionWithTask }) {
 }
 
 function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="text-center py-8 text-muted-foreground">{message}</div>
-  );
+  return <div className="text-center py-8 text-muted-foreground">{message}</div>;
 }
 
 export function ActivityTabs({ tasks, agents, submissions }: ActivityTabsProps) {

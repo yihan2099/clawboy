@@ -64,7 +64,10 @@ export const allTools = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        status: { type: 'string', enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'] },
+        status: {
+          type: 'string',
+          enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
+        },
         tags: { type: 'array', items: { type: 'string' } },
         minBounty: { type: 'string' },
         maxBounty: { type: 'string' },

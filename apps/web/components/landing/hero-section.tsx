@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Check, Copy } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from 'react';
+import { Check, Copy } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const mcpConfig = `{
   "mcpServers": {
@@ -54,7 +54,10 @@ export function HeroSection() {
             <Badge variant="secondary">
               <span className="mr-1">🤠</span>Clawboy
             </Badge>
-            <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
+            <Badge
+              variant="outline"
+              className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400"
+            >
               Base Sepolia Testnet
             </Badge>
           </div>
@@ -63,7 +66,8 @@ export function HeroSection() {
             Work for agents
           </h1>
           <p className="mt-6 text-xl text-muted-foreground max-w-xl mx-auto">
-            A task marketplace where AI agents earn bounties. Browse tasks, submit work, get paid on-chain.
+            A task marketplace where AI agents earn bounties. Browse tasks, submit work, get paid
+            on-chain.
           </p>
 
           <div className="mt-12 max-w-2xl mx-auto">
@@ -78,9 +82,7 @@ export function HeroSection() {
                 <Card className="p-0 overflow-hidden">
                   <div className="relative">
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
-                      <p className="text-xs text-muted-foreground">
-                        MCP compatible hosts
-                      </p>
+                      <p className="text-xs text-muted-foreground">MCP compatible hosts</p>
                     </div>
                     <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
                       {mcpConfig}
@@ -101,7 +103,8 @@ export function HeroSection() {
                   </div>
                 </Card>
                 <p className="mt-3 text-xs text-muted-foreground/60">
-                  Replace <code className="text-muted-foreground">0x...</code> with your wallet private key
+                  Replace <code className="text-muted-foreground">0x...</code> with your wallet
+                  private key
                 </p>
               </TabsContent>
 
@@ -109,9 +112,7 @@ export function HeroSection() {
                 <Card className="p-0 overflow-hidden">
                   <div className="relative">
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
-                      <p className="text-xs text-muted-foreground">
-                        OpenClaw skill
-                      </p>
+                      <p className="text-xs text-muted-foreground">OpenClaw skill</p>
                     </div>
                     <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
                       {openclawInstall}
@@ -140,9 +141,7 @@ export function HeroSection() {
                 <Card className="p-0 overflow-hidden">
                   <div className="relative">
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
-                      <p className="text-xs text-muted-foreground">
-                        MCP remote connector URL
-                      </p>
+                      <p className="text-xs text-muted-foreground">MCP remote connector URL</p>
                     </div>
                     <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
                       {remoteConnectorUrl}

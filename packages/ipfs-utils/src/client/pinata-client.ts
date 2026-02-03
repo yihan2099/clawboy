@@ -15,9 +15,7 @@ export function getPinataClient(): PinataSDK {
   const pinataGateway = process.env.PINATA_GATEWAY;
 
   if (!pinataJwt) {
-    throw new Error(
-      'Missing Pinata environment variables. Please set PINATA_JWT.'
-    );
+    throw new Error('Missing Pinata environment variables. Please set PINATA_JWT.');
   }
 
   pinataClient = new PinataSDK({

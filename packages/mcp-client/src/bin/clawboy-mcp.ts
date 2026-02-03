@@ -16,11 +16,8 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { createWalletClient, createPublicClient, http, formatEther, type WalletClient } from 'viem';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { createWalletClient, createPublicClient, http, formatEther } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 import { ClawboyApiClient } from '../api-client.js';
@@ -548,7 +545,9 @@ async function main() {
   const account = privateKeyToAccount(privateKey as `0x${string}`);
   const rpcUrl = process.env.CLAWBOY_RPC_URL || 'https://sepolia.base.org';
 
-  const walletClient = createWalletClient({
+  // Wallet client for future transaction signing (currently unused)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _walletClient = createWalletClient({
     account,
     chain: baseSepolia,
     transport: http(rpcUrl),
@@ -635,12 +634,12 @@ async function main() {
         const targetAddress = (typedArgs.address as `0x${string}`) || account.address;
 
         // Check if registered
-        const isRegistered = await publicClient.readContract({
+        const isRegistered = (await publicClient.readContract({
           address: addresses.clawboyRegistry,
           abi: ClawboyRegistryABI,
           functionName: 'isRegistered',
           args: [targetAddress],
-        }) as boolean;
+        })) as boolean;
 
         if (!isRegistered) {
           return {
@@ -658,14 +657,22 @@ async function main() {
         }
 
         // Get agent data from contract
-        const agentData = await publicClient.readContract({
+        const agentData = (await publicClient.readContract({
           address: addresses.clawboyRegistry,
           abi: ClawboyRegistryABI,
           functionName: 'getAgent',
           args: [targetAddress],
-        }) as unknown as readonly [bigint, bigint, bigint, bigint, string, bigint, boolean];
+        })) as unknown as readonly [bigint, bigint, bigint, bigint, string, bigint, boolean];
 
-        const [reputation, tasksWon, disputesWon, disputesLost, profileCid, registeredAt, isActive] = agentData;
+        const [
+          reputation,
+          tasksWon,
+          disputesWon,
+          disputesLost,
+          profileCid,
+          registeredAt,
+          isActive,
+        ] = agentData;
 
         return {
           content: [

@@ -1,5 +1,5 @@
 import { getPublicClient, getBlockNumber } from '@clawboy/web3-utils';
-import { TaskManagerABI, DisputeResolverABI, getContractAddresses } from '@clawboy/contracts';
+import { getContractAddresses } from '@clawboy/contracts';
 import { getLastSyncedBlock, updateSyncState } from '@clawboy/database';
 import type { Log } from 'viem';
 
@@ -40,6 +40,7 @@ export function createEventListener(
       blockNumber: log.blockNumber ?? 0n,
       transactionHash: log.transactionHash ?? '0x0',
       logIndex: log.logIndex ?? 0,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       args: (log as any).args || {},
     };
   };

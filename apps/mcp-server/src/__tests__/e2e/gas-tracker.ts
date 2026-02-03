@@ -80,8 +80,8 @@ class GasTracker {
     console.log('\nBy Operation:');
 
     // Sort operations by gas used (descending)
-    const sortedOps = Object.entries(report.byOperation).sort(
-      ([, a], [, b]) => (b.gasUsed > a.gasUsed ? 1 : -1)
+    const sortedOps = Object.entries(report.byOperation).sort(([, a], [, b]) =>
+      b.gasUsed > a.gasUsed ? 1 : -1
     );
 
     for (const [op, data] of sortedOps) {

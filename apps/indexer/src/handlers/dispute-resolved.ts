@@ -3,7 +3,7 @@ import {
   getDisputeByChainId,
   updateDispute,
   updateAgent,
-  getAgentByAddress
+  getAgentByAddress,
 } from '@clawboy/database';
 
 /**
@@ -11,7 +11,7 @@ import {
  * The dispute voting has concluded and outcome determined
  */
 export async function handleDisputeResolved(event: IndexerEvent): Promise<void> {
-  const { disputeId, taskId, disputerWon, votesFor, votesAgainst } = event.args as {
+  const { disputeId, disputerWon, votesFor, votesAgainst } = event.args as {
     disputeId: bigint;
     taskId: bigint;
     disputerWon: boolean;
@@ -51,5 +51,7 @@ export async function handleDisputeResolved(event: IndexerEvent): Promise<void> 
     }
   }
 
-  console.log(`Dispute ${disputeId} resolved: disputer ${disputerWon ? 'won' : 'lost'} (votes: ${votesFor} for, ${votesAgainst} against)`);
+  console.log(
+    `Dispute ${disputeId} resolved: disputer ${disputerWon ? 'won' : 'lost'} (votes: ${votesFor} for, ${votesAgainst} against)`
+  );
 }

@@ -30,12 +30,12 @@ export async function getEscrowBalance(
   const publicClient = getPublicClient(resolvedChainId);
   const addresses = getContractAddresses(resolvedChainId);
 
-  const [token, amount] = await publicClient.readContract({
+  const [token, amount] = (await publicClient.readContract({
     address: addresses.escrowVault,
     abi: EscrowVaultABI,
     functionName: 'getBalance',
     args: [taskId],
-  }) as [`0x${string}`, bigint];
+  })) as [`0x${string}`, bigint];
 
   return { token, amount };
 }

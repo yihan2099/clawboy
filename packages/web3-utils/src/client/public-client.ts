@@ -98,10 +98,7 @@ export async function getBlockNumber(chainId?: number): Promise<bigint> {
 /**
  * Get balance for an address
  */
-export async function getBalance(
-  address: `0x${string}`,
-  chainId?: number
-): Promise<bigint> {
+export async function getBalance(address: `0x${string}`, chainId?: number): Promise<bigint> {
   const client = getPublicClient(chainId);
   return client.getBalance({ address });
 }

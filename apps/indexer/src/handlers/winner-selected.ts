@@ -1,6 +1,6 @@
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId, updateTask } from '@clawboy/database';
-import { assertValidStatusTransition, TaskStatus, type TaskStatusString } from '@clawboy/shared-types';
+import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
 
 /**
  * Handle WinnerSelected event
@@ -35,5 +35,7 @@ export async function handleWinnerSelected(event: IndexerEvent): Promise<void> {
     challenge_deadline: new Date(Number(challengeDeadline) * 1000).toISOString(),
   });
 
-  console.log(`Winner ${winner} selected for task ${taskId}, challenge deadline: ${challengeDeadline}`);
+  console.log(
+    `Winner ${winner} selected for task ${taskId}, challenge deadline: ${challengeDeadline}`
+  );
 }

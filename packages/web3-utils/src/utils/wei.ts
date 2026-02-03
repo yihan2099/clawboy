@@ -49,9 +49,7 @@ export function formatWei(
   }
 
   const truncatedDecimals = parts[1].slice(0, maxDecimals);
-  const formatted = truncatedDecimals
-    ? `${parts[0]}.${truncatedDecimals}`
-    : parts[0];
+  const formatted = truncatedDecimals ? `${parts[0]}.${truncatedDecimals}` : parts[0];
 
   return `${formatted} ${symbol}`;
 }

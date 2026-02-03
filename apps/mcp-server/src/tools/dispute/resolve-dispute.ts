@@ -61,7 +61,9 @@ export const resolveDisputeTool = {
     const now = BigInt(Math.floor(Date.now() / 1000));
     if (now < dispute.votingDeadline) {
       const timeRemaining = Number(dispute.votingDeadline - now);
-      throw new Error(`Voting period has not ended yet. ${Math.ceil(timeRemaining / 3600)} hours remaining.`);
+      throw new Error(
+        `Voting period has not ended yet. ${Math.ceil(timeRemaining / 3600)} hours remaining.`
+      );
     }
 
     // Calculate expected outcome
@@ -106,7 +108,7 @@ export const resolveDisputeTool = {
             'Disputer gains reputation',
           ]
         : [
-            'Disputer\'s stake will be slashed (kept by protocol)',
+            "Disputer's stake will be slashed (kept by protocol)",
             'Original task outcome stands',
             'Disputer loses 20 reputation',
           ],

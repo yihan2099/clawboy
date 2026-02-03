@@ -1,14 +1,14 @@
-"use server";
+'use server';
 
-import { Resend } from "resend";
-import { waitlistSchema } from "@/lib/validations/waitlist";
+import { Resend } from 'resend';
+import { waitlistSchema } from '@/lib/validations/waitlist';
 
 // Validate environment variables at startup
 if (!process.env.RESEND_API_KEY) {
-  console.error("RESEND_API_KEY is not configured");
+  console.error('RESEND_API_KEY is not configured');
 }
 if (!process.env.RESEND_NEWSLETTER_SEGMENT_ID) {
-  console.error("RESEND_NEWSLETTER_SEGMENT_ID is not configured");
+  console.error('RESEND_NEWSLETTER_SEGMENT_ID is not configured');
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -23,27 +23,27 @@ export async function subscribeNewsletter(
   _prevState: NewsletterState,
   formData: FormData
 ): Promise<NewsletterState> {
-  const rawEmail = formData.get("email");
+  const rawEmail = formData.get('email');
 
   const parsed = waitlistSchema.safeParse({
-    email: typeof rawEmail === "string" ? rawEmail.trim() : rawEmail,
+    email: typeof rawEmail === 'string' ? rawEmail.trim() : rawEmail,
   });
 
   if (!parsed.success) {
-    console.warn("[newsletter] Validation failed:", parsed.error.issues[0]?.message);
+    console.warn('[newsletter] Validation failed:', parsed.error.issues[0]?.message);
     return {
       success: false,
-      message: parsed.error.issues[0]?.message ?? "Invalid input",
+      message: parsed.error.issues[0]?.message ?? 'Invalid input',
     };
   }
 
   const { email } = parsed.data;
 
   if (!audienceId) {
-    console.error("[newsletter] RESEND_NEWSLETTER_SEGMENT_ID is not configured");
+    console.error('[newsletter] RESEND_NEWSLETTER_SEGMENT_ID is not configured');
     return {
       success: false,
-      message: "Newsletter is not configured. Please try again later.",
+      message: 'Newsletter is not configured. Please try again later.',
     };
   }
 
@@ -53,28 +53,25 @@ export async function subscribeNewsletter(
       audienceId,
     });
 
-    console.info("[newsletter] New subscriber:", email);
+    console.info('[newsletter] New subscriber:', email);
     return {
       success: true,
       message: "You're subscribed!",
     };
   } catch (error: unknown) {
     // Handle duplicate contact error
-    if (
-      error instanceof Error &&
-      error.message.includes("already exists")
-    ) {
-      console.info("[newsletter] Duplicate subscription attempt:", email);
+    if (error instanceof Error && error.message.includes('already exists')) {
+      console.info('[newsletter] Duplicate subscription attempt:', email);
       return {
         success: true,
         message: "You're already subscribed!",
       };
     }
 
-    console.error("[newsletter] Failed to add subscriber:", error);
+    console.error('[newsletter] Failed to add subscriber:', error);
     return {
       success: false,
-      message: "Something went wrong. Please try again.",
+      message: 'Something went wrong. Please try again.',
     };
   }
 }

@@ -1,9 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import {
-  getOperationType,
-  TOOL_OPERATION_MAP,
-  MCP_RATE_LIMITS,
-} from '../config/mcp-config';
+import { getOperationType, TOOL_OPERATION_MAP, MCP_RATE_LIMITS } from '../config/mcp-config';
 
 describe('MCP Config', () => {
   describe('TOOL_OPERATION_MAP', () => {

@@ -328,9 +328,7 @@ const workflowGuides: Record<string, WorkflowGuide> = {
 /**
  * Handler for get_workflow_guide tool
  */
-export async function getWorkflowGuideHandler(
-  args: unknown
-): Promise<GetWorkflowGuideOutput> {
+export async function getWorkflowGuideHandler(args: unknown): Promise<GetWorkflowGuideOutput> {
   const input = args as GetWorkflowGuideInput;
 
   if (!input?.role || !['agent', 'creator', 'voter'].includes(input.role)) {
@@ -347,9 +345,7 @@ export async function getWorkflowGuideHandler(
     );
     if (filtered.length === 0) {
       const available = guide.workflows.map((w) => w.name).join(', ');
-      throw new Error(
-        `Unknown workflow: ${input.workflow}. Available workflows: ${available}`
-      );
+      throw new Error(`Unknown workflow: ${input.workflow}. Available workflows: ${available}`);
     }
     workflows = filtered;
   }

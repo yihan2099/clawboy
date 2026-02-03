@@ -13,7 +13,9 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
     weight: bigint;
   };
 
-  console.log(`Processing VoteSubmitted: disputeId=${disputeId}, voter=${voter}, supports=${supportsDisputer}`);
+  console.log(
+    `Processing VoteSubmitted: disputeId=${disputeId}, voter=${voter}, supports=${supportsDisputer}`
+  );
 
   // Find dispute in database
   const dispute = await getDisputeByChainId(disputeId.toString());
@@ -32,5 +34,7 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
     voted_at: new Date().toISOString(),
   });
 
-  console.log(`Vote submitted for dispute ${disputeId} by ${voter}, weight: ${weight}, supports disputer: ${supportsDisputer}`);
+  console.log(
+    `Vote submitted for dispute ${disputeId} by ${voter}, weight: ${weight}, supports disputer: ${supportsDisputer}`
+  );
 }

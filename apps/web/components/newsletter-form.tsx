@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useActionState } from "react";
-import { subscribeNewsletter, type NewsletterState } from "@/app/actions/newsletter";
+import { useActionState } from 'react';
+import { subscribeNewsletter, type NewsletterState } from '@/app/actions/newsletter';
 
 export function NewsletterForm() {
   const [state, formAction, isPending] = useActionState<NewsletterState, FormData>(
@@ -17,7 +17,7 @@ export function NewsletterForm() {
     );
   }
 
-  const emailErrorId = "email-error";
+  const emailErrorId = 'email-error';
 
   return (
     <form action={formAction}>
@@ -42,7 +42,7 @@ export function NewsletterForm() {
           disabled={isPending}
           className="h-12 px-8 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {isPending ? "Subscribing..." : "Subscribe"}
+          {isPending ? 'Subscribing...' : 'Subscribe'}
         </button>
       </div>
       {state?.message && !state.success && (

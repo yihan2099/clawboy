@@ -25,8 +25,7 @@ export interface GetSessionOutput {
  */
 export const getSessionToolDef = {
   name: 'auth_session',
-  description:
-    'Check the status of an authentication session or invalidate it.',
+  description: 'Check the status of an authentication session or invalidate it.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -47,9 +46,7 @@ export const getSessionToolDef = {
 /**
  * Handler for auth_session tool
  */
-export async function getSessionHandler(
-  args: unknown
-): Promise<GetSessionOutput> {
+export async function getSessionHandler(args: unknown): Promise<GetSessionOutput> {
   const input = args as GetSessionInput;
 
   if (!input.sessionId) {

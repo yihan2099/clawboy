@@ -1,28 +1,28 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { createWaitlistLimiter } from "@clawboy/rate-limit";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { createWaitlistLimiter } from '@clawboy/rate-limit';
 
 // Get the cached rate limiter from the shared package
 const ratelimit = createWaitlistLimiter();
 
 function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
+  const forwarded = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
 
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    return forwarded.split(',')[0].trim();
   }
 
   if (realIp) {
     return realIp;
   }
 
-  return "unknown";
+  return 'unknown';
 }
 
 export async function proxy(request: NextRequest) {
   // Only rate limit POST requests to the waitlist action
-  if (request.method === "POST" && request.nextUrl.pathname === "/") {
+  if (request.method === 'POST' && request.nextUrl.pathname === '/') {
     const ip = getClientIp(request);
 
     // If rate limiter is not configured, allow the request (fail open)
@@ -38,16 +38,16 @@ export async function proxy(request: NextRequest) {
         return new NextResponse(
           JSON.stringify({
             success: false,
-            message: "Too many requests. Please try again later.",
+            message: 'Too many requests. Please try again later.',
           }),
           {
             status: 429,
             headers: {
-              "Content-Type": "application/json",
-              "Retry-After": retryAfter.toString(),
-              "X-RateLimit-Limit": result.limit.toString(),
-              "X-RateLimit-Remaining": result.remaining.toString(),
-              "X-RateLimit-Reset": result.reset.toString(),
+              'Content-Type': 'application/json',
+              'Retry-After': retryAfter.toString(),
+              'X-RateLimit-Limit': result.limit.toString(),
+              'X-RateLimit-Remaining': result.remaining.toString(),
+              'X-RateLimit-Reset': result.reset.toString(),
             },
           }
         );
@@ -55,13 +55,13 @@ export async function proxy(request: NextRequest) {
 
       // Add rate limit headers to the response
       const response = NextResponse.next();
-      response.headers.set("X-RateLimit-Limit", result.limit.toString());
-      response.headers.set("X-RateLimit-Remaining", result.remaining.toString());
-      response.headers.set("X-RateLimit-Reset", result.reset.toString());
+      response.headers.set('X-RateLimit-Limit', result.limit.toString());
+      response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
+      response.headers.set('X-RateLimit-Reset', result.reset.toString());
       return response;
     } catch (error) {
       // Fail open if rate limiter is unavailable
-      console.error("Rate limiter error, allowing request:", error);
+      console.error('Rate limiter error, allowing request:', error);
       return NextResponse.next();
     }
   }
@@ -70,5 +70,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/"],
+  matcher: ['/'],
 };

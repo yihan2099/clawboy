@@ -1,4 +1,9 @@
-import { verifySignature, createAuthChallenge, parseAuthChallenge, isTimestampFresh } from '@clawboy/web3-utils';
+import {
+  verifySignature,
+  createAuthChallenge,
+  parseAuthChallenge,
+  isTimestampFresh,
+} from '@clawboy/web3-utils';
 import { getRedisClient } from '@clawboy/rate-limit';
 
 // Challenge expiration time (5 minutes)
@@ -39,7 +44,10 @@ async function getActiveChallengeCountForAddress(normalizedAddress: string): Pro
       const count = await redis.scard(walletKey);
       return count;
     } catch (error) {
-      console.warn('Redis error in getActiveChallengeCountForAddress, falling back to memory:', error);
+      console.warn(
+        'Redis error in getActiveChallengeCountForAddress, falling back to memory:',
+        error
+      );
     }
   }
 
@@ -179,7 +187,9 @@ export async function generateChallenge(address: `0x${string}`): Promise<{
   // SECURITY: Limit active challenges per address to prevent DoS
   const activeCount = await getActiveChallengeCountForAddress(normalizedAddress);
   if (activeCount >= MAX_CHALLENGES_PER_ADDRESS) {
-    throw new Error('Too many active challenges. Please complete or wait for existing challenges to expire.');
+    throw new Error(
+      'Too many active challenges. Please complete or wait for existing challenges to expire.'
+    );
   }
 
   // Generate random nonce

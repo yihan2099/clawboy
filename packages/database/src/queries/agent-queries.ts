@@ -46,9 +46,7 @@ export async function listAgents(options: ListAgentsOptions = {}): Promise<{
     query = query.gte('reputation', minReputation.toString());
   }
 
-  query = query
-    .order(sortBy, { ascending: sortOrder === 'asc' })
-    .range(offset, offset + limit - 1);
+  query = query.order(sortBy, { ascending: sortOrder === 'asc' }).range(offset, offset + limit - 1);
 
   const { data, error, count } = await query;
 
@@ -65,9 +63,7 @@ export async function listAgents(options: ListAgentsOptions = {}): Promise<{
 /**
  * Get an agent by their wallet address
  */
-export async function getAgentByAddress(
-  address: string
-): Promise<AgentRow | null> {
+export async function getAgentByAddress(address: string): Promise<AgentRow | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -94,10 +90,7 @@ export async function upsertAgent(agent: AgentInsert): Promise<AgentRow> {
 
   const { data, error } = await supabase
     .from('agents')
-    .upsert(
-      { ...agent, address: agent.address.toLowerCase() },
-      { onConflict: 'address' }
-    )
+    .upsert({ ...agent, address: agent.address.toLowerCase() }, { onConflict: 'address' })
     .select()
     .single();
 
@@ -111,10 +104,7 @@ export async function upsertAgent(agent: AgentInsert): Promise<AgentRow> {
 /**
  * Update an agent
  */
-export async function updateAgent(
-  address: string,
-  updates: AgentUpdate
-): Promise<AgentRow> {
+export async function updateAgent(address: string, updates: AgentUpdate): Promise<AgentRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase
@@ -192,10 +182,7 @@ export async function incrementDisputesLost(address: string): Promise<void> {
 /**
  * Update agent reputation
  */
-export async function updateAgentReputation(
-  address: string,
-  delta: number
-): Promise<void> {
+export async function updateAgentReputation(address: string, delta: number): Promise<void> {
   const supabase = getWriteClient();
 
   const { error } = await supabase.rpc('update_agent_reputation', {
@@ -220,9 +207,7 @@ export function calculateVoteWeight(reputation: string | number): number {
 /**
  * Get agents with failed IPFS fetches (for background retry)
  */
-export async function getAgentsWithFailedIpfs(
-  limit = 50
-): Promise<AgentRow[]> {
+export async function getAgentsWithFailedIpfs(limit = 50): Promise<AgentRow[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase

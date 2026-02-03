@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { listActiveDisputes, getDisputesReadyForResolution } from '@clawboy/database';
+import { getDisputesReadyForResolution } from '@clawboy/database';
 import { getSupabaseClient } from '@clawboy/database';
 import type { DisputeStatus } from '@clawboy/shared-types';
 

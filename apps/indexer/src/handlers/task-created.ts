@@ -8,15 +8,14 @@ import { withRetryResult } from '../utils/retry';
  * Includes IPFS retry with exponential backoff
  */
 export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
-  const { taskId, creator, bountyAmount, bountyToken, specificationCid, deadline } =
-    event.args as {
-      taskId: bigint;
-      creator: `0x${string}`;
-      bountyAmount: bigint;
-      bountyToken: `0x${string}`;
-      specificationCid: string;
-      deadline: bigint;
-    };
+  const { taskId, creator, bountyAmount, bountyToken, specificationCid, deadline } = event.args as {
+    taskId: bigint;
+    creator: `0x${string}`;
+    bountyAmount: bigint;
+    bountyToken: `0x${string}`;
+    specificationCid: string;
+    deadline: bigint;
+  };
 
   console.log(`Processing TaskCreated: taskId=${taskId}, creator=${creator}`);
 
@@ -26,19 +25,16 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
   let tags: string[] = [];
   let ipfsFetchFailed = false;
 
-  const fetchResult = await withRetryResult(
-    () => fetchTaskSpecification(specificationCid),
-    {
-      maxAttempts: 3,
-      initialDelayMs: 1000,
-      maxDelayMs: 10000,
-      onRetry: (attempt, error, delayMs) => {
-        console.warn(
-          `IPFS fetch attempt ${attempt} failed for CID ${specificationCid}: ${error.message}. Retrying in ${delayMs}ms...`
-        );
-      },
-    }
-  );
+  const fetchResult = await withRetryResult(() => fetchTaskSpecification(specificationCid), {
+    maxAttempts: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 10000,
+    onRetry: (attempt, error, delayMs) => {
+      console.warn(
+        `IPFS fetch attempt ${attempt} failed for CID ${specificationCid}: ${error.message}. Retrying in ${delayMs}ms...`
+      );
+    },
+  });
 
   if (fetchResult.success && fetchResult.data) {
     title = fetchResult.data.title;
@@ -70,5 +66,7 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
     ipfs_fetch_failed: ipfsFetchFailed,
   });
 
-  console.log(`Task ${taskId} created in database (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`);
+  console.log(
+    `Task ${taskId} created in database (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`
+  );
 }

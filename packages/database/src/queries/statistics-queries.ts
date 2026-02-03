@@ -100,9 +100,7 @@ export interface SubmissionWithTask extends SubmissionRow {
 /**
  * Get recent submissions with task info for display on the landing page.
  */
-export async function getRecentSubmissions(
-  limit = 5
-): Promise<SubmissionWithTask[]> {
+export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTask[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase

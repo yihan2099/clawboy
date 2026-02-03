@@ -1,7 +1,11 @@
 export { getChallengeTool, getChallengeToolDef, getChallengeHandler } from './get-challenge';
 export type { GetChallengeInput, GetChallengeOutput } from './get-challenge';
 
-export { verifySignatureTool, verifySignatureToolDef, verifySignatureHandler } from './verify-signature';
+export {
+  verifySignatureTool,
+  verifySignatureToolDef,
+  verifySignatureHandler,
+} from './verify-signature';
 export type { VerifySignatureInput, VerifySignatureOutput } from './verify-signature';
 
 export { getSessionTool, getSessionToolDef, getSessionHandler } from './get-session';
@@ -51,8 +55,7 @@ export const authToolDefs = [
   },
   {
     name: 'auth_session',
-    description:
-      'Check the status of an authentication session or invalidate it.',
+    description: 'Check the status of an authentication session or invalidate it.',
     inputSchema: {
       type: 'object' as const,
       properties: {

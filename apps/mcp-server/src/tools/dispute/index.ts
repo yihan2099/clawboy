@@ -59,7 +59,8 @@ export const disputeToolDefs = [
   },
   {
     name: 'start_dispute',
-    description: 'Start a dispute on a task in review. Requires staking ETH. You must be a submitter on the task.',
+    description:
+      'Start a dispute on a task in review. Requires staking ETH. You must be a submitter on the task.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -73,7 +74,8 @@ export const disputeToolDefs = [
   },
   {
     name: 'submit_vote',
-    description: 'Submit a vote on an active dispute. You cannot vote if you are the disputer or task creator.',
+    description:
+      'Submit a vote on an active dispute. You cannot vote if you are the disputer or task creator.',
     inputSchema: {
       type: 'object' as const,
       properties: {

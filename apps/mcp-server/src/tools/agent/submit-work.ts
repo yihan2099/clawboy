@@ -1,11 +1,7 @@
 import { z } from 'zod';
 import { getTaskHandler } from '../../services/task-service';
 import { uploadWorkSubmission } from '@clawboy/ipfs-utils';
-import {
-  getSubmissionByTaskAndAgent,
-  createSubmission,
-  updateSubmission,
-} from '@clawboy/database';
+import { getSubmissionByTaskAndAgent, createSubmission, updateSubmission } from '@clawboy/database';
 import type { WorkSubmission } from '@clawboy/shared-types';
 
 // SECURITY: IPFS CID v0 and v1 format validation
@@ -15,16 +11,19 @@ export const submitWorkSchema = z.object({
   taskId: z.string().min(1).max(100), // SECURITY: Limit task ID length
   summary: z.string().min(1).max(1000), // SECURITY: Limit summary length
   description: z.string().max(50000).optional(), // SECURITY: Limit description length
-  deliverables: z.array(
-    z.object({
-      type: z.enum(['code', 'document', 'data', 'file', 'other']),
-      description: z.string().min(1).max(2000), // SECURITY: Limit description
-      // SECURITY: Validate CID format if provided
-      cid: z.string().regex(cidRegex, 'Invalid IPFS CID format').optional(),
-      // SECURITY: Validate URL format (zod already validates)
-      url: z.string().url().max(2000).optional(),
-    })
-  ).min(1).max(20), // SECURITY: Limit number of deliverables
+  deliverables: z
+    .array(
+      z.object({
+        type: z.enum(['code', 'document', 'data', 'file', 'other']),
+        description: z.string().min(1).max(2000), // SECURITY: Limit description
+        // SECURITY: Validate CID format if provided
+        cid: z.string().regex(cidRegex, 'Invalid IPFS CID format').optional(),
+        // SECURITY: Validate URL format (zod already validates)
+        url: z.string().url().max(2000).optional(),
+      })
+    )
+    .min(1)
+    .max(20), // SECURITY: Limit number of deliverables
   creatorNotes: z.string().max(5000).optional(), // SECURITY: Limit notes length
 });
 
@@ -32,7 +31,8 @@ export type SubmitWorkInput = z.infer<typeof submitWorkSchema>;
 
 export const submitWorkTool = {
   name: 'submit_work',
-  description: 'Submit work for an open task. In the competitive model, any registered agent can submit work. You can update your submission before the deadline.',
+  description:
+    'Submit work for an open task. In the competitive model, any registered agent can submit work. You can update your submission before the deadline.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -82,7 +82,9 @@ export const submitWorkTool = {
     }
 
     if (task.status !== 'open') {
-      throw new Error(`Cannot submit work for task with status: ${task.status}. Task must be open.`);
+      throw new Error(
+        `Cannot submit work for task with status: ${task.status}. Task must be open.`
+      );
     }
 
     // Check if deadline has passed

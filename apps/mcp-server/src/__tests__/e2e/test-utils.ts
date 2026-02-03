@@ -33,11 +33,7 @@ import {
   waitForTransaction,
 } from '@clawboy/web3-utils';
 import { gasTracker } from './gas-tracker';
-import {
-  TaskManagerABI,
-  ClawboyRegistryABI,
-  getContractAddresses,
-} from '@clawboy/contracts';
+import { TaskManagerABI, ClawboyRegistryABI, getContractAddresses } from '@clawboy/contracts';
 import { getTaskByChainId } from '@clawboy/database';
 
 // Chain configuration - supports both Base Sepolia and local Anvil
@@ -215,9 +211,7 @@ export async function registerAgentOnChain(
 /**
  * Check if an address is registered on-chain
  */
-export async function checkAgentRegistered(
-  address: `0x${string}`
-): Promise<boolean> {
+export async function checkAgentRegistered(address: `0x${string}`): Promise<boolean> {
   const publicClient = getPublicClient(CHAIN_ID);
 
   return publicClient.readContract({
@@ -457,8 +451,8 @@ export async function waitForTaskStatus(
     const task = await getTaskByChainId(chainTaskIdStr, CHAIN_ID);
     if (task) {
       // Optionally verify creator if provided (extra safety check)
-      const creatorMatches = !creatorAddress ||
-        task.creator_address.toLowerCase() === creatorAddress.toLowerCase();
+      const creatorMatches =
+        !creatorAddress || task.creator_address.toLowerCase() === creatorAddress.toLowerCase();
 
       if (creatorMatches && task.status === expectedStatus) {
         return task;
@@ -692,19 +686,17 @@ export async function updateProfileOnChain(
 /**
  * Get agent profile CID from chain
  */
-export async function getAgentProfileCid(
-  address: `0x${string}`
-): Promise<string | null> {
+export async function getAgentProfileCid(address: `0x${string}`): Promise<string | null> {
   const publicClient = getPublicClient(CHAIN_ID);
 
   try {
     // First check if registered
-    const isRegistered = await publicClient.readContract({
+    const isRegistered = (await publicClient.readContract({
       address: addresses.clawboyRegistry,
       abi: ClawboyRegistryABI,
       functionName: 'isRegistered',
       args: [address],
-    }) as boolean;
+    })) as boolean;
 
     if (!isRegistered) {
       return null;

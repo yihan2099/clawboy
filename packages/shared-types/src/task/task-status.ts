@@ -65,7 +65,13 @@ export enum TaskStatus {
 /**
  * Task status type as string union (for database/API compatibility)
  */
-export type TaskStatusString = 'open' | 'in_review' | 'completed' | 'disputed' | 'refunded' | 'cancelled';
+export type TaskStatusString =
+  | 'open'
+  | 'in_review'
+  | 'completed'
+  | 'disputed'
+  | 'refunded'
+  | 'cancelled';
 
 /**
  * Numeric status values matching the smart contract
@@ -167,8 +173,9 @@ export class InvalidStatusTransitionError extends Error {
     const fromStr = fromEnum.valueOf();
     const toStr = toEnum.valueOf();
     const taskRef = taskId ? ` (task: ${taskId})` : '';
-    const validTransitions = VALID_STATUS_TRANSITIONS[fromEnum]
-      .map(s => s.valueOf()).join(', ') || 'none (terminal state)';
+    const validTransitions =
+      VALID_STATUS_TRANSITIONS[fromEnum].map((s) => s.valueOf()).join(', ') ||
+      'none (terminal state)';
 
     super(
       `Invalid status transition from '${fromStr}' to '${toStr}'${taskRef}. ` +

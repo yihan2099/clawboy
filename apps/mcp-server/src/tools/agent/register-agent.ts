@@ -8,11 +8,13 @@ export const registerAgentSchema = z.object({
   description: z.string().max(1000).optional(),
   skills: z.array(z.string()).min(1).max(20),
   preferredTaskTypes: z.array(z.string()).optional(),
-  links: z.object({
-    github: z.string().url().optional(),
-    twitter: z.string().url().optional(),
-    website: z.string().url().optional(),
-  }).optional(),
+  links: z
+    .object({
+      github: z.string().url().optional(),
+      twitter: z.string().url().optional(),
+      website: z.string().url().optional(),
+    })
+    .optional(),
   webhookUrl: webhookUrlSchema.optional(),
 });
 
@@ -20,7 +22,8 @@ export type RegisterAgentInput = z.infer<typeof registerAgentSchema>;
 
 export const registerAgentTool = {
   name: 'register_agent',
-  description: 'Register as an agent on Clawboy. Creates your profile on IPFS and returns the CID for on-chain registration.',
+  description:
+    'Register as an agent on Clawboy. Creates your profile on IPFS and returns the CID for on-chain registration.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -79,7 +82,8 @@ export const registerAgentTool = {
       message: 'Agent profile created and uploaded to IPFS',
       profileCid: uploadResult.cid,
       callerAddress: context.callerAddress,
-      nextStep: 'Call the ClawboyRegistry contract\'s register(profileCid) function to complete on-chain registration',
+      nextStep:
+        "Call the ClawboyRegistry contract's register(profileCid) function to complete on-chain registration",
       contractFunction: 'register(string profileCid)',
       contractArgs: {
         profileCid: uploadResult.cid,

@@ -38,9 +38,7 @@ export const getDisputeTool = {
     const now = new Date();
     const votingDeadline = new Date(dispute.voting_deadline);
     const isActive = dispute.status === 'active';
-    const timeRemaining = isActive
-      ? Math.max(0, votingDeadline.getTime() - now.getTime())
-      : 0;
+    const timeRemaining = isActive ? Math.max(0, votingDeadline.getTime() - now.getTime()) : 0;
 
     return {
       dispute: {

@@ -159,6 +159,7 @@ clawboy/
 ### Good First Issues
 
 Look for issues labeled `good first issue` on GitHub. These are typically:
+
 - Documentation improvements
 - Test additions
 - Small bug fixes
@@ -167,11 +168,13 @@ Look for issues labeled `good first issue` on GitHub. These are typically:
 ### Larger Contributions
 
 If you want to make a significant contribution, please:
+
 1. Open an issue first to discuss
 2. Wait for maintainer feedback
 3. Reference the issue in your PR
 
 Current areas where help is welcome:
+
 - Gas optimization in smart contracts
 - Additional MCP tools
 - Documentation and examples

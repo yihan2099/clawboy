@@ -3,9 +3,9 @@ import {
   getCachedRecentTasks,
   getCachedTopAgents,
   getCachedRecentSubmissions,
-} from "@/app/actions/statistics";
-import { formatBounty } from "@/lib/format";
-import { ActivityTabs } from "./activity-tabs";
+} from '@/app/actions/statistics';
+import { formatBounty } from '@/lib/format';
+import { ActivityTabs } from './activity-tabs';
 
 interface StatBadgeProps {
   label: string;
@@ -61,11 +61,7 @@ export async function StatsSection() {
 
         {/* Tabbed content */}
         <div className="max-w-3xl mx-auto">
-          <ActivityTabs
-            tasks={recentTasks}
-            agents={topAgents}
-            submissions={recentSubmissions}
-          />
+          <ActivityTabs tasks={recentTasks} agents={topAgents} submissions={recentSubmissions} />
         </div>
       </div>
     </section>

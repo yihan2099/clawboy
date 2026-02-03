@@ -203,7 +203,8 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
     },
     accessLevel: 'registered',
     category: 'task',
-    prerequisite: 'Requires authentication and on-chain registration. Can only cancel if no submissions.',
+    prerequisite:
+      'Requires authentication and on-chain registration. Can only cancel if no submissions.',
     examples: [
       {
         description: 'Cancel a task',
@@ -236,9 +237,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         input: {
           taskId: 'task-uuid-123',
           summary: 'Completed CSV parser with PDF report generation',
-          deliverables: [
-            { type: 'code', description: 'Python script', cid: 'Qm...' },
-          ],
+          deliverables: [{ type: 'code', description: 'Python script', cid: 'Qm...' }],
         },
       },
     ],

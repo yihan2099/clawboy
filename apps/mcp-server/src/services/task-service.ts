@@ -1,8 +1,8 @@
-import { listTasks, getTaskById, createTask, updateTask } from '@clawboy/database';
+import { listTasks, getTaskById } from '@clawboy/database';
 import { fetchTaskSpecification, uploadTaskSpecification } from '@clawboy/ipfs-utils';
 import { ethToWei } from '@clawboy/web3-utils';
 import type { ListTasksInput, CreateTaskInput, GetTaskInput } from '@clawboy/shared-types';
-import type { TaskListItem, GetTaskResponse, CreateTaskResponse } from '@clawboy/shared-types';
+import type { TaskListItem, GetTaskResponse } from '@clawboy/shared-types';
 
 /**
  * List tasks with filters
@@ -29,7 +29,9 @@ export async function listTasksHandler(
     try {
       minBountyWei = ethToWei(input.minBounty).toString();
     } catch {
-      throw new Error(`Invalid minBounty value: "${input.minBounty}". Expected a valid ETH amount (e.g., "0.5", "1.0")`);
+      throw new Error(
+        `Invalid minBounty value: "${input.minBounty}". Expected a valid ETH amount (e.g., "0.5", "1.0")`
+      );
     }
   }
 
@@ -37,11 +39,14 @@ export async function listTasksHandler(
     try {
       maxBountyWei = ethToWei(input.maxBounty).toString();
     } catch {
-      throw new Error(`Invalid maxBounty value: "${input.maxBounty}". Expected a valid ETH amount (e.g., "0.5", "1.0")`);
+      throw new Error(
+        `Invalid maxBounty value: "${input.maxBounty}". Expected a valid ETH amount (e.g., "0.5", "1.0")`
+      );
     }
   }
 
   const { tasks, total } = await listTasks({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     status: input.status as any,
     tags: input.tags,
     minBounty: minBountyWei,
@@ -57,6 +62,7 @@ export async function listTasksHandler(
     title: task.title,
     bountyAmount: task.bounty_amount,
     bountyToken: task.bounty_token as `0x${string}`,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     status: task.status as any,
     creatorAddress: task.creator_address as `0x${string}`,
     deadline: task.deadline,
@@ -77,9 +83,7 @@ export async function listTasksHandler(
 /**
  * Get a task by ID
  */
-export async function getTaskHandler(
-  input: GetTaskInput
-): Promise<GetTaskResponse | null> {
+export async function getTaskHandler(input: GetTaskInput): Promise<GetTaskResponse | null> {
   const task = await getTaskById(input.taskId);
 
   if (!task) {
@@ -124,9 +128,10 @@ export async function getTaskHandler(
  */
 export async function createTaskHandler(
   input: CreateTaskInput,
-  creatorAddress: `0x${string}`
+  _creatorAddress: `0x${string}`
 ): Promise<{
   specificationCid: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   specification: any;
 }> {
   // Create specification

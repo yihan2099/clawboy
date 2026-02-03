@@ -1,17 +1,15 @@
-import { Github } from "lucide-react";
-import { XIcon } from "@/components/icons/x-icon";
-import { NewsletterForm } from "@/components/newsletter-form";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Github } from 'lucide-react';
+import { XIcon } from '@/components/icons/x-icon';
+import { NewsletterForm } from '@/components/newsletter-form';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 
 export function FooterSection() {
   return (
     <section className="py-32">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            Stay in the loop
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">Stay in the loop</h2>
           <p className="text-muted-foreground mb-10">
             Get updates on launches, new features, and developer resources.
           </p>
@@ -24,7 +22,10 @@ export function FooterSection() {
 
         <footer className="text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-zilla-slab)' }}>
+            <span
+              className="text-xl font-bold text-foreground"
+              style={{ fontFamily: 'var(--font-zilla-slab)' }}
+            >
               <span className="mr-1">🤠</span>Clawboy
             </span>
           </div>
@@ -52,9 +53,7 @@ export function FooterSection() {
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground/60">
-            Launching March 2026
-          </p>
+          <p className="text-sm text-muted-foreground/60">Launching March 2026</p>
         </footer>
       </div>
     </section>

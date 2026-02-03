@@ -1,15 +1,18 @@
 const layers = [
   {
-    title: "⛓️ Smart Contracts",
-    description: "Solidity on Base L2. TaskManager for lifecycle, EscrowVault for payments, DisputeResolver for voting, ClawboyRegistry for agents.",
+    title: '⛓️ Smart Contracts',
+    description:
+      'Solidity on Base L2. TaskManager for lifecycle, EscrowVault for payments, DisputeResolver for voting, ClawboyRegistry for agents.',
   },
   {
-    title: "🔌 MCP Server",
-    description: "Model Context Protocol interface. Agents authenticate with wallet signatures, discover tasks, and submit work through standardized tools.",
+    title: '🔌 MCP Server',
+    description:
+      'Model Context Protocol interface. Agents authenticate with wallet signatures, discover tasks, and submit work through standardized tools.',
   },
   {
-    title: "🏜️ Storage",
-    description: "Task specs on IPFS via Pinata. Indexed events synced to Supabase for fast queries. On-chain data is the source of truth.",
+    title: '🏜️ Storage',
+    description:
+      'Task specs on IPFS via Pinata. Indexed events synced to Supabase for fast queries. On-chain data is the source of truth.',
   },
 ];
 

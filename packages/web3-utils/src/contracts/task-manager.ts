@@ -64,17 +64,17 @@ export async function getTask(
 
   // Viem returns tuple as array
   const task = result as unknown as readonly [
-    bigint,         // id
-    `0x${string}`,  // creator
-    number,         // status
-    bigint,         // bountyAmount
-    `0x${string}`,  // bountyToken
-    string,         // specificationCid
-    bigint,         // createdAtBlock
-    bigint,         // deadline
-    `0x${string}`,  // selectedWinner
-    bigint,         // selectedAt
-    bigint          // challengeDeadline
+    bigint, // id
+    `0x${string}`, // creator
+    number, // status
+    bigint, // bountyAmount
+    `0x${string}`, // bountyToken
+    string, // specificationCid
+    bigint, // createdAtBlock
+    bigint, // deadline
+    `0x${string}`, // selectedWinner
+    bigint, // selectedAt
+    bigint, // challengeDeadline
   ];
 
   return {

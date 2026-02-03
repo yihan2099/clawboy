@@ -1,7 +1,6 @@
 import { getSupabaseAdminClient } from '../client';
 import type { Database } from '../schema/database';
 
-type ProcessedEventRow = Database['public']['Tables']['processed_events']['Row'];
 type FailedEventRow = Database['public']['Tables']['failed_events']['Row'];
 
 export interface EventIdentifier {
@@ -71,15 +70,13 @@ export async function markEventProcessed(event: EventIdentifier): Promise<boolea
 
   if (error) {
     // Fall back to direct insert
-    const { error: insertError } = await supabase
-      .from('processed_events')
-      .insert({
-        chain_id: event.chainId,
-        block_number: event.blockNumber,
-        tx_hash: event.txHash.toLowerCase(),
-        log_index: event.logIndex,
-        event_name: event.eventName,
-      });
+    const { error: insertError } = await supabase.from('processed_events').insert({
+      chain_id: event.chainId,
+      block_number: event.blockNumber,
+      tx_hash: event.txHash.toLowerCase(),
+      log_index: event.logIndex,
+      event_name: event.eventName,
+    });
 
     if (insertError) {
       // Unique constraint violation means already processed
@@ -148,16 +145,13 @@ export async function addFailedEvent(event: FailedEventData): Promise<string> {
 /**
  * Get failed events that can be retried
  */
-export async function getRetryableFailedEvents(
-  limit: number = 10
-): Promise<FailedEventRow[]> {
+export async function getRetryableFailedEvents(limit: number = 10): Promise<FailedEventRow[]> {
   const supabase = getSupabaseAdminClient();
 
   // Try RPC first
-  const { data: rpcData, error: rpcError } = await supabase.rpc(
-    'get_retryable_failed_events',
-    { p_limit: limit }
-  );
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_retryable_failed_events', {
+    p_limit: limit,
+  });
 
   if (!rpcError && rpcData) {
     return rpcData as FailedEventRow[];
@@ -213,10 +207,7 @@ export async function getFailedEvents(options: {
 /**
  * Resolve a failed event (mark as handled)
  */
-export async function resolveFailedEvent(
-  eventId: string,
-  notes?: string
-): Promise<boolean> {
+export async function resolveFailedEvent(eventId: string, notes?: string): Promise<boolean> {
   const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase.rpc('resolve_failed_event', {

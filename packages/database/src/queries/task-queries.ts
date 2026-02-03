@@ -66,14 +66,17 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     const tasks = (data ?? []) as TaskRow[];
 
     // Get accurate count using the companion count function
-    const { data: countData, error: countError } = await supabase.rpc('count_tasks_with_bounty_filter', {
-      p_min_bounty: minBounty || null,
-      p_max_bounty: maxBounty || null,
-      p_status: status || null,
-      p_creator_address: creatorAddress?.toLowerCase() || null,
-      p_winner_address: winnerAddress?.toLowerCase() || null,
-      p_tags: tags && tags.length > 0 ? tags : null,
-    });
+    const { data: countData, error: countError } = await supabase.rpc(
+      'count_tasks_with_bounty_filter',
+      {
+        p_min_bounty: minBounty || null,
+        p_max_bounty: maxBounty || null,
+        p_status: status || null,
+        p_creator_address: creatorAddress?.toLowerCase() || null,
+        p_winner_address: winnerAddress?.toLowerCase() || null,
+        p_tags: tags && tags.length > 0 ? tags : null,
+      }
+    );
 
     if (countError) {
       // Non-fatal: return tasks without accurate total
@@ -102,9 +105,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     query = query.overlaps('tags', tags);
   }
 
-  query = query
-    .order(sortBy, { ascending: sortOrder === 'asc' })
-    .range(offset, offset + limit - 1);
+  query = query.order(sortBy, { ascending: sortOrder === 'asc' }).range(offset, offset + limit - 1);
 
   const { data, error, count } = await query;
 
@@ -124,11 +125,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
 export async function getTaskById(id: string): Promise<TaskRow | null> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from('tasks').select('*').eq('id', id).single();
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -151,10 +148,7 @@ export async function getTaskByChainId(
 ): Promise<TaskRow | null> {
   const supabase = getSupabaseClient();
 
-  let query = supabase
-    .from('tasks')
-    .select('*')
-    .eq('chain_task_id', chainTaskId);
+  let query = supabase.from('tasks').select('*').eq('chain_task_id', chainTaskId);
 
   // If chain_id is provided, filter by it
   if (chainId !== undefined) {
@@ -176,11 +170,7 @@ export async function getTaskByChainId(
 export async function createTask(task: TaskInsert): Promise<TaskRow> {
   const supabase = getWriteClient();
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert(task)
-    .select()
-    .single();
+  const { data, error } = await supabase.from('tasks').insert(task).select().single();
 
   if (error) {
     throw new Error(`Failed to create task: ${error.message}`);
@@ -192,10 +182,7 @@ export async function createTask(task: TaskInsert): Promise<TaskRow> {
 /**
  * Update a task
  */
-export async function updateTask(
-  id: string,
-  updates: TaskUpdate
-): Promise<TaskRow> {
+export async function updateTask(id: string, updates: TaskUpdate): Promise<TaskRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase
@@ -286,9 +273,7 @@ export async function getDisputedTasks(
 /**
  * Get tasks with failed IPFS fetches (for background retry)
  */
-export async function getTasksWithFailedIpfs(
-  limit = 50
-): Promise<TaskRow[]> {
+export async function getTasksWithFailedIpfs(limit = 50): Promise<TaskRow[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase

@@ -61,10 +61,7 @@ function createPublicContext(): ServerContext {
 /**
  * Create an authenticated (but not registered) context
  */
-function createAuthenticatedContext(
-  address: `0x${string}`,
-  sessionId: string
-): ServerContext {
+function createAuthenticatedContext(address: `0x${string}`, sessionId: string): ServerContext {
   return {
     callerAddress: address,
     isAuthenticated: true,
@@ -76,10 +73,7 @@ function createAuthenticatedContext(
 /**
  * Create a fully registered context
  */
-function createRegisteredContext(
-  address: `0x${string}`,
-  sessionId: string
-): ServerContext {
+function createRegisteredContext(address: `0x${string}`, sessionId: string): ServerContext {
   return {
     callerAddress: address,
     isAuthenticated: true,
@@ -185,52 +179,57 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
       console.log('Authenticated: register_agent available, submit_work requires registration');
     });
 
-    test('Test 3: Fully registered capabilities check', async () => {
-      console.log('\n--- Test 3: Fully registered capabilities check ---\n');
+    test(
+      'Test 3: Fully registered capabilities check',
+      async () => {
+        console.log('\n--- Test 3: Fully registered capabilities check ---\n');
 
-      // Ensure agent is registered
-      const isRegistered = await checkAgentRegistered(agentWallet.address);
-      if (!isRegistered) {
-        console.log('Registering agent first...');
-        const profileResult = await registerAgentTool.handler(
-          {
-            name: `E2E Discovery Test Agent ${Date.now()}`,
-            description: 'Test agent for discovery tools',
-            skills: ['testing'],
-            preferredTaskTypes: ['code'],
-          },
-          { callerAddress: agentWallet.address }
+        // Ensure agent is registered
+        const isRegistered = await checkAgentRegistered(agentWallet.address);
+        if (!isRegistered) {
+          console.log('Registering agent first...');
+          const profileResult = await registerAgentTool.handler(
+            {
+              name: `E2E Discovery Test Agent ${Date.now()}`,
+              description: 'Test agent for discovery tools',
+              skills: ['testing'],
+              preferredTaskTypes: ['code'],
+            },
+            { callerAddress: agentWallet.address }
+          );
+          await registerAgentOnChain(agentWallet, profileResult.profileCid);
+        }
+
+        const context = createRegisteredContext(agentWallet.address, agentSessionId);
+        const result = await getCapabilitiesHandler({}, context);
+
+        console.log(`Access level: ${result.currentAccess.level}`);
+        console.log(`Is registered: ${result.currentAccess.isRegistered}`);
+
+        // Check access level
+        expect(result.currentAccess.level).toBe('registered');
+        expect(result.currentAccess.isRegistered).toBe(true);
+
+        // Check all tools are available
+        const unavailableTools = result.tools.filter((t) => !t.available);
+        console.log(`Unavailable tools: ${unavailableTools.length}`);
+
+        // All tools should be available for registered users
+        for (const tool of result.tools) {
+          expect(tool.available).toBe(true);
+        }
+
+        // Check nextSteps mentions browsing tasks
+        const hasBrowseStep = result.nextSteps.some(
+          (step) =>
+            step.toLowerCase().includes('list_tasks') || step.toLowerCase().includes('browse')
         );
-        await registerAgentOnChain(agentWallet, profileResult.profileCid);
-      }
+        expect(hasBrowseStep).toBe(true);
 
-      const context = createRegisteredContext(agentWallet.address, agentSessionId);
-      const result = await getCapabilitiesHandler({}, context);
-
-      console.log(`Access level: ${result.currentAccess.level}`);
-      console.log(`Is registered: ${result.currentAccess.isRegistered}`);
-
-      // Check access level
-      expect(result.currentAccess.level).toBe('registered');
-      expect(result.currentAccess.isRegistered).toBe(true);
-
-      // Check all tools are available
-      const unavailableTools = result.tools.filter((t) => !t.available);
-      console.log(`Unavailable tools: ${unavailableTools.length}`);
-
-      // All tools should be available for registered users
-      for (const tool of result.tools) {
-        expect(tool.available).toBe(true);
-      }
-
-      // Check nextSteps mentions browsing tasks
-      const hasBrowseStep = result.nextSteps.some((step) =>
-        step.toLowerCase().includes('list_tasks') || step.toLowerCase().includes('browse')
-      );
-      expect(hasBrowseStep).toBe(true);
-
-      console.log('All tools available for registered user');
-    }, TEST_TIMEOUT);
+        console.log('All tools available for registered user');
+      },
+      TEST_TIMEOUT
+    );
 
     test('Test 4: Category filter works', async () => {
       console.log('\n--- Test 4: Category filter works ---\n');
@@ -316,8 +315,8 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
       const hasCreateTool = createWorkflow!.steps.some(
         (s) => s.tool === 'create_task' || s.description?.includes('createTask')
       );
-      const mentionsBounty = createWorkflow!.steps.some(
-        (s) => s.description?.toLowerCase().includes('bounty')
+      const mentionsBounty = createWorkflow!.steps.some((s) =>
+        s.description?.toLowerCase().includes('bounty')
       );
 
       expect(hasCreateTool).toBe(true);
@@ -419,8 +418,7 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
       const hasHeading = content!.includes('# ') || content!.includes('Agent');
       const mentionsSubmitWork =
         content!.includes('submit_work') || content!.includes('submitWork');
-      const mentionsRegister =
-        content!.includes('register_agent') || content!.includes('Register');
+      const mentionsRegister = content!.includes('register_agent') || content!.includes('Register');
 
       expect(hasHeading).toBe(true);
       expect(mentionsSubmitWork).toBe(true);
