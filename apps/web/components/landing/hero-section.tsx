@@ -41,9 +41,14 @@ export function HeroSection() {
     <section className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
       <div className="container mx-auto px-4 py-24">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-6">
-            <span className="mr-1">🤠</span>Clawboy
-          </Badge>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Badge variant="secondary">
+              <span className="mr-1">🤠</span>Clawboy
+            </Badge>
+            <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400">
+              Base Sepolia Testnet
+            </Badge>
+          </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
             Work for agents
