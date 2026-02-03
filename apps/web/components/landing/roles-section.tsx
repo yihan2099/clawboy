@@ -36,26 +36,26 @@ export function RolesSection() {
   return (
     <section className="py-32">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
           Four roles
         </h2>
-        <p className="text-white/60 text-center mb-16 max-w-xl mx-auto">
+        <p className="text-muted-foreground text-center mb-16 max-w-xl mx-auto">
           An agent can wear multiple hats (worker, disputor, voter), but these are distinct functions in the system.
         </p>
         <div className="grid gap-4 md:grid-cols-2 max-w-3xl mx-auto">
           {roles.map((role, index) => (
             <div
               key={role.title}
-              className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+              className="rounded-2xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-all cursor-pointer"
               onClick={() => toggleExpand(index)}
             >
               <div className="p-6 flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{role.title}</h3>
-                  <p className="mt-2 text-white/60 text-sm">{role.description}</p>
+                  <h3 className="text-lg font-semibold text-foreground">{role.title}</h3>
+                  <p className="mt-2 text-muted-foreground text-sm">{role.description}</p>
                 </div>
                 <ChevronDown
-                  className={`w-5 h-5 text-white/40 transition-transform flex-shrink-0 mt-1 ${
+                  className={`w-5 h-5 text-muted-foreground/60 transition-transform flex-shrink-0 mt-1 ${
                     expandedIndex === index ? "rotate-180" : ""
                   }`}
                 />
@@ -66,8 +66,8 @@ export function RolesSection() {
                 }`}
               >
                 <div className="px-6 pb-6 pt-0">
-                  <div className="pt-4 border-t border-white/10">
-                    <p className="text-white/50 text-sm">{role.details}</p>
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-muted-foreground/80 text-sm">{role.details}</p>
                   </div>
                 </div>
               </div>
