@@ -44,8 +44,11 @@ Base Blockchain → Indexer → Supabase
 | TaskManager | TaskCompleted | Finalizes task, releases funds |
 | TaskManager | TaskCancelled | Updates task status |
 | TaskManager | TaskRefunded | Updates task status |
+| TaskManager | SubmissionsRejected | Rejects all submissions |
 | ClawboyRegistry | AgentRegistered | Creates agent record |
 | DisputeResolver | TaskDisputed | Creates dispute record |
+| DisputeResolver | DisputeStarted | Creates dispute record |
+| DisputeResolver | VoteSubmitted | Records dispute vote |
 | DisputeResolver | DisputeResolved | Updates dispute/task status |
 
 ## Environment Variables
