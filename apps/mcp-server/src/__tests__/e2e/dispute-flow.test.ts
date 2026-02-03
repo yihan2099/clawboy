@@ -74,6 +74,7 @@ function createMockContext(address: `0x${string}`, sessionId: string): ServerCon
 const TEST_BOUNTY_ETH = '0.002'; // Higher bounty to ensure minimum stake is meaningful
 const INDEXER_SYNC_WAIT_MS = 15000;
 const CHAIN_ID = 84532;
+const TEST_TIMEOUT = 60000; // 60 seconds for on-chain tests
 
 // Environment variables
 const CREATOR_PRIVATE_KEY = process.env.E2E_CREATOR_PRIVATE_KEY as `0x${string}` | undefined;
@@ -323,130 +324,152 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     expect(voterSessionId).toBeDefined();
   });
 
-  test('Step 2: Ensure all agents are registered', async () => {
-    console.log('\n--- Step 2: Agent Registration Check ---\n');
+  test(
+    'Step 2: Ensure all agents are registered',
+    async () => {
+      console.log('\n--- Step 2: Agent Registration Check ---\n');
 
-    // Check and register agent if needed
-    const agentRegistered = await checkAgentRegistered(agentWallet.address);
-    console.log(`Agent registered: ${agentRegistered}`);
+      // Check and register agent if needed
+      const agentRegistered = await checkAgentRegistered(agentWallet.address);
+      console.log(`Agent registered: ${agentRegistered}`);
 
-    if (!agentRegistered) {
-      console.log('Registering agent...');
-      const profileResult = await registerAgentTool.handler(
+      if (!agentRegistered) {
+        console.log('Registering agent...');
+        const profileResult = await registerAgentTool.handler(
+          {
+            name: `E2E Test Agent ${Date.now()}`,
+            description: 'Test agent for dispute flow',
+            skills: ['testing'],
+            preferredTaskTypes: ['code'],
+          },
+          { callerAddress: agentWallet.address }
+        );
+        await registerAgentOnChain(agentWallet, profileResult.profileCid);
+        await sleep(3000); // Wait for state propagation
+      }
+
+      // Check and register voter if needed
+      const voterRegistered = await checkAgentRegistered(voterWallet.address);
+      console.log(`Voter registered: ${voterRegistered}`);
+
+      if (!voterRegistered) {
+        console.log('Registering voter...');
+        const profileResult = await registerAgentTool.handler(
+          {
+            name: `E2E Test Voter ${Date.now()}`,
+            description: 'Test voter for dispute flow',
+            skills: ['review'],
+            preferredTaskTypes: ['document'],
+          },
+          { callerAddress: voterWallet.address }
+        );
+        await registerAgentOnChain(voterWallet, profileResult.profileCid);
+        await sleep(3000); // Wait for state propagation
+      }
+
+      // Verify both are registered
+      expect(await checkAgentRegistered(agentWallet.address)).toBe(true);
+      expect(await checkAgentRegistered(voterWallet.address)).toBe(true);
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Step 3: Create task and submit work',
+    async () => {
+      console.log('\n--- Step 3: Create Task & Submit Work ---\n');
+
+      // Create task specification
+      const taskResult = await createTaskTool.handler(
         {
-          name: `E2E Test Agent ${Date.now()}`,
-          description: 'Test agent for dispute flow',
-          skills: ['testing'],
-          preferredTaskTypes: ['code'],
+          title: `E2E Dispute Test Task ${Date.now()}`,
+          description: 'Task for testing dispute resolution flow',
+          deliverables: [
+            {
+              type: 'document' as const,
+              description: 'Test deliverable',
+              format: 'text',
+            },
+          ],
+          bountyAmount: TEST_BOUNTY_ETH,
+          tags: ['test', 'dispute'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      // Create task on-chain
+      const { hash, taskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        TEST_BOUNTY_ETH
+      );
+      chainTaskId = taskId;
+      console.log(`Task created: ${chainTaskId}`);
+
+      // Wait for state propagation
+      await sleep(3000);
+
+      // Wait for indexer
+      console.log('Waiting for indexer sync...');
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
+      dbTaskId = dbTask!.id;
+      console.log(`Database task ID: ${dbTaskId}`);
+
+      // Submit work from agent
+      const submitResult = await submitWorkTool.handler(
+        {
+          taskId: dbTaskId,
+          summary: 'Test submission for dispute flow',
+          description: 'This submission will be disputed',
+          deliverables: [
+            {
+              type: 'document' as const,
+              description: 'Test output',
+              url: 'https://example.com/test',
+            },
+          ],
         },
         { callerAddress: agentWallet.address }
       );
-      await registerAgentOnChain(agentWallet, profileResult.profileCid);
-    }
 
-    // Check and register voter if needed
-    const voterRegistered = await checkAgentRegistered(voterWallet.address);
-    console.log(`Voter registered: ${voterRegistered}`);
+      await submitWorkOnChain(agentWallet, chainTaskId, submitResult.submissionCid);
+      console.log('Work submitted on-chain');
 
-    if (!voterRegistered) {
-      console.log('Registering voter...');
-      const profileResult = await registerAgentTool.handler(
-        {
-          name: `E2E Test Voter ${Date.now()}`,
-          description: 'Test voter for dispute flow',
-          skills: ['review'],
-          preferredTaskTypes: ['document'],
-        },
-        { callerAddress: voterWallet.address }
-      );
-      await registerAgentOnChain(voterWallet, profileResult.profileCid);
-    }
+      expect(chainTaskId).toBeGreaterThan(0n);
+      expect(dbTaskId).toBeDefined();
+    },
+    TEST_TIMEOUT
+  );
 
-    // Verify both are registered
-    expect(await checkAgentRegistered(agentWallet.address)).toBe(true);
-    expect(await checkAgentRegistered(voterWallet.address)).toBe(true);
-  });
+  test(
+    'Step 4: Select winner (starts challenge window)',
+    async () => {
+      console.log('\n--- Step 4: Select Winner ---\n');
 
-  test('Step 3: Create task and submit work', async () => {
-    console.log('\n--- Step 3: Create Task & Submit Work ---\n');
+      // Select agent as winner
+      const txHash = await selectWinnerOnChain(creatorWallet, chainTaskId, agentWallet.address);
+      console.log(`Winner selected: ${txHash}`);
 
-    // Create task specification
-    const taskResult = await createTaskTool.handler(
-      {
-        title: `E2E Dispute Test Task ${Date.now()}`,
-        description: 'Task for testing dispute resolution flow',
-        deliverables: [
-          {
-            type: 'document' as const,
-            description: 'Test deliverable',
-            format: 'text',
-          },
-        ],
-        bountyAmount: TEST_BOUNTY_ETH,
-        tags: ['test', 'dispute'],
-      },
-      { callerAddress: creatorWallet.address }
-    );
+      // Wait for state propagation
+      await sleep(3000);
 
-    // Create task on-chain
-    const { hash, taskId } = await createTaskOnChain(
-      creatorWallet,
-      taskResult.specificationCid,
-      TEST_BOUNTY_ETH
-    );
-    chainTaskId = taskId;
-    console.log(`Task created: ${chainTaskId}`);
+      // Verify task is in review
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`Task status: ${taskStatusToString(onChainTask.status)}`);
+      console.log(`Selected winner: ${onChainTask.selectedWinner}`);
 
-    // Wait for indexer
-    console.log('Waiting for indexer sync...');
-    const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
-    dbTaskId = dbTask!.id;
-    console.log(`Database task ID: ${dbTaskId}`);
+      expect(onChainTask.status).toBe(TaskStatus.InReview);
+      expect(onChainTask.selectedWinner.toLowerCase()).toBe(agentWallet.address.toLowerCase());
 
-    // Submit work from agent
-    const submitResult = await submitWorkTool.handler(
-      {
-        taskId: dbTaskId,
-        summary: 'Test submission for dispute flow',
-        description: 'This submission will be disputed',
-        deliverables: [
-          {
-            type: 'document' as const,
-            description: 'Test output',
-            url: 'https://example.com/test',
-          },
-        ],
-      },
-      { callerAddress: agentWallet.address }
-    );
+      // Wait for indexer
+      await waitForTaskStatus(chainTaskId, 'in_review', INDEXER_SYNC_WAIT_MS);
+    },
+    TEST_TIMEOUT
+  );
 
-    await submitWorkOnChain(agentWallet, chainTaskId, submitResult.submissionCid);
-    console.log('Work submitted on-chain');
-
-    expect(chainTaskId).toBeGreaterThan(0n);
-    expect(dbTaskId).toBeDefined();
-  });
-
-  test('Step 4: Select winner (starts challenge window)', async () => {
-    console.log('\n--- Step 4: Select Winner ---\n');
-
-    // Select agent as winner
-    const txHash = await selectWinnerOnChain(creatorWallet, chainTaskId, agentWallet.address);
-    console.log(`Winner selected: ${txHash}`);
-
-    // Verify task is in review
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log(`Task status: ${taskStatusToString(onChainTask.status)}`);
-    console.log(`Selected winner: ${onChainTask.selectedWinner}`);
-
-    expect(onChainTask.status).toBe(TaskStatus.InReview);
-    expect(onChainTask.selectedWinner.toLowerCase()).toBe(agentWallet.address.toLowerCase());
-
-    // Wait for indexer
-    await waitForTaskStatus(chainTaskId, 'in_review', INDEXER_SYNC_WAIT_MS);
-  });
-
-  test('Step 5: Start dispute via MCP tool (validation)', async () => {
+  test(
+    'Step 5: Start dispute via MCP tool (validation)',
+    async () => {
     console.log('\n--- Step 5: Start Dispute (MCP Validation) ---\n');
 
     // Use MCP tool to validate and get required stake

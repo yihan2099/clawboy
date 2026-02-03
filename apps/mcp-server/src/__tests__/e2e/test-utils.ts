@@ -318,28 +318,28 @@ export async function getTaskFromChain(taskId: bigint): Promise<{
     args: [taskId],
   });
 
-  // Updated struct mapping for competitive model
-  const task = result as unknown as readonly [
-    bigint,           // id
-    `0x${string}`,    // creator
-    number,           // status
-    bigint,           // bountyAmount
-    `0x${string}`,    // bountyToken
-    string,           // specificationCid
-    `0x${string}`,    // selectedWinner
-    bigint,           // selectedAt
-    bigint,           // challengeDeadline
-    bigint,           // deadline
-    bigint            // createdAtBlock
-  ];
+  // viem returns tuple as object with named properties matching ABI
+  const task = result as {
+    id: bigint;
+    creator: `0x${string}`;
+    status: number;
+    bountyAmount: bigint;
+    bountyToken: `0x${string}`;
+    specificationCid: string;
+    createdAtBlock: bigint;
+    deadline: bigint;
+    selectedWinner: `0x${string}`;
+    selectedAt: bigint;
+    challengeDeadline: bigint;
+  };
 
   return {
-    id: task[0],
-    creator: task[1],
-    status: task[2],
-    bountyAmount: task[3],
-    specificationCid: task[5],
-    selectedWinner: task[6],
+    id: task.id,
+    creator: task.creator,
+    status: task.status,
+    bountyAmount: task.bountyAmount,
+    specificationCid: task.specificationCid,
+    selectedWinner: task.selectedWinner,
     submissionCount: 0n, // Would need separate call to get submission count
   };
 }
@@ -491,10 +491,9 @@ export async function getTaskChallengeDeadline(taskId: bigint): Promise<{
   isPassed: boolean;
   remainingMs: number;
 }> {
-  const task = await getTaskFromChain(taskId);
   const publicClient = getPublicClient(CHAIN_ID);
 
-  // Read challengeDeadline directly
+  // Read task to get challengeDeadline
   const result = await publicClient.readContract({
     address: addresses.taskManager,
     abi: TaskManagerABI,
@@ -502,8 +501,8 @@ export async function getTaskChallengeDeadline(taskId: bigint): Promise<{
     args: [taskId],
   });
 
-  // Task struct: {id, creator, status, bountyAmount, bountyToken, specCid, selectedWinner, selectedAt, challengeDeadline, deadline, createdAtBlock}
-  const taskData = result as unknown as { challengeDeadline: bigint };
+  // viem returns tuple as object with named properties
+  const taskData = result as { challengeDeadline: bigint };
   const challengeDeadline = taskData.challengeDeadline;
   const deadlineMs = Number(challengeDeadline) * 1000;
   const now = Date.now();

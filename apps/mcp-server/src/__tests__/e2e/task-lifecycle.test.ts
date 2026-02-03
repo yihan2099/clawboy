@@ -71,6 +71,9 @@ const shouldSkipTests =
   !CREATOR_PRIVATE_KEY.startsWith('0x') ||
   !AGENT_PRIVATE_KEY.startsWith('0x');
 
+// Longer timeout for testnet transactions (60 seconds per test)
+const TEST_TIMEOUT = 60000;
+
 describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
   // Test state shared across tests
   let creatorWallet: TestWallet;
@@ -155,249 +158,279 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
     );
   });
 
-  test('Step 2: Register agent (if not already registered)', async () => {
-    console.log('\n--- Step 2: Agent Registration ---\n');
+  test(
+    'Step 2: Register agent (if not already registered)',
+    async () => {
+      console.log('\n--- Step 2: Agent Registration ---\n');
 
-    // Check if agent is already registered on-chain
-    const isRegistered = await checkAgentRegistered(agentWallet.address);
-    console.log(`Agent already registered on-chain: ${isRegistered}`);
+      // Check if agent is already registered on-chain
+      const isRegistered = await checkAgentRegistered(agentWallet.address);
+      console.log(`Agent already registered on-chain: ${isRegistered}`);
 
-    if (isRegistered) {
-      console.log('Skipping registration - agent already registered');
-      agentProfileCid = 'existing'; // Marker for already registered
-      return;
-    }
+      if (isRegistered) {
+        console.log('Skipping registration - agent already registered');
+        agentProfileCid = 'existing'; // Marker for already registered
+        return;
+      }
 
-    // Create agent profile via MCP
-    console.log('Creating agent profile via MCP...');
-    const profileResult = await registerAgentTool.handler(
-      {
-        name: `E2E Test Agent ${Date.now()}`,
-        description: 'Automated test agent for E2E lifecycle testing',
-        skills: ['testing', 'development', 'automation'],
-        preferredTaskTypes: ['code', 'document'],
-      },
-      { callerAddress: agentWallet.address }
-    );
-
-    agentProfileCid = profileResult.profileCid;
-    console.log(`Profile CID: ${agentProfileCid}`);
-
-    // Register on-chain
-    console.log('Registering agent on-chain...');
-    const txHash = await registerAgentOnChain(agentWallet, agentProfileCid);
-    console.log(`Registration tx: ${txHash}`);
-
-    // Verify registration
-    const nowRegistered = await checkAgentRegistered(agentWallet.address);
-    console.log(`Agent registered on-chain: ${nowRegistered}`);
-
-    expect(nowRegistered).toBe(true);
-    expect(agentProfileCid).toMatch(/^Qm|^bafy/); // IPFS CID format
-  });
-
-  test('Step 3: Create task with bounty', async () => {
-    console.log('\n--- Step 3: Task Creation ---\n');
-
-    // Create task specification via MCP
-    console.log('Creating task specification via MCP...');
-    const taskResult = await createTaskTool.handler(
-      {
-        title: `E2E Test Task ${Date.now()}`,
-        description:
-          'This is an automated E2E test task. It verifies the complete task lifecycle from creation through submission.',
-        deliverables: [
-          {
-            type: 'code' as const,
-            description: 'Test output file',
-            format: 'text',
-          },
-        ],
-        bountyAmount: TEST_BOUNTY_ETH,
-        tags: ['test', 'e2e', 'automated'],
-      },
-      { callerAddress: creatorWallet.address }
-    );
-
-    taskSpecCid = taskResult.specificationCid;
-    console.log(`Specification CID: ${taskSpecCid}`);
-
-    // Create task on-chain
-    console.log(`Creating task on-chain with ${TEST_BOUNTY_ETH} ETH bounty...`);
-    const { hash, taskId } = await createTaskOnChain(
-      creatorWallet,
-      taskSpecCid,
-      TEST_BOUNTY_ETH
-    );
-    chainTaskId = taskId;
-    console.log(`Creation tx: ${hash}`);
-    console.log(`Chain task ID: ${chainTaskId}`);
-
-    // Verify on-chain state
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
-
-    expect(onChainTask.status).toBe(TaskStatus.Open);
-    expect(onChainTask.creator.toLowerCase()).toBe(
-      creatorWallet.address.toLowerCase()
-    );
-    expect(onChainTask.specificationCid).toBe(taskSpecCid);
-  });
-
-  test('Step 4: Wait for indexer sync and verify database', async () => {
-    console.log('\n--- Step 4: Indexer Sync ---\n');
-
-    console.log(
-      `Waiting for indexer to sync (up to ${INDEXER_SYNC_WAIT_MS / 1000}s)...`
-    );
-    const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
-
-    dbTaskId = dbTask!.id;
-    console.log(`Database task ID: ${dbTaskId}`);
-    console.log(`Database status: ${dbTask!.status}`);
-    console.log(`Database title: ${dbTask!.title}`);
-
-    expect(dbTask).toBeDefined();
-    expect(dbTask!.chain_task_id).toBe(chainTaskId.toString());
-    expect(dbTask!.status).toBe('open');
-    expect(dbTask!.creator_address.toLowerCase()).toBe(
-      creatorWallet.address.toLowerCase()
-    );
-  });
-
-  test('Step 5: Agent submits work (competitive - no claiming)', async () => {
-    console.log('\n--- Step 5: Work Submission ---\n');
-
-    // Submit work via MCP (uploads to IPFS, creates database record)
-    console.log('Submitting work via MCP...');
-    const submitResult = await submitWorkTool.handler(
-      {
-        taskId: dbTaskId,
-        summary: 'E2E test work completed successfully',
-        description:
-          'This submission demonstrates the complete task lifecycle workflow.',
-        deliverables: [
-          {
-            type: 'code' as const,
-            description: 'Test output',
-            url: 'https://example.com/test-output',
-          },
-        ],
-        creatorNotes: 'Automated E2E test - please approve',
-      },
-      { callerAddress: agentWallet.address }
-    );
-
-    submissionCid = submitResult.submissionCid;
-    console.log(`Submission CID: ${submissionCid}`);
-    console.log(`Is update: ${submitResult.isUpdate}`);
-
-    // Submit on-chain
-    console.log('Submitting work on-chain...');
-    const txHash = await submitWorkOnChain(
-      agentWallet,
-      chainTaskId,
-      submissionCid
-    );
-    console.log(`Submit tx: ${txHash}`);
-
-    // Verify on-chain state (task should still be open until creator selects winner)
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
-
-    // In competitive model, task stays open until deadline or creator selects
-    expect(onChainTask.status).toBe(TaskStatus.Open);
-  });
-
-  test('Step 6: Creator selects winner', async () => {
-    console.log('\n--- Step 6: Winner Selection ---\n');
-
-    // Select winner on-chain (agent who submitted)
-    console.log('Selecting winner on-chain...');
-    const txHash = await selectWinnerOnChain(
-      creatorWallet,
-      chainTaskId,
-      agentWallet.address
-    );
-    console.log(`Select winner tx: ${txHash}`);
-
-    // Verify on-chain state
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
-    console.log(`Selected winner: ${onChainTask.selectedWinner}`);
-
-    // Task should now be in review (48h challenge window)
-    expect(onChainTask.status).toBe(TaskStatus.InReview);
-    expect(onChainTask.selectedWinner.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
-
-    // Wait for indexer to sync
-    console.log('\nWaiting for indexer to sync winner selection...');
-    const dbTask = await waitForTaskStatus(
-      chainTaskId,
-      'in_review',
-      INDEXER_SYNC_WAIT_MS
-    );
-    console.log(`Database status: ${dbTask!.status}`);
-    console.log(`Database winner: ${dbTask!.winner_address}`);
-
-    expect(dbTask!.status).toBe('in_review');
-    expect(dbTask!.winner_address?.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
-  });
-
-  test('Final verification: Complete state check', async () => {
-    console.log('\n--- Final Verification ---\n');
-
-    // On-chain verification
-    const onChainTask = await getTaskFromChain(chainTaskId);
-    console.log('On-chain state:');
-    console.log(`  Task ID: ${onChainTask.id}`);
-    console.log(`  Status: ${taskStatusToString(onChainTask.status)}`);
-    console.log(`  Creator: ${onChainTask.creator}`);
-    console.log(`  Bounty: ${formatEther(onChainTask.bountyAmount)} ETH`);
-    console.log(`  Selected Winner: ${onChainTask.selectedWinner}`);
-    console.log(`  Spec CID: ${onChainTask.specificationCid}`);
-
-    // Database verification
-    const dbTask = await waitForTaskInDB(chainTaskId);
-    console.log('\nDatabase state:');
-    console.log(`  ID: ${dbTask!.id}`);
-    console.log(`  Chain ID: ${dbTask!.chain_task_id}`);
-    console.log(`  Status: ${dbTask!.status}`);
-    console.log(`  Title: ${dbTask!.title}`);
-    console.log(`  Winner: ${dbTask!.winner_address}`);
-    console.log(`  Submission Count: ${dbTask!.submission_count}`);
-
-    // Check challenge deadline
-    const deadline = await getTaskChallengeDeadline(chainTaskId);
-    console.log('\nChallenge window:');
-    console.log(`  Deadline: ${deadline.deadline.toISOString()}`);
-    console.log(`  Passed: ${deadline.isPassed}`);
-    if (!deadline.isPassed) {
-      const hours = Math.floor(deadline.remainingMs / (60 * 60 * 1000));
-      const minutes = Math.floor(
-        (deadline.remainingMs % (60 * 60 * 1000)) / (60 * 1000)
+      // Create agent profile via MCP
+      console.log('Creating agent profile via MCP...');
+      const profileResult = await registerAgentTool.handler(
+        {
+          name: `E2E Test Agent ${Date.now()}`,
+          description: 'Automated test agent for E2E lifecycle testing',
+          skills: ['testing', 'development', 'automation'],
+          preferredTaskTypes: ['code', 'document'],
+        },
+        { callerAddress: agentWallet.address }
       );
-      console.log(`  Remaining: ${hours}h ${minutes}m`);
-    }
 
-    // Assertions
-    expect(onChainTask.status).toBe(TaskStatus.InReview);
-    expect(dbTask!.status).toBe('in_review');
-    expect(dbTask!.winner_address?.toLowerCase()).toBe(
-      agentWallet.address.toLowerCase()
-    );
+      agentProfileCid = profileResult.profileCid;
+      console.log(`Profile CID: ${agentProfileCid}`);
 
-    console.log('\n========================================');
-    console.log('E2E Test Complete!');
-    console.log('========================================');
-    console.log('\nTask is now in 48h challenge window.');
-    console.log('After challenge period, call finalizeTask() to complete.');
-    console.log('========================================\n');
-  });
+      // Register on-chain
+      console.log('Registering agent on-chain...');
+      const txHash = await registerAgentOnChain(agentWallet, agentProfileCid);
+      console.log(`Registration tx: ${txHash}`);
+
+      // Verify registration
+      const nowRegistered = await checkAgentRegistered(agentWallet.address);
+      console.log(`Agent registered on-chain: ${nowRegistered}`);
+
+      expect(nowRegistered).toBe(true);
+      expect(agentProfileCid).toMatch(/^Qm|^bafy/); // IPFS CID format
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Step 3: Create task with bounty',
+    async () => {
+      console.log('\n--- Step 3: Task Creation ---\n');
+
+      // Create task specification via MCP
+      console.log('Creating task specification via MCP...');
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E Test Task ${Date.now()}`,
+          description:
+            'This is an automated E2E test task. It verifies the complete task lifecycle from creation through submission.',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Test output file',
+              format: 'text',
+            },
+          ],
+          bountyAmount: TEST_BOUNTY_ETH,
+          tags: ['test', 'e2e', 'automated'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      taskSpecCid = taskResult.specificationCid;
+      console.log(`Specification CID: ${taskSpecCid}`);
+
+      // Create task on-chain
+      console.log(`Creating task on-chain with ${TEST_BOUNTY_ETH} ETH bounty...`);
+      const { hash, taskId } = await createTaskOnChain(
+        creatorWallet,
+        taskSpecCid,
+        TEST_BOUNTY_ETH
+      );
+      chainTaskId = taskId;
+      console.log(`Creation tx: ${hash}`);
+      console.log(`Chain task ID: ${chainTaskId}`);
+
+      // Wait for state to propagate (RPC can be slow to update)
+      await sleep(3000);
+
+      // Verify on-chain state
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+
+      expect(onChainTask.status).toBe(TaskStatus.Open);
+      expect(onChainTask.creator.toLowerCase()).toBe(
+        creatorWallet.address.toLowerCase()
+      );
+      expect(onChainTask.specificationCid).toBe(taskSpecCid);
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Step 4: Wait for indexer sync and verify database',
+    async () => {
+      console.log('\n--- Step 4: Indexer Sync ---\n');
+
+      console.log(
+        `Waiting for indexer to sync (up to ${INDEXER_SYNC_WAIT_MS / 1000}s)...`
+      );
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
+
+      dbTaskId = dbTask!.id;
+      console.log(`Database task ID: ${dbTaskId}`);
+      console.log(`Database status: ${dbTask!.status}`);
+      console.log(`Database title: ${dbTask!.title}`);
+
+      expect(dbTask).toBeDefined();
+      expect(dbTask!.chain_task_id).toBe(chainTaskId.toString());
+      expect(dbTask!.status).toBe('open');
+      expect(dbTask!.creator_address.toLowerCase()).toBe(
+        creatorWallet.address.toLowerCase()
+      );
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Step 5: Agent submits work (competitive - no claiming)',
+    async () => {
+      console.log('\n--- Step 5: Work Submission ---\n');
+
+      // Submit work via MCP (uploads to IPFS, creates database record)
+      console.log('Submitting work via MCP...');
+      const submitResult = await submitWorkTool.handler(
+        {
+          taskId: dbTaskId,
+          summary: 'E2E test work completed successfully',
+          description:
+            'This submission demonstrates the complete task lifecycle workflow.',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Test output',
+              url: 'https://example.com/test-output',
+            },
+          ],
+          creatorNotes: 'Automated E2E test - please approve',
+        },
+        { callerAddress: agentWallet.address }
+      );
+
+      submissionCid = submitResult.submissionCid;
+      console.log(`Submission CID: ${submissionCid}`);
+      console.log(`Is update: ${submitResult.isUpdate}`);
+
+      // Submit on-chain
+      console.log('Submitting work on-chain...');
+      const txHash = await submitWorkOnChain(
+        agentWallet,
+        chainTaskId,
+        submissionCid
+      );
+      console.log(`Submit tx: ${txHash}`);
+
+      // Verify on-chain state (task should still be open until creator selects winner)
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+
+      // In competitive model, task stays open until deadline or creator selects
+      expect(onChainTask.status).toBe(TaskStatus.Open);
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Step 6: Creator selects winner',
+    async () => {
+      console.log('\n--- Step 6: Winner Selection ---\n');
+
+      // Select winner on-chain (agent who submitted)
+      console.log('Selecting winner on-chain...');
+      const txHash = await selectWinnerOnChain(
+        creatorWallet,
+        chainTaskId,
+        agentWallet.address
+      );
+      console.log(`Select winner tx: ${txHash}`);
+
+      // Wait for state to propagate (RPC can be slow to update)
+      await sleep(3000);
+
+      // Verify on-chain state
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log(`On-chain status: ${taskStatusToString(onChainTask.status)}`);
+      console.log(`Selected winner: ${onChainTask.selectedWinner}`);
+
+      // Task should now be in review (48h challenge window)
+      expect(onChainTask.status).toBe(TaskStatus.InReview);
+      expect(onChainTask.selectedWinner.toLowerCase()).toBe(
+        agentWallet.address.toLowerCase()
+      );
+
+      // Wait for indexer to sync
+      console.log('\nWaiting for indexer to sync winner selection...');
+      const dbTask = await waitForTaskStatus(
+        chainTaskId,
+        'in_review',
+        INDEXER_SYNC_WAIT_MS
+      );
+      console.log(`Database status: ${dbTask!.status}`);
+      console.log(`Database winner: ${dbTask!.winner_address}`);
+
+      expect(dbTask!.status).toBe('in_review');
+      expect(dbTask!.winner_address?.toLowerCase()).toBe(
+        agentWallet.address.toLowerCase()
+      );
+    },
+    TEST_TIMEOUT
+  );
+
+  test(
+    'Final verification: Complete state check',
+    async () => {
+      console.log('\n--- Final Verification ---\n');
+
+      // On-chain verification
+      const onChainTask = await getTaskFromChain(chainTaskId);
+      console.log('On-chain state:');
+      console.log(`  Task ID: ${onChainTask.id}`);
+      console.log(`  Status: ${taskStatusToString(onChainTask.status)}`);
+      console.log(`  Creator: ${onChainTask.creator}`);
+      console.log(`  Bounty: ${formatEther(onChainTask.bountyAmount)} ETH`);
+      console.log(`  Selected Winner: ${onChainTask.selectedWinner}`);
+      console.log(`  Spec CID: ${onChainTask.specificationCid}`);
+
+      // Database verification
+      const dbTask = await waitForTaskInDB(chainTaskId);
+      console.log('\nDatabase state:');
+      console.log(`  ID: ${dbTask!.id}`);
+      console.log(`  Chain ID: ${dbTask!.chain_task_id}`);
+      console.log(`  Status: ${dbTask!.status}`);
+      console.log(`  Title: ${dbTask!.title}`);
+      console.log(`  Winner: ${dbTask!.winner_address}`);
+      console.log(`  Submission Count: ${dbTask!.submission_count}`);
+
+      // Check challenge deadline
+      const deadline = await getTaskChallengeDeadline(chainTaskId);
+      console.log('\nChallenge window:');
+      console.log(`  Deadline: ${deadline.deadline.toISOString()}`);
+      console.log(`  Passed: ${deadline.isPassed}`);
+      if (!deadline.isPassed) {
+        const hours = Math.floor(deadline.remainingMs / (60 * 60 * 1000));
+        const minutes = Math.floor(
+          (deadline.remainingMs % (60 * 60 * 1000)) / (60 * 1000)
+        );
+        console.log(`  Remaining: ${hours}h ${minutes}m`);
+      }
+
+      // Assertions
+      expect(onChainTask.status).toBe(TaskStatus.InReview);
+      expect(dbTask!.status).toBe('in_review');
+      expect(dbTask!.winner_address?.toLowerCase()).toBe(
+        agentWallet.address.toLowerCase()
+      );
+
+      console.log('\n========================================');
+      console.log('E2E Test Complete!');
+      console.log('========================================');
+      console.log('\nTask is now in 48h challenge window.');
+      console.log('After challenge period, call finalizeTask() to complete.');
+      console.log('========================================\n');
+    },
+    TEST_TIMEOUT
+  );
 
   // Note: The following test can only be run after the 48h challenge period
   // This is commented out because it requires waiting 48h on testnet

@@ -28,14 +28,25 @@ bun run dev:indexer
 
 ### 3. Environment Variables
 
-Set the private keys for your test wallets:
+Use the pre-configured test wallets in `.env.e2e`:
 
 ```bash
-export E2E_CREATOR_PRIVATE_KEY="0x..."
-export E2E_AGENT_PRIVATE_KEY="0x..."
+# From repo root
+source apps/mcp-server/.env.e2e
+
+# Or export all at once
+export $(cat apps/mcp-server/.env.e2e | grep -v '^#' | xargs)
 ```
 
-Or create a `.env.test` file in the mcp-server directory.
+The `.env.e2e` file contains funded testnet wallets:
+- **Creator**: `0xb2eD80C490E5418f716530F391FD4348CA91bFc2` (~0.01+ ETH)
+- **Agent**: `0x4730a8BbcB2792520a7E2fb82EB11f09737E5595` (~0.01+ ETH)
+- **Voter**: `0x4a9E136a45Bbf5Bf6DEa786765cA816A1DBFb247` (~0.005 ETH)
+
+To refund wallets, use the deployer key from `env.sepolia`:
+```bash
+cast send <WALLET_ADDRESS> --value 0.01ether --rpc-url https://sepolia.base.org --private-key $DEPLOYER_PRIVATE_KEY
+```
 
 ## Running Tests
 
