@@ -142,26 +142,32 @@ export async function getTaskById(id: string): Promise<TaskRow | null> {
 
 /**
  * Get a task by its on-chain task ID
+ * @param chainTaskId - The on-chain task ID
+ * @param chainId - Optional chain ID to filter by (for multi-chain support)
  */
 export async function getTaskByChainId(
-  chainTaskId: string
+  chainTaskId: string,
+  chainId?: number
 ): Promise<TaskRow | null> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('tasks')
     .select('*')
-    .eq('chain_task_id', chainTaskId)
-    .single();
+    .eq('chain_task_id', chainTaskId);
+
+  // If chain_id is provided, filter by it
+  if (chainId !== undefined) {
+    query = query.eq('chain_id', chainId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
     throw new Error(`Failed to get task: ${error.message}`);
   }
 
-  return data as TaskRow;
+  return data as TaskRow | null;
 }
 
 /**

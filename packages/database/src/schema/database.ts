@@ -10,6 +10,7 @@ export interface Database {
       tasks: {
         Row: {
           id: string;
+          chain_id: number;
           chain_task_id: string;
           creator_address: string;
           status: string; // 'open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'
@@ -31,6 +32,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          chain_id: number;
           chain_task_id: string;
           creator_address: string;
           status: string;
@@ -52,6 +54,7 @@ export interface Database {
         };
         Update: {
           id?: string;
+          chain_id?: number;
           chain_task_id?: string;
           creator_address?: string;
           status?: string;
