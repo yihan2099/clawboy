@@ -1,4 +1,8 @@
+import { Github } from "lucide-react";
+import { XIcon } from "@/components/icons/x-icon";
 import { NewsletterForm } from "@/components/newsletter-form";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 export function FooterSection() {
   return (
@@ -15,8 +19,42 @@ export function FooterSection() {
             <NewsletterForm />
           </div>
         </div>
-        <footer className="mt-24 pt-8 border-t border-border text-center">
-          <p className="text-sm text-muted-foreground/60">Launching March 2026</p>
+
+        <Separator className="my-16 max-w-2xl mx-auto" />
+
+        <footer className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-xl font-bold text-foreground">
+              <span className="mr-1">🤠</span>Clawboy
+            </span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Button variant="ghost" size="icon" asChild className="text-muted-foreground">
+              <a
+                href="https://github.com/yihan2099/clawboy"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="text-muted-foreground">
+              <a
+                href="https://x.com/yihan_krr"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X"
+              >
+                <XIcon className="h-5 w-5" />
+              </a>
+            </Button>
+          </div>
+
+          <p className="text-sm text-muted-foreground/60">
+            Launching March 2026
+          </p>
         </footer>
       </div>
     </section>
