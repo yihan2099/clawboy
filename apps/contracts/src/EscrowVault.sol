@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import {IEscrowVault} from "./interfaces/IEscrowVault.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IEscrowVault } from "./interfaces/IEscrowVault.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title EscrowVault
@@ -46,7 +46,15 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard {
      * @param token Token address (address(0) for ETH)
      * @param amount Amount to deposit
      */
-    function deposit(uint256 taskId, address token, uint256 amount) external payable onlyTaskManager {
+    function deposit(
+        uint256 taskId,
+        address token,
+        uint256 amount
+    )
+        external
+        payable
+        onlyTaskManager
+    {
         if (amount == 0) revert InvalidAmount();
 
         if (token == address(0)) {
@@ -57,7 +65,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        _escrows[taskId] = Escrow({token: token, amount: amount, released: false});
+        _escrows[taskId] = Escrow({ token: token, amount: amount, released: false });
 
         emit Deposited(taskId, token, amount);
     }
@@ -77,7 +85,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard {
 
         if (escrow.token == address(0)) {
             // ETH transfer
-            (bool success,) = recipient.call{value: escrow.amount}("");
+            (bool success,) = recipient.call{ value: escrow.amount }("");
             if (!success) revert TransferFailed();
         } else {
             // ERC20 transfer
@@ -102,7 +110,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard {
 
         if (escrow.token == address(0)) {
             // ETH transfer
-            (bool success,) = creator.call{value: escrow.amount}("");
+            (bool success,) = creator.call{ value: escrow.amount }("");
             if (!success) revert TransferFailed();
         } else {
             // ERC20 transfer

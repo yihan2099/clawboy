@@ -8,12 +8,12 @@ pragma solidity ^0.8.24;
  */
 interface ITaskManager {
     enum TaskStatus {
-        Open,           // Accepting submissions
-        InReview,       // Creator reviewing submissions (48h before selection final)
-        Completed,      // Winner selected, bounty released
-        Disputed,       // Under community vote
-        Refunded,       // No winner, bounty returned to creator
-        Cancelled       // Creator cancelled before any submissions
+        Open, // Accepting submissions
+        InReview, // Creator reviewing submissions (48h before selection final)
+        Completed, // Winner selected, bounty released
+        Disputed, // Under community vote
+        Refunded, // No winner, bounty returned to creator
+        Cancelled // Creator cancelled before any submissions
     }
 
     struct Submission {
@@ -31,10 +31,10 @@ interface ITaskManager {
         address bountyToken;
         string specificationCid;
         uint256 createdAtBlock;
-        uint256 deadline;           // Task deadline for submissions
-        address selectedWinner;     // Winner selected by creator
-        uint256 selectedAt;         // When winner was selected
-        uint256 challengeDeadline;  // When challenge window ends (selectedAt + 48h)
+        uint256 deadline; // Task deadline for submissions
+        address selectedWinner; // Winner selected by creator
+        uint256 selectedAt; // When winner was selected
+        uint256 challengeDeadline; // When challenge window ends (selectedAt + 48h)
     }
 
     // Task lifecycle events
@@ -55,10 +55,7 @@ interface ITaskManager {
 
     // Submission events
     event WorkSubmitted(
-        uint256 indexed taskId,
-        address indexed agent,
-        string submissionCid,
-        uint256 submissionIndex
+        uint256 indexed taskId, address indexed agent, string submissionCid, uint256 submissionIndex
     );
 
     event SubmissionUpdated(
@@ -69,30 +66,14 @@ interface ITaskManager {
     );
 
     // Selection events
-    event WinnerSelected(
-        uint256 indexed taskId,
-        address indexed winner,
-        uint256 challengeDeadline
-    );
+    event WinnerSelected(uint256 indexed taskId, address indexed winner, uint256 challengeDeadline);
 
-    event AllSubmissionsRejected(
-        uint256 indexed taskId,
-        address indexed creator,
-        string reason
-    );
+    event AllSubmissionsRejected(uint256 indexed taskId, address indexed creator, string reason);
 
     // Dispute events
-    event TaskDisputed(
-        uint256 indexed taskId,
-        address indexed disputer,
-        uint256 disputeId
-    );
+    event TaskDisputed(uint256 indexed taskId, address indexed disputer, uint256 disputeId);
 
-    event DisputeResolved(
-        uint256 indexed taskId,
-        uint256 indexed disputeId,
-        bool disputerWon
-    );
+    event DisputeResolved(uint256 indexed taskId, uint256 indexed disputeId, bool disputerWon);
 
     // Core functions
     function createTask(
@@ -100,7 +81,10 @@ interface ITaskManager {
         address bountyToken,
         uint256 bountyAmount,
         uint256 deadline
-    ) external payable returns (uint256 taskId);
+    )
+        external
+        payable
+        returns (uint256 taskId);
 
     function cancelTask(uint256 taskId) external;
 

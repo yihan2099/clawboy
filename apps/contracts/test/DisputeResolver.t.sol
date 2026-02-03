@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import {Test, console} from "forge-std/Test.sol";
-import {TaskManager} from "../src/TaskManager.sol";
-import {EscrowVault} from "../src/EscrowVault.sol";
-import {ClawboyRegistry} from "../src/ClawboyRegistry.sol";
-import {DisputeResolver} from "../src/DisputeResolver.sol";
-import {ITaskManager} from "../src/interfaces/ITaskManager.sol";
-import {IDisputeResolver} from "../src/interfaces/IDisputeResolver.sol";
-import {IClawboyRegistry} from "../src/interfaces/IClawboyRegistry.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { TaskManager } from "../src/TaskManager.sol";
+import { EscrowVault } from "../src/EscrowVault.sol";
+import { ClawboyRegistry } from "../src/ClawboyRegistry.sol";
+import { DisputeResolver } from "../src/DisputeResolver.sol";
+import { ITaskManager } from "../src/interfaces/ITaskManager.sol";
+import { IDisputeResolver } from "../src/interfaces/IDisputeResolver.sol";
+import { IClawboyRegistry } from "../src/interfaces/IClawboyRegistry.sol";
 
 contract DisputeResolverTest is Test {
     TaskManager public taskManager;
@@ -30,7 +30,8 @@ contract DisputeResolverTest is Test {
         clawboyRegistry = new ClawboyRegistry();
 
         // Deploy EscrowVault with predicted TaskManager address
-        address predictedTaskManager = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
+        address predictedTaskManager =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
         escrowVault = new EscrowVault(predictedTaskManager);
 
         // Deploy TaskManager
@@ -71,8 +72,8 @@ contract DisputeResolverTest is Test {
         // Give voters some reputation for weighted voting
         vm.startPrank(address(taskManager));
         clawboyRegistry.updateReputation(voter1, 100); // Weight: 7 (log2(101) ~= 6.66)
-        clawboyRegistry.updateReputation(voter2, 50);  // Weight: 6 (log2(51) ~= 5.67)
-        clawboyRegistry.updateReputation(voter3, 10);  // Weight: 4 (log2(11) ~= 3.46)
+        clawboyRegistry.updateReputation(voter2, 50); // Weight: 6 (log2(51) ~= 5.67)
+        clawboyRegistry.updateReputation(voter3, 10); // Weight: 4 (log2(11) ~= 3.46)
         vm.stopPrank();
     }
 
@@ -82,11 +83,8 @@ contract DisputeResolverTest is Test {
 
     function _createTaskWithSubmission() internal returns (uint256 taskId) {
         vm.prank(creator);
-        taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -95,11 +93,8 @@ contract DisputeResolverTest is Test {
 
     function _createTaskWithMultipleSubmissions() internal returns (uint256 taskId) {
         vm.prank(creator);
-        taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -149,7 +144,7 @@ contract DisputeResolverTest is Test {
         uint256 agent1BalanceBefore = agent1.balance;
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         assertEq(disputeId, 1);
         assertEq(agent1.balance, agent1BalanceBefore - stake);
@@ -177,7 +172,7 @@ contract DisputeResolverTest is Test {
         // agent2 didn't submit, can't dispute
         vm.prank(agent2);
         vm.expectRevert(DisputeResolver.NotSubmitter.selector);
-        disputeResolver.startDispute{value: stake}(taskId);
+        disputeResolver.startDispute{ value: stake }(taskId);
     }
 
     function test_StartDispute_RevertIfInsufficientStake() public {
@@ -189,7 +184,7 @@ contract DisputeResolverTest is Test {
         // Send less than required stake
         vm.prank(agent1);
         vm.expectRevert(DisputeResolver.InsufficientStake.selector);
-        disputeResolver.startDispute{value: 0.001 ether}(taskId);
+        disputeResolver.startDispute{ value: 0.001 ether }(taskId);
     }
 
     function test_StartDispute_RevertIfNotInReview() public {
@@ -200,7 +195,7 @@ contract DisputeResolverTest is Test {
 
         vm.prank(agent1);
         vm.expectRevert(DisputeResolver.TaskNotInReview.selector);
-        disputeResolver.startDispute{value: stake}(taskId);
+        disputeResolver.startDispute{ value: stake }(taskId);
     }
 
     function test_StartDispute_RevertIfDisputeAlreadyExists() public {
@@ -213,14 +208,14 @@ contract DisputeResolverTest is Test {
 
         // First dispute succeeds
         vm.prank(agent1);
-        disputeResolver.startDispute{value: stake}(taskId);
+        disputeResolver.startDispute{ value: stake }(taskId);
 
         // Second dispute fails - task is now Disputed, not InReview
         // The DisputeAlreadyExists check happens after TaskNotInReview,
         // so we get TaskNotInReview (which is actually correct behavior)
         vm.prank(agent2);
         vm.expectRevert(DisputeResolver.TaskNotInReview.selector);
-        disputeResolver.startDispute{value: stake}(taskId);
+        disputeResolver.startDispute{ value: stake }(taskId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -235,7 +230,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // voter1 votes for disputer
         vm.prank(voter1);
@@ -257,7 +252,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // All voters vote for disputer
         vm.prank(voter1);
@@ -280,7 +275,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Unregistered voter
         address unregistered = address(0x999);
@@ -297,7 +292,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         vm.prank(voter1);
         disputeResolver.submitVote(disputeId, true);
@@ -316,7 +311,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Disputer tries to vote
         vm.prank(agent1);
@@ -336,7 +331,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Creator tries to vote
         vm.prank(creator);
@@ -352,7 +347,7 @@ contract DisputeResolverTest is Test {
 
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Warp past voting deadline (48 hours)
         vm.warp(block.timestamp + 48 hours + 1);
@@ -376,7 +371,7 @@ contract DisputeResolverTest is Test {
         uint256 agent1BalanceBefore = agent1.balance;
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // All voters vote for disputer (>60%)
         vm.prank(voter1);
@@ -425,7 +420,7 @@ contract DisputeResolverTest is Test {
         uint256 creatorBalanceBefore = creator.balance;
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // All voters vote against disputer
         vm.prank(voter1);
@@ -470,7 +465,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // No votes submitted
         vm.warp(block.timestamp + 48 hours + 1);
@@ -491,7 +486,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Get vote weights
         uint256 voter1Weight = clawboyRegistry.getVoteWeight(voter1); // ~7
@@ -527,7 +522,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Try to resolve before voting ends
         vm.expectRevert(DisputeResolver.VotingStillActive.selector);
@@ -543,7 +538,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         vm.warp(block.timestamp + 48 hours + 1);
 
@@ -569,7 +564,7 @@ contract DisputeResolverTest is Test {
 
         // agent2 disputes (they submitted but weren't selected)
         vm.prank(agent2);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Voters side with agent2 (disputer wins)
         vm.prank(voter1);
@@ -604,7 +599,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         // Get initial reputations
         uint256 voter1RepBefore = clawboyRegistry.getAgent(voter1).reputation;
@@ -650,7 +645,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         vm.prank(voter1);
         disputeResolver.submitVote(disputeId, true);
@@ -673,7 +668,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        uint256 disputeId = disputeResolver.startDispute{value: stake}(taskId);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
 
         assertEq(disputeResolver.getDisputeByTask(taskId), disputeId);
     }
@@ -688,7 +683,7 @@ contract DisputeResolverTest is Test {
         uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
 
         vm.prank(agent1);
-        disputeResolver.startDispute{value: stake}(taskId1);
+        disputeResolver.startDispute{ value: stake }(taskId1);
 
         assertEq(disputeResolver.disputeCount(), 1);
     }

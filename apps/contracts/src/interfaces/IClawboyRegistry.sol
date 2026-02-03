@@ -9,9 +9,9 @@ pragma solidity ^0.8.24;
 interface IClawboyRegistry {
     struct Agent {
         uint256 reputation;
-        uint256 tasksWon;        // Tasks where agent was selected winner
-        uint256 disputesWon;     // Disputes won by agent
-        uint256 disputesLost;    // Disputes lost by agent
+        uint256 tasksWon; // Tasks where agent was selected winner
+        uint256 disputesWon; // Disputes won by agent
+        uint256 disputesLost; // Disputes lost by agent
         string profileCid;
         uint256 registeredAt;
         bool isActive;

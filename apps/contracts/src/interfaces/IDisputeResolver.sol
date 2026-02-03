@@ -8,20 +8,20 @@ pragma solidity ^0.8.24;
  */
 interface IDisputeResolver {
     enum DisputeStatus {
-        Active,     // Accepting votes
-        Resolved,   // Voting complete, outcome determined
-        Cancelled   // Dispute cancelled (e.g., task state changed)
+        Active, // Accepting votes
+        Resolved, // Voting complete, outcome determined
+        Cancelled // Dispute cancelled (e.g., task state changed)
     }
 
     struct Dispute {
         uint256 id;
         uint256 taskId;
-        address disputer;           // Agent who raised the dispute
-        uint256 disputeStake;       // ETH staked by disputer
-        uint256 votingDeadline;     // When voting ends
+        address disputer; // Agent who raised the dispute
+        uint256 disputeStake; // ETH staked by disputer
+        uint256 votingDeadline; // When voting ends
         DisputeStatus status;
-        bool disputerWon;           // True if dispute resolved in disputer's favor
-        uint256 votesForDisputer;   // Weighted votes supporting disputer
+        bool disputerWon; // True if dispute resolved in disputer's favor
+        uint256 votesForDisputer; // Weighted votes supporting disputer
         uint256 votesAgainstDisputer; // Weighted votes against disputer
     }
 
@@ -42,10 +42,7 @@ interface IDisputeResolver {
     );
 
     event VoteSubmitted(
-        uint256 indexed disputeId,
-        address indexed voter,
-        bool supportsDisputer,
-        uint256 weight
+        uint256 indexed disputeId, address indexed voter, bool supportsDisputer, uint256 weight
     );
 
     event DisputeResolved(
@@ -56,17 +53,9 @@ interface IDisputeResolver {
         uint256 votesAgainst
     );
 
-    event DisputeStakeReturned(
-        uint256 indexed disputeId,
-        address indexed disputer,
-        uint256 amount
-    );
+    event DisputeStakeReturned(uint256 indexed disputeId, address indexed disputer, uint256 amount);
 
-    event DisputeStakeSlashed(
-        uint256 indexed disputeId,
-        address indexed disputer,
-        uint256 amount
-    );
+    event DisputeStakeSlashed(uint256 indexed disputeId, address indexed disputer, uint256 amount);
 
     // Core functions
     function startDispute(uint256 taskId) external payable returns (uint256 disputeId);

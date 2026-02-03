@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import {ITaskManager} from "./interfaces/ITaskManager.sol";
-import {IEscrowVault} from "./interfaces/IEscrowVault.sol";
-import {IClawboyRegistry} from "./interfaces/IClawboyRegistry.sol";
-import {IDisputeResolver} from "./interfaces/IDisputeResolver.sol";
+import { ITaskManager } from "./interfaces/ITaskManager.sol";
+import { IEscrowVault } from "./interfaces/IEscrowVault.sol";
+import { IClawboyRegistry } from "./interfaces/IClawboyRegistry.sol";
+import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
 
 /**
  * @title TaskManager
@@ -99,7 +99,11 @@ contract TaskManager is ITaskManager {
         address bountyToken,
         uint256 bountyAmount,
         uint256 deadline
-    ) external payable returns (uint256 taskId) {
+    )
+        external
+        payable
+        returns (uint256 taskId)
+    {
         if (bountyAmount == 0) revert InsufficientBounty();
         if (deadline != 0 && deadline <= block.timestamp) revert InvalidDeadline();
 
@@ -125,7 +129,7 @@ contract TaskManager is ITaskManager {
         });
 
         // Deposit bounty to escrow
-        escrowVault.deposit{value: msg.value}(taskId, bountyToken, bountyAmount);
+        escrowVault.deposit{ value: msg.value }(taskId, bountyToken, bountyAmount);
 
         emit TaskCreated(taskId, msg.sender, bountyAmount, bountyToken, specificationCid, deadline);
     }
@@ -144,12 +148,14 @@ contract TaskManager is ITaskManager {
         if (_agentSubmissionIndex[taskId][msg.sender] != 0) revert AlreadySubmitted();
 
         uint256 submissionIndex = _submissions[taskId].length;
-        _submissions[taskId].push(Submission({
-            agent: msg.sender,
-            submissionCid: submissionCid,
-            submittedAt: block.timestamp,
-            updatedAt: block.timestamp
-        }));
+        _submissions[taskId].push(
+            Submission({
+                agent: msg.sender,
+                submissionCid: submissionCid,
+                submittedAt: block.timestamp,
+                updatedAt: block.timestamp
+            })
+        );
         _agentSubmissionIndex[taskId][msg.sender] = submissionIndex + 1; // +1 to distinguish from "not submitted"
 
         emit WorkSubmitted(taskId, msg.sender, submissionCid, submissionIndex);
@@ -303,7 +309,14 @@ contract TaskManager is ITaskManager {
      * @param disputeId The dispute ID
      * @param disputer The agent who raised the dispute
      */
-    function markDisputed(uint256 taskId, uint256 disputeId, address disputer) external onlyDisputeResolver {
+    function markDisputed(
+        uint256 taskId,
+        uint256 disputeId,
+        address disputer
+    )
+        external
+        onlyDisputeResolver
+    {
         Task storage task = _tasks[taskId];
         if (task.id == 0) revert TaskNotFound();
         if (task.status != TaskStatus.InReview) revert TaskNotInReview();
@@ -398,7 +411,11 @@ contract TaskManager is ITaskManager {
      * @param index The submission index
      * @return The submission data
      */
-    function getSubmission(uint256 taskId, uint256 index) external view returns (Submission memory) {
+    function getSubmission(uint256 taskId, uint256 index)
+        external
+        view
+        returns (Submission memory)
+    {
         return _submissions[taskId][index];
     }
 
@@ -417,7 +434,11 @@ contract TaskManager is ITaskManager {
      * @param agent The agent address
      * @return The submission index (reverts if not submitted)
      */
-    function getAgentSubmissionIndex(uint256 taskId, address agent) external view returns (uint256) {
+    function getAgentSubmissionIndex(uint256 taskId, address agent)
+        external
+        view
+        returns (uint256)
+    {
         uint256 indexPlusOne = _agentSubmissionIndex[taskId][agent];
         if (indexPlusOne == 0) revert NotSubmitted();
         return indexPlusOne - 1;

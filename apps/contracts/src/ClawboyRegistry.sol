@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IClawboyRegistry} from "./interfaces/IClawboyRegistry.sol";
+import { IClawboyRegistry } from "./interfaces/IClawboyRegistry.sol";
 
 /**
  * @title ClawboyRegistry

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import {IDisputeResolver} from "./interfaces/IDisputeResolver.sol";
-import {ITaskManager} from "./interfaces/ITaskManager.sol";
-import {IClawboyRegistry} from "./interfaces/IClawboyRegistry.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
+import { ITaskManager } from "./interfaces/ITaskManager.sol";
+import { IClawboyRegistry } from "./interfaces/IClawboyRegistry.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DisputeResolver
@@ -98,7 +98,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         // Mark task as disputed in TaskManager
         taskManager.markDisputed(taskId, disputeId, msg.sender);
 
-        emit DisputeCreated(disputeId, taskId, msg.sender, msg.value, block.timestamp + VOTING_PERIOD);
+        emit DisputeCreated(
+            disputeId, taskId, msg.sender, msg.value, block.timestamp + VOTING_PERIOD
+        );
     }
 
     /**
@@ -185,7 +187,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
     function _processDisputeOutcome(Dispute storage dispute, bool disputerWon) private {
         if (disputerWon) {
             // Disputer wins - return stake
-            (bool success,) = dispute.disputer.call{value: dispute.disputeStake}("");
+            (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
             if (!success) revert TransferFailed();
 
             emit DisputeStakeReturned(dispute.id, dispute.disputer, dispute.disputeStake);
@@ -295,8 +297,15 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
      * @param amount The amount to withdraw
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on withdrawals
      */
-    function withdrawSlashedStakes(address recipient, uint256 amount) external onlyOwner nonReentrant {
-        (bool success,) = recipient.call{value: amount}("");
+    function withdrawSlashedStakes(
+        address recipient,
+        uint256 amount
+    )
+        external
+        onlyOwner
+        nonReentrant
+    {
+        (bool success,) = recipient.call{ value: amount }("");
         if (!success) revert TransferFailed();
     }
 }

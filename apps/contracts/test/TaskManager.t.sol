@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import {Test, console} from "forge-std/Test.sol";
-import {TaskManager} from "../src/TaskManager.sol";
-import {EscrowVault} from "../src/EscrowVault.sol";
-import {ClawboyRegistry} from "../src/ClawboyRegistry.sol";
-import {DisputeResolver} from "../src/DisputeResolver.sol";
-import {ITaskManager} from "../src/interfaces/ITaskManager.sol";
-import {IClawboyRegistry} from "../src/interfaces/IClawboyRegistry.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { TaskManager } from "../src/TaskManager.sol";
+import { EscrowVault } from "../src/EscrowVault.sol";
+import { ClawboyRegistry } from "../src/ClawboyRegistry.sol";
+import { DisputeResolver } from "../src/DisputeResolver.sol";
+import { ITaskManager } from "../src/interfaces/ITaskManager.sol";
+import { IClawboyRegistry } from "../src/interfaces/IClawboyRegistry.sol";
 
 contract TaskManagerTest is Test {
     TaskManager public taskManager;
@@ -27,7 +27,8 @@ contract TaskManagerTest is Test {
         clawboyRegistry = new ClawboyRegistry();
 
         // Deploy EscrowVault with predicted TaskManager address
-        address predictedTaskManager = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
+        address predictedTaskManager =
+            vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
         escrowVault = new EscrowVault(predictedTaskManager);
 
         // Deploy TaskManager
@@ -64,11 +65,8 @@ contract TaskManagerTest is Test {
 
     function test_CreateTask() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         assertEq(taskId, 1);
@@ -85,11 +83,8 @@ contract TaskManagerTest is Test {
         uint256 deadline = block.timestamp + 7 days;
 
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            deadline
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, deadline
         );
 
         ITaskManager.Task memory task = taskManager.getTask(taskId);
@@ -99,12 +94,7 @@ contract TaskManagerTest is Test {
     function test_CreateTask_RevertIfZeroBounty() public {
         vm.prank(creator);
         vm.expectRevert(TaskManager.InsufficientBounty.selector);
-        taskManager.createTask{value: 0}(
-            "task-spec-cid",
-            address(0),
-            0,
-            0
-        );
+        taskManager.createTask{ value: 0 }("task-spec-cid", address(0), 0, 0);
     }
 
     function test_CreateTask_RevertIfDeadlineInPast() public {
@@ -113,11 +103,8 @@ contract TaskManagerTest is Test {
 
         vm.prank(creator);
         vm.expectRevert(TaskManager.InvalidDeadline.selector);
-        taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            block.timestamp - 1
+        taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, block.timestamp - 1
         );
     }
 
@@ -128,11 +115,8 @@ contract TaskManagerTest is Test {
     function test_SubmitWork() public {
         // Create task
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         // Agent submits work
@@ -151,11 +135,8 @@ contract TaskManagerTest is Test {
     function test_MultipleAgentsCanSubmit() public {
         // Create task
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         // Multiple agents submit
@@ -179,11 +160,8 @@ contract TaskManagerTest is Test {
         address unregisteredAgent = address(0x999);
 
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(unregisteredAgent);
@@ -193,11 +171,8 @@ contract TaskManagerTest is Test {
 
     function test_SubmitWork_RevertIfAlreadySubmitted() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -213,11 +188,8 @@ contract TaskManagerTest is Test {
         uint256 deadline = block.timestamp + 1 days;
 
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            deadline
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, deadline
         );
 
         // Warp past deadline
@@ -230,11 +202,8 @@ contract TaskManagerTest is Test {
 
     function test_UpdateSubmission() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -251,11 +220,8 @@ contract TaskManagerTest is Test {
 
     function test_UpdateSubmission_RevertIfNotSubmitted() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -269,11 +235,8 @@ contract TaskManagerTest is Test {
 
     function test_SelectWinner() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -294,11 +257,8 @@ contract TaskManagerTest is Test {
 
     function test_SelectWinner_RevertIfNotCreator() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -311,11 +271,8 @@ contract TaskManagerTest is Test {
 
     function test_SelectWinner_RevertIfNoSubmissions() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(creator);
@@ -325,11 +282,8 @@ contract TaskManagerTest is Test {
 
     function test_SelectWinner_RevertIfWinnerNotSubmitter() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -347,11 +301,8 @@ contract TaskManagerTest is Test {
 
     function test_RejectAll() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -369,11 +320,8 @@ contract TaskManagerTest is Test {
 
     function test_RejectAll_RevertIfNoSubmissions() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(creator);
@@ -387,11 +335,8 @@ contract TaskManagerTest is Test {
 
     function test_FinalizeTask_WithWinner() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -424,11 +369,8 @@ contract TaskManagerTest is Test {
 
     function test_FinalizeTask_AllRejected() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -453,11 +395,8 @@ contract TaskManagerTest is Test {
 
     function test_FinalizeTask_RevertBeforeChallengeWindow() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -477,11 +416,8 @@ contract TaskManagerTest is Test {
 
     function test_CancelTask() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         uint256 creatorBalanceBefore = creator.balance;
@@ -496,11 +432,8 @@ contract TaskManagerTest is Test {
 
     function test_CancelTask_RevertIfHasSubmissions() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -513,11 +446,8 @@ contract TaskManagerTest is Test {
 
     function test_CancelTask_RevertIfNotCreator() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -531,11 +461,8 @@ contract TaskManagerTest is Test {
 
     function test_EmitsWorkSubmitted() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.expectEmit(true, true, false, true);
@@ -547,11 +474,8 @@ contract TaskManagerTest is Test {
 
     function test_EmitsWinnerSelected() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
@@ -566,11 +490,8 @@ contract TaskManagerTest is Test {
 
     function test_EmitsTaskCompleted() public {
         vm.prank(creator);
-        uint256 taskId = taskManager.createTask{value: BOUNTY_AMOUNT}(
-            "task-spec-cid",
-            address(0),
-            BOUNTY_AMOUNT,
-            0
+        uint256 taskId = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid", address(0), BOUNTY_AMOUNT, 0
         );
 
         vm.prank(agent1);
