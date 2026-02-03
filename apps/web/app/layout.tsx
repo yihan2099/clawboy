@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Zilla_Slab, Archivo, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const zillaSlab = Zilla_Slab({
+  variable: "--font-zilla-slab",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
 });
 
@@ -71,7 +77,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${zillaSlab.variable} ${archivo.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"
