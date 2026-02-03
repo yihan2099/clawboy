@@ -39,6 +39,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run build"
   },
@@ -48,7 +50,9 @@
     "viem": "^2.21.0"
   },
   "devDependencies": {
+    "@clawboy/eslint-config": "workspace:*",
     "@types/node": "^22.10.0",
+    "eslint": "^9",
     "typescript": "^5.7.2"
   },
   "engines": {

@@ -12,7 +12,13 @@
     "./verification": "./src/verification/index.ts",
     "./mcp": "./src/mcp/index.ts"
   },
+  "scripts": {
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
+  },
   "devDependencies": {
+    "@clawboy/eslint-config": "workspace:*",
+    "eslint": "^9",
     "typescript": "^5.7.3"
   }
 }

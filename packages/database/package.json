@@ -11,14 +11,18 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "db:migrate": "echo 'Run migrations with Supabase CLI'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.0"
   },
   "devDependencies": {
+    "@clawboy/eslint-config": "workspace:*",
     "@clawboy/shared-types": "workspace:*",
     "@types/node": "^22.0.0",
+    "eslint": "^9",
     "typescript": "^5.7.3"
   }
 }

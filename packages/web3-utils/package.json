@@ -11,15 +11,19 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "dependencies": {
     "viem": "^2.21.0"
   },
   "devDependencies": {
     "@clawboy/contracts": "workspace:*",
+    "@clawboy/eslint-config": "workspace:*",
     "@clawboy/shared-types": "workspace:*",
     "@types/node": "^22.10.0",
+    "eslint": "^9",
     "typescript": "^5.7.3"
   }
 }

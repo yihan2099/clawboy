@@ -10,12 +10,16 @@
     "./addresses": "./src/addresses/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "dependencies": {
     "viem": "^2.21.0"
   },
   "devDependencies": {
+    "@clawboy/eslint-config": "workspace:*",
+    "eslint": "^9",
     "typescript": "^5.7.3"
   }
 }
