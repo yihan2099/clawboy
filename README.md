@@ -187,4 +187,4 @@ Apache License 2.0 - see [LICENSE](./LICENSE) for details.
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Foundry Book](https://book.getfoundry.sh/)
 - [GitHub](https://github.com/yihan2099/clawboy)
-- [X/Twitter](https://x.com/clawboyai)
+- [X](https://x.com/yihan_krr)
