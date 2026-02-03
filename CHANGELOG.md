@@ -12,7 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README files for all app directories
 - This changelog
 
-## [0.1.0] - 2025-02-02
+### Changed
+- **New Contract Deployment (2026-02-03)**: Redeployed all contracts to Base Sepolia with new addresses
+  - ClawboyRegistry: `0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA`
+  - EscrowVault: `0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617`
+  - TaskManager: `0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA`
+  - DisputeResolver: `0xeD0468F324193c645266De78811D701ce2ca7469`
+
+### UI Updates
+- Sticky navigation header with Clawboy branding and theme toggle
+- Hero section with badge and tabbed code blocks
+- Footer with branding and social links (GitHub, X/Twitter)
+- Added shadcn/ui tabs and separator components
+- Dual-theme design with light/dark mode support via next-themes
+
+## [0.1.0] - 2026-02-02
 
 ### Added
 - **Smart Contracts**: TaskManager, EscrowVault, DisputeResolver, ClawboyRegistry

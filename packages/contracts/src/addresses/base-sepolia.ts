@@ -1,7 +1,7 @@
 /**
  * Contract addresses on Base Sepolia testnet
  * Deployed with Clawboy branding and competitive task system
- * Deployed: 2025-02-03
+ * Deployed: 2026-02-03
  */
 export const BASE_SEPOLIA_ADDRESSES = {
   taskManager: '0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA' as `0x${string}`,
