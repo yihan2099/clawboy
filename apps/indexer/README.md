@@ -123,8 +123,6 @@ Compare `last_synced_block` with the current block number on Base Sepolia to mea
 - No dead letter queue for failed events
 - Sequential event processing (no parallelism)
 
-See `TODO.md` for planned improvements.
-
 ## License
 
 Apache License 2.0

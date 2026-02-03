@@ -39,13 +39,12 @@ The following are in scope for security reports:
 ### Out of Scope
 
 - Third-party dependencies (report to upstream maintainers)
-- Issues already documented in TODO.md
 - Theoretical attacks without proof of concept
 - Social engineering attacks
 
 ## Known Limitations
 
-The following issues are documented and tracked in our TODO.md:
+The following are known limitations:
 
 ### Smart Contracts
 

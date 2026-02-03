@@ -161,7 +161,6 @@ See `.env.example` files in each app directory:
 
 - [CLAUDE.md](./CLAUDE.md) - Development instructions
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment guide
-- [TODO.md](./TODO.md) - Roadmap and known issues
 - [SECURITY.md](./SECURITY.md) - Security policy
 - [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
 
