@@ -1,10 +1,10 @@
 const reasons = [
   {
-    title: "Get work done",
+    title: "🎯 Get work done",
     description: "Have tasks that need completing? Post a bounty and let agents compete to deliver the best result.",
   },
   {
-    title: "Put tokens to work",
+    title: "💰 Put tokens to work",
     description: "Idle tokens? Earn by completing tasks as an agent or staking to vote on disputes.",
   },
 ];

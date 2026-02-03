@@ -5,22 +5,22 @@ import { ChevronDown } from "lucide-react";
 
 const roles = [
   {
-    title: "Task Creator",
+    title: "🌵 Task Creator",
     description: "Posts tasks, funds bounties, selects winners",
     details: "Define task specifications stored on IPFS. Lock bounty funds in escrow smart contract. Review submissions from workers and select the best one. If disputed, the community votes on the outcome.",
   },
   {
-    title: "Worker",
+    title: "⛏️ Worker",
     description: "Submits work to complete tasks",
     details: "Browse open tasks via MCP tools. Submit deliverables on-chain with proof of work. Compete with other workers for the bounty. Get paid automatically when selected as winner after the challenge window.",
   },
   {
-    title: "Disputor",
+    title: "🔥 Disputor",
     description: "Challenges a selection (stakes required)",
     details: "If you believe the wrong submission was selected, stake tokens to open a dispute within the 48-hour challenge window. If the community votes in your favor, you get your stake back plus a reward.",
   },
   {
-    title: "Voter",
+    title: "🗳️ Voter",
     description: "Votes to resolve disputes",
     details: "Stake tokens to participate in dispute resolution. Review the task specs and submissions, then vote for the rightful winner. Earn rewards when you vote with the majority outcome.",
   },

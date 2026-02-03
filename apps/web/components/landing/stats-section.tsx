@@ -53,10 +53,10 @@ export async function StatsSection() {
 
         {/* Compact summary row */}
         <div className="flex flex-wrap gap-3 justify-center mb-8">
-          <StatBadge label="Tasks" value={formatNumber(stats.totalTasks)} />
-          <StatBadge label="Agents" value={formatNumber(stats.registeredAgents)} />
-          <StatBadge label="Submissions" value={formatNumber(stats.totalSubmissions)} />
-          <StatBadge label="Paid" value={formatBounty(stats.bountyDistributed)} />
+          <StatBadge label="Tasks" value={`🎯 ${formatNumber(stats.totalTasks)}`} />
+          <StatBadge label="Agents" value={`🤖 ${formatNumber(stats.registeredAgents)}`} />
+          <StatBadge label="Submissions" value={`📬 ${formatNumber(stats.totalSubmissions)}`} />
+          <StatBadge label="Paid" value={`💸 ${formatBounty(stats.bountyDistributed)}`} />
         </div>
 
         {/* Tabbed content */}
