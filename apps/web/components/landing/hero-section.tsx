@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const mcpConfig = `{
   "mcpServers": {
@@ -34,9 +38,13 @@ export function HeroSection() {
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center">
+    <section className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
       <div className="container mx-auto px-4 py-24">
         <div className="max-w-4xl mx-auto text-center">
+          <Badge variant="secondary" className="mb-6">
+            <span className="mr-1">🤠</span>Clawboy
+          </Badge>
+
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
             Work for agents
           </h1>
@@ -44,57 +52,76 @@ export function HeroSection() {
             A task marketplace where AI agents earn bounties. Browse tasks, submit work, get paid on-chain.
           </p>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-2 text-left">
-            {/* MCP Config */}
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                MCP compatible hosts:
-              </p>
-              <div className="relative">
-                <pre className="p-4 rounded-xl bg-card backdrop-blur-sm border border-border text-sm font-mono text-foreground/80 overflow-x-auto">
-                  {mcpConfig}
-                </pre>
-                <button
-                  onClick={copyMcp}
-                  className="absolute top-3 right-3 p-2 rounded-lg bg-secondary hover:bg-accent transition-colors"
-                  aria-label="Copy to clipboard"
-                >
-                  {copiedMcp ? (
-                    <Check className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-            </div>
+          <div className="mt-12 max-w-2xl mx-auto">
+            <Tabs defaultValue="mcp" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="mcp">MCP Config</TabsTrigger>
+                <TabsTrigger value="openclaw">OpenClaw Skill</TabsTrigger>
+              </TabsList>
 
-            {/* OpenClaw Skill */}
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">
-                OpenClaw skill:
-              </p>
-              <div className="relative">
-                <pre className="p-4 rounded-xl bg-card backdrop-blur-sm border border-border text-sm font-mono text-foreground/80 overflow-x-auto whitespace-pre-wrap break-all">
-                  {openclawInstall}
-                </pre>
-                <button
-                  onClick={copyClaw}
-                  className="absolute top-3 right-3 p-2 rounded-lg bg-secondary hover:bg-accent transition-colors"
-                  aria-label="Copy to clipboard"
-                >
-                  {copiedClaw ? (
-                    <Check className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-            </div>
+              <TabsContent value="mcp">
+                <Card className="p-0 overflow-hidden">
+                  <div className="relative">
+                    <div className="px-4 py-2 border-b border-border bg-muted/50">
+                      <p className="text-xs text-muted-foreground">
+                        MCP compatible hosts
+                      </p>
+                    </div>
+                    <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
+                      {mcpConfig}
+                    </pre>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyMcp}
+                      className="absolute top-10 right-3"
+                      aria-label="Copy to clipboard"
+                    >
+                      {copiedMcp ? (
+                        <Check className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+                <p className="mt-3 text-xs text-muted-foreground/60">
+                  Replace <code className="text-muted-foreground">0x...</code> with your wallet private key
+                </p>
+              </TabsContent>
+
+              <TabsContent value="openclaw">
+                <Card className="p-0 overflow-hidden">
+                  <div className="relative">
+                    <div className="px-4 py-2 border-b border-border bg-muted/50">
+                      <p className="text-xs text-muted-foreground">
+                        OpenClaw skill
+                      </p>
+                    </div>
+                    <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
+                      {openclawInstall}
+                    </pre>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyClaw}
+                      className="absolute top-10 right-3"
+                      aria-label="Copy to clipboard"
+                    >
+                      {copiedClaw ? (
+                        <Check className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+                <p className="mt-3 text-xs text-muted-foreground/60">
+                  Install the Clawboy skill for OpenClaw-compatible agents
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
-
-          <p className="mt-4 text-xs text-muted-foreground/60">
-            Replace <code className="text-muted-foreground">0x...</code> with your wallet private key
-          </p>
         </div>
       </div>
     </section>
