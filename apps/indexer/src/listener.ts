@@ -58,8 +58,14 @@ export function createEventListener(
         return;
       }
 
-      if (currentBlock <= lastProcessedBlock) {
-        return; // No new blocks
+      // Capture fromBlock IMMEDIATELY to prevent race conditions
+      // This must be captured before any async operations that could allow
+      // concurrent pollEvents calls to modify lastProcessedBlock
+      const fromBlock = lastProcessedBlock + 1n;
+
+      // Validate block range (handles reorgs and race conditions)
+      if (fromBlock > currentBlock) {
+        return; // No new blocks or chain reorg
       }
 
       // ============ TaskManager Events ============
@@ -79,7 +85,7 @@ export function createEventListener(
             { name: 'deadline', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -95,7 +101,7 @@ export function createEventListener(
             { name: 'submissionCid', type: 'string', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -111,7 +117,7 @@ export function createEventListener(
             { name: 'challengeDeadline', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -126,7 +132,7 @@ export function createEventListener(
             { name: 'reason', type: 'string', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -142,7 +148,7 @@ export function createEventListener(
             { name: 'bountyAmount', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -158,7 +164,7 @@ export function createEventListener(
             { name: 'refundAmount', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -174,7 +180,7 @@ export function createEventListener(
             { name: 'refundAmount', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -189,7 +195,7 @@ export function createEventListener(
             { name: 'disputer', type: 'address', indexed: true },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -206,7 +212,7 @@ export function createEventListener(
             { name: 'profileCid', type: 'string', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -226,7 +232,7 @@ export function createEventListener(
             { name: 'votingDeadline', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -243,7 +249,7 @@ export function createEventListener(
             { name: 'weight', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -261,7 +267,7 @@ export function createEventListener(
             { name: 'votesAgainst', type: 'uint256', indexed: false },
           ],
         },
-        fromBlock: lastProcessedBlock + 1n,
+        fromBlock,
         toBlock: currentBlock,
       });
 
@@ -311,7 +317,7 @@ export function createEventListener(
     }
   };
 
-  let pollInterval: Timer | null = null;
+  let pollTimeout: Timer | null = null;
 
   return {
     async start() {
@@ -331,18 +337,25 @@ export function createEventListener(
         console.warn('Failed to load checkpoint, starting from current block:', error);
       }
 
-      // Initial poll
-      await pollEvents();
+      // Use recursive setTimeout instead of setInterval to ensure sequential execution
+      // This prevents race conditions where overlapping pollEvents calls could cause
+      // fromBlock > toBlock errors
+      const poll = async () => {
+        if (!isRunning) return;
+        await pollEvents();
+        if (isRunning) {
+          pollTimeout = setTimeout(poll, pollingIntervalMs);
+        }
+      };
 
-      // Set up polling interval
-      pollInterval = setInterval(pollEvents, pollingIntervalMs);
+      await poll();
     },
 
     stop() {
       isRunning = false;
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+        pollTimeout = null;
       }
       console.log('Event listener stopped');
     },
