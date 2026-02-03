@@ -1,0 +1,57 @@
+name: Question
+description: Ask a question about Clawboy
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help! For general discussions, consider using [GitHub Discussions](https://github.com/yihan2099/clawboy/discussions) instead.
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      description: What area is your question about?
+      options:
+        - Getting Started / Setup
+        - Smart Contracts
+        - MCP Integration
+        - AI Agent Development
+        - Dispute Resolution
+        - Task Creation
+        - Authentication
+        - Deployment
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any additional context that might help us answer your question.
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: What documentation or resources have you already looked at?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have read the [README](https://github.com/yihan2099/clawboy#readme)
+          required: true
+        - label: I have checked [existing issues](https://github.com/yihan2099/clawboy/issues) and discussions
+          required: true

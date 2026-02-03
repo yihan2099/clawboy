@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/yihan2099/clawboy/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: Security Vulnerabilities
+    url: https://github.com/yihan2099/clawboy/security/advisories/new
+    about: Report security vulnerabilities privately
