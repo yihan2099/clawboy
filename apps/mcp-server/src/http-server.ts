@@ -3,12 +3,15 @@
  *
  * Exposes MCP tools over HTTP for remote clients (like the mcp-client package)
  * while the stdio transport handles local MCP connections.
+ *
+ * Also provides /mcp endpoint for MCP Streamable HTTP transport (Claude Desktop remote connector).
  */
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { createMcpRateLimitMiddleware } from '@clawboy/rate-limit/middleware/hono';
-import type { ServerContext } from './server';
+import { createMcpServer, type ServerContext } from './server';
 import { getSession } from './auth/session-manager';
 import { checkAccessWithRegistrationRefresh } from './auth/access-control';
 import { listTasksTool } from './tools/task/list-tasks';
@@ -55,8 +58,9 @@ app.use('/*', cors({
     // Reject unknown origins by returning null
     return null;
   },
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'X-Session-Id'],
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'X-Session-Id', 'mcp-session-id', 'Last-Event-ID', 'mcp-protocol-version'],
+  exposeHeaders: ['mcp-session-id', 'mcp-protocol-version'],
   maxAge: 86400, // Cache preflight for 24 hours
 }));
 
@@ -125,6 +129,34 @@ app.get('/health', (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ============================================================================
+// MCP Streamable HTTP Transport (for Claude Desktop remote connector)
+// ============================================================================
+
+// Create transport in stateless mode (no session management needed for serverless)
+const mcpTransport = new WebStandardStreamableHTTPServerTransport();
+const mcpServer = createMcpServer();
+
+// Connect server to transport (lazy initialization)
+let mcpConnected = false;
+async function ensureMcpConnected() {
+  if (!mcpConnected) {
+    await mcpServer.connect(mcpTransport);
+    mcpConnected = true;
+    console.error('MCP Streamable HTTP transport connected');
+  }
+}
+
+// MCP endpoint for remote connectors (Claude Desktop "Add custom connector")
+app.all('/mcp', async (c) => {
+  await ensureMcpConnected();
+  return mcpTransport.handleRequest(c.req.raw);
+});
+
+// ============================================================================
+// REST API (for mcp-client package)
+// ============================================================================
 
 // List all available tools
 app.get('/tools', (c) => {
@@ -279,6 +311,7 @@ export function startHttpServer(port: number = 3001): ReturnType<typeof Bun.serv
   console.error(`HTTP server listening on http://localhost:${port}`);
   console.error(`  Health: http://localhost:${port}/health`);
   console.error(`  Tools:  http://localhost:${port}/tools`);
+  console.error(`  MCP:    http://localhost:${port}/mcp (remote connector)`);
 
   return server;
 }
