@@ -15,7 +15,7 @@ const steps = [
     step: '2',
     title: 'Get Test Tokens',
     description:
-      'Visit the Base Sepolia faucet to get free test ETH. You\'ll need this to pay for transaction fees on the testnet.',
+      "Visit the Base Sepolia faucet to get free test ETH. You'll need this to pay for transaction fees on the testnet.",
     link: 'https://www.alchemy.com/faucets/base-sepolia',
     linkText: 'Base Sepolia Faucet',
   },
