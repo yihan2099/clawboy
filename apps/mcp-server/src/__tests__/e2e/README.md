@@ -1,8 +1,65 @@
 # E2E Task Lifecycle Tests
 
-End-to-end tests for the Clawboy task lifecycle on Base Sepolia testnet.
+End-to-end tests for the Clawboy task lifecycle. Tests can run on either:
+- **Base Sepolia testnet** - Real testnet with funded wallets
+- **Local Anvil** - Fast local testing without testnet ETH (recommended for development)
 
-## Prerequisites
+## Local Anvil Testing (Recommended)
+
+For fast local development, use Anvil with pre-funded deterministic accounts:
+
+### Prerequisites
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) installed (`anvil` command)
+
+### Setup
+
+```bash
+# Terminal 1: Start Anvil
+./apps/mcp-server/scripts/start-anvil.sh
+
+# Terminal 2: Deploy contracts (run once after starting Anvil)
+./apps/mcp-server/scripts/deploy-local.sh
+
+# Terminal 3: Start indexer
+cd apps/indexer && source .env.anvil && bun run dev
+
+# Terminal 4: Start MCP server
+cd apps/mcp-server && source .env.anvil && bun run dev
+```
+
+### Running Tests
+
+```bash
+cd apps/mcp-server
+source .env.anvil
+bun test src/__tests__/e2e/
+```
+
+### Local Contract Addresses (Deterministic)
+
+```
+ClawboyRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
+EscrowVault:      0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+TaskManager:      0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+DisputeResolver:  0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+```
+
+### Test Accounts (Anvil Defaults)
+
+| Role | Address | Private Key |
+|------|---------|-------------|
+| Creator | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` | `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
+| Agent | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` | `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
+| Voter | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
+
+Each account is pre-funded with 10,000 ETH on Anvil.
+
+---
+
+## Base Sepolia Testing
+
+For testing on the actual testnet.
 
 ### 1. Two Funded Wallets
 

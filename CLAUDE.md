@@ -135,22 +135,77 @@ Full lifecycle tests require:
 
 See `apps/mcp-server/src/__tests__/e2e/README.md` for details.
 
+### Local Anvil Development
+
+For local development and E2E testing without using testnet ETH:
+
+```bash
+# Terminal 1: Start local Anvil node
+./apps/mcp-server/scripts/start-anvil.sh
+
+# Terminal 2: Deploy contracts to Anvil
+./apps/mcp-server/scripts/deploy-local.sh
+
+# Terminal 3: Start indexer with Anvil config
+cd apps/indexer && source .env.anvil && bun run dev
+
+# Terminal 4: Start MCP server with Anvil config
+cd apps/mcp-server && source .env.anvil && bun run dev
+
+# Run E2E tests
+cd apps/mcp-server && source .env.anvil && bun test src/__tests__/e2e/
+```
+
+**Local Anvil addresses** (deterministic, same every deployment):
+```
+ClawboyRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
+EscrowVault:      0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+TaskManager:      0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+DisputeResolver:  0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+```
+
+The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/indexer/` are pre-configured for local testing with Anvil's default funded accounts.
+
 ## Environment Variables
 
-Each app has its own `.env.example`:
+### File Naming Convention
 
-**apps/web/.env.local**:
+```
+.env.example      - Template with documentation (committed)
+.env              - Default active config (auto-loaded by Bun, gitignored)
+.env.anvil        - Local Anvil testing (source or copy to .env)
+.env.sepolia      - Base Sepolia testnet (source or copy to .env)
+.env.e2e          - E2E test credentials (sourced in addition to chain config)
+.env.local        - Next.js only: local overrides (auto-loaded by Next.js)
+```
+
+### Environment Files by App
+
+| App | Files | Notes |
+|-----|-------|-------|
+| **contracts** | `.env.example`, `.env.anvil`, `.env.sepolia` | Source chain-specific file before forge commands |
+| **mcp-server** | `.env.example`, `.env`, `.env.anvil`, `.env.e2e` | Bun auto-loads `.env`; source `.env.anvil` for local |
+| **indexer** | `.env.example`, `.env`, `.env.anvil` | Bun auto-loads `.env`; source `.env.anvil` for local |
+| **web** | `.env.example`, `.env.local` | Next.js auto-loads `.env.local` |
+
+### Key Variables
+
+**apps/web** (`.env.local`):
 - `RESEND_API_KEY`, `RESEND_NEWSLETTER_SEGMENT_ID` - Waitlist email functionality
 
-**apps/contracts/.env**:
+**apps/contracts** (`.env.sepolia` / `.env.anvil`):
 - `BASE_SEPOLIA_RPC_URL`, `BASE_MAINNET_RPC_URL` - RPC endpoints
 - `DEPLOYER_PRIVATE_KEY` - For contract deployment
 - `BASESCAN_API_KEY` - For contract verification
 
-**apps/indexer/.env** and **apps/mcp-server/.env**:
-- `RPC_URL`, `CHAIN_ID` - Blockchain connection
+**apps/indexer** and **apps/mcp-server** (`.env` / `.env.anvil`):
+- `RPC_URL`, `CHAIN_ID` - Blockchain connection (84532 = Base Sepolia, 31337 = local Anvil)
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` - Database
 - `PINATA_JWT`, `PINATA_GATEWAY` - IPFS for task specs
+
+**Local Anvil testing** (`.env.anvil` files):
+- Pre-configured for `CHAIN_ID=31337` and `RPC_URL=http://localhost:8545`
+- Uses Anvil's deterministic test accounts (pre-funded with 10000 ETH each)
 
 ## Tech Stack
 
