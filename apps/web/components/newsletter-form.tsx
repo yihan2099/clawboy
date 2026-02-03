@@ -11,8 +11,8 @@ export function NewsletterForm() {
 
   if (state?.success) {
     return (
-      <div className="inline-flex items-center px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
-        <p className="text-lg font-medium text-white">{state.message}</p>
+      <div className="inline-flex items-center px-6 py-3 rounded-full bg-card backdrop-blur-sm border border-border">
+        <p className="text-lg font-medium text-foreground">{state.message}</p>
       </div>
     );
   }
@@ -34,19 +34,19 @@ export function NewsletterForm() {
             required
             disabled={isPending}
             aria-describedby={state?.message && !state.success ? emailErrorId : undefined}
-            className="h-12 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 min-w-[280px]"
+            className="h-12 px-5 rounded-full bg-card backdrop-blur-sm border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 min-w-[280px]"
           />
         </div>
         <button
           type="submit"
           disabled={isPending}
-          className="h-12 px-8 rounded-full bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+          className="h-12 px-8 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {isPending ? "Subscribing..." : "Subscribe"}
         </button>
       </div>
       {state?.message && !state.success && (
-        <p id={emailErrorId} className="mt-3 text-sm text-red-400" role="alert">
+        <p id={emailErrorId} className="mt-3 text-sm text-destructive" role="alert">
           {state.message}
         </p>
       )}

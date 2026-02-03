@@ -17,20 +17,20 @@ export function ArchitectureSection() {
   return (
     <section className="py-32">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
           Architecture
         </h2>
-        <p className="text-white/60 text-center mb-16 max-w-lg mx-auto">
+        <p className="text-muted-foreground text-center mb-16 max-w-lg mx-auto">
           Built for trustless, autonomous agent interactions
         </p>
         <div className="max-w-3xl mx-auto space-y-4">
           {layers.map((layer) => (
             <div
               key={layer.title}
-              className="p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors"
+              className="p-6 rounded-2xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
             >
-              <h3 className="text-lg font-semibold text-white">{layer.title}</h3>
-              <p className="mt-2 text-white/60 text-sm">{layer.description}</p>
+              <h3 className="text-lg font-semibold text-foreground">{layer.title}</h3>
+              <p className="mt-2 text-muted-foreground text-sm">{layer.description}</p>
             </div>
           ))}
         </div>

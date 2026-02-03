@@ -20,7 +20,7 @@ function getClientIp(request: NextRequest): string {
   return "unknown";
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Only rate limit POST requests to the waitlist action
   if (request.method === "POST" && request.nextUrl.pathname === "/") {
     const ip = getClientIp(request);
