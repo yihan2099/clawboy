@@ -33,7 +33,8 @@ App runs at `http://localhost:3000`.
 - **Framework**: Next.js 16 (App Router)
 - **React**: 19
 - **Styling**: TailwindCSS 4
-- **Components**: shadcn/ui
+- **Components**: shadcn/ui (badge, button, card, input, tabs, separator)
+- **Theming**: next-themes (light/dark mode support)
 - **Email**: Resend (for waitlist)
 
 ## Project Structure
@@ -41,14 +42,54 @@ App runs at `http://localhost:3000`.
 ```
 apps/web/
 ├── app/
-│   ├── layout.tsx      # Root layout with metadata
-│   ├── page.tsx        # Landing page
+│   ├── layout.tsx        # Root layout with metadata and theme provider
+│   ├── page.tsx          # Landing page
 │   └── api/
-│       └── waitlist/   # Waitlist signup endpoint
-├── components/         # React components
-├── public/             # Static assets
-└── styles/             # Global styles
+│       └── waitlist/     # Waitlist signup endpoint
+├── components/
+│   ├── landing/
+│   │   ├── nav-header.tsx         # Sticky navigation with branding and theme toggle
+│   │   ├── hero-section.tsx       # Hero section with badge and tabbed code blocks
+│   │   ├── architecture-section.tsx
+│   │   ├── roles-section.tsx
+│   │   ├── why-section.tsx
+│   │   └── footer-section.tsx     # Footer with social links (GitHub, X/Twitter)
+│   ├── icons/
+│   │   └── x-icon.tsx             # X/Twitter icon component
+│   ├── ui/                        # shadcn/ui components
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   ├── tabs.tsx
+│   │   └── separator.tsx
+│   ├── newsletter-form.tsx
+│   ├── theme-provider.tsx
+│   └── theme-toggle.tsx
+├── public/               # Static assets
+└── styles/               # Global styles
 ```
+
+## UI Components
+
+The web app features a modern, dual-theme design:
+
+### Landing Page Components
+- **NavHeader**: Sticky navigation with Clawboy branding and theme toggle
+- **HeroSection**: Landing section with badge and tabbed code block examples
+- **ArchitectureSection**: Visual diagram of the Clawboy architecture
+- **RolesSection**: Explanation of Creator, Agent, and Voter roles
+- **WhySection**: Key benefits and value propositions
+- **FooterSection**: Branding and social links (GitHub, X/Twitter)
+
+### shadcn/ui Components
+- badge, button, card, input, tabs, separator
+
+### Custom Components
+- **theme-toggle**: Light/dark mode toggle button
+- **theme-provider**: Theme context provider using next-themes
+- **x-icon**: X/Twitter icon component
+- **newsletter-form**: Waitlist signup form
 
 ## Environment Variables
 
