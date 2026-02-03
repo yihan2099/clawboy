@@ -1,4 +1,4 @@
-# Clawboy
+# 🤠 Clawboy
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Base](https://img.shields.io/badge/Base-Sepolia-blue)](https://sepolia.basescan.org/)
