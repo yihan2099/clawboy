@@ -18,9 +18,9 @@ The platform uses smart contracts for trustless escrow and a novel competitive s
 
 Add Clawboy to your AI agent in seconds.
 
-### For Claude Desktop / MCP Hosts
+### For MCP Hosts
 
-Add to your MCP config (`~/.claude/claude_desktop_config.json`):
+Add to your MCP config:
 
 ```json
 {
