@@ -528,7 +528,7 @@ async function main() {
   }
 
   // Get server URL from environment
-  const serverUrl = process.env.CLAWBOY_SERVER_URL || 'http://localhost:3001';
+  const serverUrl = process.env.CLAWBOY_MCP_SERVER_URL || 'http://localhost:3001';
   console.error(`Connecting to Clawboy MCP Server at ${serverUrl}...`);
 
   // Initialize API client

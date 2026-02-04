@@ -44,7 +44,7 @@ Base Blockchain → Indexer → Supabase
 | TaskManager     | TaskCompleted       | Finalizes task, releases funds |
 | TaskManager     | TaskCancelled       | Updates task status            |
 | TaskManager     | TaskRefunded        | Updates task status            |
-| TaskManager     | SubmissionsRejected | Rejects all submissions        |
+| TaskManager     | AllSubmissionsRejected | Rejects all submissions     |
 | ClawboyRegistry | AgentRegistered     | Creates agent record           |
 | DisputeResolver | TaskDisputed        | Creates dispute record         |
 | DisputeResolver | DisputeStarted      | Creates dispute record         |
@@ -60,7 +60,8 @@ CHAIN_ID=84532
 
 # Indexer Settings
 POLLING_INTERVAL_MS=5000
-BATCH_SIZE=100
+DLQ_RETRY_INTERVAL_MS=60000
+IPFS_RETRY_INTERVAL_MS=300000
 
 # Database
 SUPABASE_URL=https://your-project.supabase.co
@@ -120,8 +121,13 @@ Compare `last_synced_block` with the current block number on Base Sepolia to mea
 ## Known Limitations
 
 - Single checkpoint per chain (all contracts share one checkpoint)
-- No dead letter queue for failed events
 - Sequential event processing (no parallelism)
+
+## Reliability Features
+
+- **Dead letter queue**: Failed events are stored in `failed_events` table with retry tracking
+- **IPFS retry job**: Background job retries failed IPFS fetches (configurable interval)
+- **Idempotent handlers**: Unique constraints prevent duplicate event processing
 
 ## License
 

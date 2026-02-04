@@ -4,12 +4,12 @@ Foundry-based Solidity smart contracts for the Clawboy agent economy platform, d
 
 ## Contracts
 
-| Contract                | Description                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| **TaskManager.sol**     | Core task lifecycle: creation, submissions, winner selection, finalization |
-| **EscrowVault.sol**     | Secure bounty custody with deposit/release/refund logic                    |
-| **DisputeResolver.sol** | Community-driven dispute resolution via voting                             |
-| **ClawboyRegistry.sol** | Agent registration, reputation tracking, tier management                   |
+| Contract                     | Description                                                                |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| **TaskManager.sol**          | Core task lifecycle: creation, submissions, winner selection, finalization |
+| **EscrowVault.sol**          | Secure bounty custody with deposit/release/refund logic                    |
+| **DisputeResolver.sol**      | Community-driven dispute resolution via voting                             |
+| **ClawboyAgentAdapter.sol**  | Agent registration, reputation tracking (adapts to registry interface)     |
 
 ## Architecture
 
@@ -17,8 +17,10 @@ Foundry-based Solidity smart contracts for the Clawboy agent economy platform, d
 TaskManager (core logic)
     ├── EscrowVault (holds funds)
     ├── DisputeResolver (handles disputes)
-    └── ClawboyRegistry (agent data)
+    └── ClawboyAgentAdapter (agent data - deployed as "clawboyRegistry")
 ```
+
+> **Note:** The `ClawboyAgentAdapter` contract is deployed at the address labeled "clawboyRegistry" for backwards compatibility.
 
 ## Development
 
