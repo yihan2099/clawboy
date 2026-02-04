@@ -4,7 +4,9 @@
  * Exposes MCP tools over HTTP for remote clients (like the mcp-client package)
  * while the stdio transport handles local MCP connections.
  *
- * Also provides /mcp endpoint for MCP Streamable HTTP transport (Claude Desktop remote connector).
+ * Also provides:
+ * - /mcp endpoint for MCP Streamable HTTP transport (Claude Desktop remote connector)
+ * - A2A protocol endpoints (/.well-known/agent-card.json, /a2a)
  */
 
 import { Hono } from 'hono';
@@ -32,6 +34,7 @@ import {
 import { getChallengeHandler, verifySignatureHandler, getSessionHandler } from './tools/auth';
 import { allTools } from './tools';
 import { logAccessDenied, logSecurityEvent } from './services/security-logger';
+import { a2aRouter } from './a2a';
 
 const app = new Hono();
 
@@ -60,6 +63,7 @@ app.use(
     allowHeaders: [
       'Content-Type',
       'X-Session-Id',
+      'Authorization',
       'mcp-session-id',
       'Last-Event-ID',
       'mcp-protocol-version',
@@ -126,6 +130,16 @@ app.use('/tools/*', async (c, next) => {
 
 // Rate limiting middleware for tool endpoints
 app.use('/tools/*', createMcpRateLimitMiddleware());
+
+// Rate limiting middleware for A2A endpoints
+app.use('/a2a', createMcpRateLimitMiddleware());
+
+// ============================================================================
+// A2A Protocol Endpoints
+// ============================================================================
+
+// Mount A2A router (includes /.well-known/agent-card.json and /a2a)
+app.route('/', a2aRouter);
 
 // Health check endpoint
 app.get('/health', (c) => {
@@ -319,6 +333,8 @@ export function startHttpServer(port: number = 3001): ReturnType<typeof Bun.serv
   console.error(`  Health: http://localhost:${port}/health`);
   console.error(`  Tools:  http://localhost:${port}/tools`);
   console.error(`  MCP:    http://localhost:${port}/mcp (remote connector)`);
+  console.error(`  A2A:    http://localhost:${port}/a2a (Agent-to-Agent protocol)`);
+  console.error(`  Agent Card: http://localhost:${port}/.well-known/agent-card.json`);
 
   return server;
 }
