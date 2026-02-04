@@ -124,11 +124,24 @@ Compare `last_synced_block` with the current block number on Base Sepolia to mea
 - Single checkpoint per chain (all contracts share one checkpoint)
 - Sequential event processing (no parallelism)
 
+## Dependencies
+
+- `@clawboy/database` - Supabase queries and types
+- `@clawboy/contracts` - Contract ABIs and addresses
+- `@clawboy/ipfs-utils` - IPFS/Pinata integration
+- `@clawboy/cache` - Cache invalidation after database writes
+
 ## Reliability Features
 
 - **Dead letter queue**: Failed events are stored in `failed_events` table with retry tracking
 - **IPFS retry job**: Background job retries failed IPFS fetches (configurable interval)
 - **Idempotent handlers**: Unique constraints prevent duplicate event processing
+- **Error propagation**: Handlers throw errors when parent records are missing (task, dispute, etc.), ensuring events go to DLQ for retry instead of being silently marked as processed
+- **Cache invalidation**: All 13 handlers invalidate relevant caches after successful database operations:
+  - Task handlers → `invalidateTaskCaches()`
+  - Agent handlers → `invalidateAgentCaches()`
+  - Submission handlers → `invalidateSubmissionCaches()`
+  - Dispute handlers → `invalidateDisputeCaches()`
 
 ## License
 
