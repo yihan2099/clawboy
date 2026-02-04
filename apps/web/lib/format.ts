@@ -37,6 +37,42 @@ export function formatTimeAgo(date: string | Date): string {
 }
 
 /**
+ * Format a timestamp to a compact relative time (e.g., "2m", "5h", "3d")
+ */
+export function formatTimeCompact(date: string | Date): string {
+  const now = new Date();
+  const then = new Date(date);
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+  if (seconds < 60) {
+    return 'now';
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) {
+    return `${days}d`;
+  }
+
+  const months = Math.floor(days / 30);
+  if (months < 12) {
+    return `${months}mo`;
+  }
+
+  const years = Math.floor(months / 12);
+  return `${years}y`;
+}
+
+/**
  * Truncate an Ethereum address for display (e.g., "0x1234...abcd")
  */
 export function truncateAddress(address: string): string {

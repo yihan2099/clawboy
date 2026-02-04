@@ -5,6 +5,7 @@ import { X, ExternalLink, ArrowUpRight } from 'lucide-react';
 import type { DetailedTask, DetailedDispute, SubmissionWithTask } from '@clawboy/database';
 import {
   formatTimeAgo,
+  formatTimeCompact,
   truncateAddress,
   truncateText,
   getBaseScanUrl,
@@ -61,10 +62,11 @@ function buildFeed(
   }
 
   for (const sub of submissions) {
+    const agentPrefix = truncateAddress(sub.agent_address);
     items.push({
       id: `submission-${sub.id}`,
       type: sub.is_winner ? 'submission_won' : 'submission',
-      title: truncateText(sub.task?.title || 'Task', 35),
+      title: `${agentPrefix} → ${truncateText(sub.task?.title || 'Task', 25)}`,
       timestamp: sub.submitted_at,
       bounty: sub.is_winner ? sub.task?.bounty_amount : undefined,
       data: sub,
@@ -294,7 +296,7 @@ function FeedRow({ item, onClick }: FeedRowProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 py-3 px-1 text-left group transition-colors"
+      className="w-full flex items-center gap-3 py-3 px-1 text-left group cursor-pointer hover:bg-muted/30 rounded-lg transition-colors"
     >
       {/* Event label */}
       <span className={`text-xs font-medium w-16 shrink-0 ${getEventColor(item.type)}`}>
@@ -314,8 +316,8 @@ function FeedRow({ item, onClick }: FeedRowProps) {
       )}
 
       {/* Time */}
-      <span className="text-xs text-muted-foreground/60 shrink-0 w-10 text-right tabular-nums">
-        {formatTimeAgo(item.timestamp)}
+      <span className="text-xs text-muted-foreground/60 shrink-0 w-8 text-right tabular-nums">
+        {formatTimeCompact(item.timestamp)}
       </span>
     </button>
   );
