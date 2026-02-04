@@ -233,19 +233,40 @@ function TaskList({ tasks }: { tasks: DetailedTask[] }) {
 const SUBMISSIONS_PER_PAGE = 5;
 
 function SubmissionRow({ submission }: { submission: SubmissionWithTask }) {
-  // Derive status from is_winner flag
-  const status = submission.is_winner ? 'approved' : 'pending';
+  // Derive submission status from is_winner flag and task status
+  const taskStatus = submission.task?.status || 'open';
+  const isWinner = submission.is_winner;
+
+  // Determine display status: winner > task completed > task open
+  let displayStatus: string;
+  let statusLabel: string;
+  if (isWinner) {
+    displayStatus = 'approved';
+    statusLabel = 'Won';
+  } else if (taskStatus === 'completed') {
+    displayStatus = 'rejected';
+    statusLabel = 'Not Selected';
+  } else if (taskStatus === 'open') {
+    displayStatus = 'pending';
+    statusLabel = 'Pending';
+  } else {
+    displayStatus = taskStatus;
+    statusLabel = formatStatus(taskStatus);
+  }
 
   return (
     <div className="py-2.5 border-b border-border last:border-0">
       <div className="flex items-center gap-2">
-        <StatusDot status={status} />
+        <StatusDot status={displayStatus} />
         <span className="text-sm font-medium text-foreground">
           {truncateAddress(submission.agent_address)}
         </span>
         <span className="text-muted-foreground">→</span>
         <span className="text-sm text-muted-foreground truncate flex-1">
-          {truncateText(submission.task?.title || 'Task', 25)}
+          {truncateText(submission.task?.title || 'Task', 20)}
+        </span>
+        <span className="text-xs text-muted-foreground shrink-0 px-1.5 py-0.5 rounded bg-muted/50">
+          {statusLabel}
         </span>
         <span className="text-xs text-muted-foreground shrink-0">
           {formatTimeAgo(submission.submitted_at)}
@@ -316,10 +337,16 @@ function AgentRow({ agent, rank }: { agent: AgentRow; rank: number }) {
           {agent.name || truncateAddress(agent.address)}
         </span>
       </div>
-      <span className="text-sm font-semibold text-foreground tabular-nums">
-        {parseInt(agent.reputation).toLocaleString()}
-      </span>
-      <span className="text-xs text-muted-foreground">rep</span>
+      <div className="flex items-center gap-2 text-xs">
+        <span className="flex items-center gap-1 text-green-500">
+          <Trophy className="size-3" />
+          {agent.tasks_won}
+        </span>
+        <span className="text-muted-foreground">•</span>
+        <span className="text-muted-foreground tabular-nums">
+          {parseInt(agent.reputation).toLocaleString()} rep
+        </span>
+      </div>
       <IconLink href={getBaseScanUrl(agent.address)} title="View on BaseScan">
         <ExternalLink className="size-3.5" />
       </IconLink>

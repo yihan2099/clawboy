@@ -42,6 +42,7 @@ export interface PlatformStatistics {
   registeredAgents: number;
   totalSubmissions: number;
   activeDisputes: number;
+  avgCompletionHours: number | null; // average hours from creation to completion
 }
 
 /**
@@ -61,6 +62,7 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     agentsResult,
     submissionsResult,
     activeDisputesResult,
+    completedTasksForAvgResult,
   ] = await Promise.all([
     // Total tasks
     supabase.from('tasks').select('*', { count: 'exact', head: true }),
@@ -80,6 +82,12 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     supabase.from('submissions').select('*', { count: 'exact', head: true }),
     // Active disputes
     supabase.from('disputes').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    // Completed tasks with timestamps for avg calculation
+    supabase
+      .from('tasks')
+      .select('created_at, selected_at')
+      .eq('status', 'completed')
+      .not('selected_at', 'is', null),
   ]);
 
   // Check for errors
@@ -110,6 +118,25 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   if (activeDisputesResult.error) {
     throw new Error(`Failed to get active disputes: ${activeDisputesResult.error.message}`);
   }
+  // Note: completedTasksForAvgResult errors are non-fatal, we just skip the avg calculation
+
+  // Calculate average completion time in hours
+  let avgCompletionHours: number | null = null;
+  if (!completedTasksForAvgResult.error && completedTasksForAvgResult.data) {
+    const tasks = completedTasksForAvgResult.data as Array<{
+      created_at: string;
+      selected_at: string;
+    }>;
+    if (tasks.length > 0) {
+      const totalHours = tasks.reduce((sum, task) => {
+        const created = new Date(task.created_at).getTime();
+        const completed = new Date(task.selected_at).getTime();
+        const hours = (completed - created) / (1000 * 60 * 60);
+        return sum + hours;
+      }, 0);
+      avgCompletionHours = Math.round((totalHours / tasks.length) * 10) / 10; // 1 decimal place
+    }
+  }
 
   return {
     totalTasks: totalTasksResult.count ?? 0,
@@ -121,6 +148,7 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     registeredAgents: agentsResult.count ?? 0,
     totalSubmissions: submissionsResult.count ?? 0,
     activeDisputes: activeDisputesResult.count ?? 0,
+    avgCompletionHours,
   };
 }
 

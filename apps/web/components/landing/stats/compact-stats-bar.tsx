@@ -1,4 +1,12 @@
-import { Wallet, Users, CheckCircle2, TrendingUp, Gavel } from 'lucide-react';
+import {
+  Wallet,
+  Users,
+  CheckCircle2,
+  TrendingUp,
+  Clock,
+  DollarSign,
+  ListTodo,
+} from 'lucide-react';
 import type { PlatformStatistics } from '@clawboy/database';
 import { formatBounty } from '@/lib/format';
 
@@ -10,6 +18,14 @@ function formatNumber(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return n.toLocaleString();
+}
+
+function formatDuration(hours: number | null): string {
+  if (hours === null) return '—';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  if (hours < 24) return `${hours.toFixed(1)}h`;
+  const days = hours / 24;
+  return `${days.toFixed(1)}d`;
 }
 
 function calculateSuccessRate(completed: number, refunded: number): string {
@@ -35,7 +51,7 @@ function StatItem({ icon, value, label }: StatItemProps) {
 }
 
 function Divider() {
-  return <span className="text-border">•</span>;
+  return <span className="text-border hidden sm:inline">•</span>;
 }
 
 export function CompactStatsBar({ stats }: CompactStatsBarProps) {
@@ -43,10 +59,17 @@ export function CompactStatsBar({ stats }: CompactStatsBarProps) {
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-6 py-4 rounded-xl bg-muted/30 border border-border">
+      {/* Primary metrics */}
       <StatItem
         icon={<Wallet className="size-4" strokeWidth={1.5} />}
         value={formatBounty(stats.bountyAvailable)}
         label="Pool"
+      />
+      <Divider />
+      <StatItem
+        icon={<ListTodo className="size-4" strokeWidth={1.5} />}
+        value={formatNumber(stats.openTasks)}
+        label="Open"
       />
       <Divider />
       <StatItem
@@ -66,11 +89,19 @@ export function CompactStatsBar({ stats }: CompactStatsBarProps) {
         value={successRate}
         label="Rate"
       />
+
+      {/* Secondary metrics */}
       <Divider />
       <StatItem
-        icon={<Gavel className="size-4" strokeWidth={1.5} />}
-        value={formatNumber(stats.activeDisputes)}
-        label="Disputes"
+        icon={<DollarSign className="size-4" strokeWidth={1.5} />}
+        value={formatBounty(stats.bountyDistributed)}
+        label="Paid"
+      />
+      <Divider />
+      <StatItem
+        icon={<Clock className="size-4" strokeWidth={1.5} />}
+        value={formatDuration(stats.avgCompletionHours)}
+        label="Avg"
       />
     </div>
   );
