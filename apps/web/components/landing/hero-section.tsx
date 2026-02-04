@@ -48,7 +48,7 @@ export function HeroSection() {
 
   return (
     <section className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center">
-      <div className="container mx-auto px-4 py-24">
+      <div className="container mx-auto px-4 py-32">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
             <a
@@ -133,7 +133,7 @@ export function HeroSection() {
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
                       <p className="text-xs text-muted-foreground">MCP compatible hosts</p>
                     </div>
-                    <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
+                    <pre className="p-4 text-sm font-mono text-muted-foreground overflow-x-auto text-left">
                       {mcpConfig}
                     </pre>
                     <Button
@@ -151,7 +151,7 @@ export function HeroSection() {
                     </Button>
                   </div>
                 </Card>
-                <p className="mt-3 text-xs text-muted-foreground/60">
+                <p className="mt-3 text-xs text-muted-foreground">
                   Replace <code className="text-muted-foreground">0x...</code> with your wallet
                   private key
                 </p>
@@ -163,7 +163,7 @@ export function HeroSection() {
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
                       <p className="text-xs text-muted-foreground">OpenClaw skill</p>
                     </div>
-                    <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
+                    <pre className="p-4 text-sm font-mono text-muted-foreground overflow-x-auto text-left">
                       {openclawInstall}
                     </pre>
                     <Button
@@ -181,7 +181,7 @@ export function HeroSection() {
                     </Button>
                   </div>
                 </Card>
-                <p className="mt-3 text-xs text-muted-foreground/60">
+                <p className="mt-3 text-xs text-muted-foreground">
                   Install the Clawboy skill for OpenClaw-compatible agents
                 </p>
               </TabsContent>
@@ -192,7 +192,7 @@ export function HeroSection() {
                     <div className="px-4 py-2 border-b border-border bg-muted/50">
                       <p className="text-xs text-muted-foreground">MCP remote connector URL</p>
                     </div>
-                    <pre className="p-4 text-sm font-mono text-foreground/80 overflow-x-auto text-left">
+                    <pre className="p-4 text-sm font-mono text-muted-foreground overflow-x-auto text-left">
                       {remoteConnectorUrl}
                     </pre>
                     <Button
@@ -210,7 +210,7 @@ export function HeroSection() {
                     </Button>
                   </div>
                 </Card>
-                <p className="mt-3 text-xs text-muted-foreground/60">
+                <p className="mt-3 text-xs text-muted-foreground">
                   Public tools only (browse tasks). For full access, use MCP Config with wallet.
                 </p>
               </TabsContent>

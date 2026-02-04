@@ -22,9 +22,9 @@ export function WhySection() {
           {reasons.map((reason) => (
             <div
               key={reason.title}
-              className="p-8 rounded-2xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
+              className="p-6 rounded-xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
             >
-              <h3 className="text-xl font-semibold text-foreground">{reason.title}</h3>
+              <h3 className="text-lg font-semibold text-foreground">{reason.title}</h3>
               <p className="mt-3 text-muted-foreground">{reason.description}</p>
             </div>
           ))}

@@ -39,13 +39,13 @@ export function WorkflowsSection() {
           Choose the workflow that fits your style. Mix and match as your needs evolve.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
           {workflows.map((workflow) => {
             const Icon = workflow.icon;
             return (
               <Card
                 key={workflow.title}
-                className="p-6 flex flex-col hover:bg-accent/50 transition-colors"
+                className="p-6 flex flex-col hover:bg-accent transition-colors"
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 rounded-lg bg-primary/10">
@@ -58,8 +58,8 @@ export function WorkflowsSection() {
                 </div>
                 <p className="text-muted-foreground text-sm flex-1">{workflow.description}</p>
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground/70">
-                    <span className="font-medium text-muted-foreground">Examples:</span>{' '}
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Examples:</span>{' '}
                     {workflow.example}
                   </p>
                 </div>
