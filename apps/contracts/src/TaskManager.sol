@@ -276,7 +276,8 @@ contract TaskManager is ITaskManager {
     }
 
     /**
-     * @notice Auto-refund if creator doesn't select within deadline
+     * @notice Auto-refund if creator doesn't select within deadline + SELECTION_DEADLINE
+     * @dev Only works for tasks with deadlines. Tasks without deadlines must be cancelled manually.
      * @param taskId The task ID
      */
     function refundExpiredTask(uint256 taskId) external {
@@ -284,15 +285,11 @@ contract TaskManager is ITaskManager {
         if (task.id == 0) revert TaskNotFound();
         if (task.status != TaskStatus.Open) revert TaskNotOpen();
 
-        // Calculate selection deadline (task deadline + SELECTION_DEADLINE, or just SELECTION_DEADLINE if no deadline)
-        uint256 selectionDeadline;
-        if (task.deadline != 0) {
-            selectionDeadline = task.deadline + SELECTION_DEADLINE;
-        } else {
-            selectionDeadline = task.createdAtBlock + SELECTION_DEADLINE; // Use block as rough timestamp
-            // Actually, use a timestamp-based approach
-            revert InvalidDeadline(); // Tasks without deadlines can't auto-expire (creator must select or cancel)
-        }
+        // Tasks without deadlines cannot auto-expire - creator must cancel manually
+        if (task.deadline == 0) revert InvalidDeadline();
+
+        // Selection deadline is task deadline + SELECTION_DEADLINE (7 days)
+        uint256 selectionDeadline = task.deadline + SELECTION_DEADLINE;
 
         if (block.timestamp <= selectionDeadline) revert DeadlineNotPassed();
 

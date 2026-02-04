@@ -184,8 +184,17 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         );
     }
 
+    // Maximum iterations to prevent gas exhaustion
+    uint256 public constant MAX_CLIENTS_PER_CALL = 100;
+    uint256 public constant MAX_FEEDBACK_PER_CLIENT = 100;
+
+    // Errors for iteration limits
+    error TooManyClients();
+    error TooManyFeedback();
+
     /**
-     * @notice Get a summary of an agent's reputation
+     * @notice Get a summary of an agent's reputation with pagination support
+     * @dev For agents with many clients/feedback, use getPaginatedSummary instead
      */
     function getSummary(
         uint256 agentId,
@@ -206,9 +215,15 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         uint256 numClients =
             clientAddresses.length > 0 ? clientAddresses.length : _clients[agentId].length;
 
+        // Enforce iteration limit to prevent gas exhaustion
+        if (numClients > MAX_CLIENTS_PER_CALL) revert TooManyClients();
+
         for (uint256 i = 0; i < numClients; i++) {
             address client = clientAddresses.length > 0 ? clientAddresses[i] : _clients[agentId][i];
             uint64 lastIdx = _lastIndex[agentId][client];
+
+            // Enforce feedback limit per client
+            if (lastIdx > MAX_FEEDBACK_PER_CLIENT) revert TooManyFeedback();
 
             for (uint64 j = 0; j < lastIdx; j++) {
                 FeedbackEntry storage entry = _feedback[agentId][client][j];
@@ -223,6 +238,66 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
                 summaryValue += entry.value;
             }
         }
+    }
+
+    /**
+     * @notice Get paginated summary for agents with many clients
+     * @param startClientIndex Starting index in the clients array
+     * @param maxClients Maximum number of clients to process in this call
+     */
+    function getPaginatedSummary(
+        uint256 agentId,
+        string calldata tag1,
+        string calldata tag2,
+        uint256 startClientIndex,
+        uint256 maxClients
+    )
+        external
+        view
+        returns (
+            uint64 count,
+            int128 summaryValue,
+            uint8 summaryValueDecimals,
+            uint256 processedClients,
+            bool hasMore
+        )
+    {
+        summaryValueDecimals = 0;
+
+        bytes32 tag1Hash = bytes(tag1).length > 0 ? keccak256(bytes(tag1)) : bytes32(0);
+        bytes32 tag2Hash = bytes(tag2).length > 0 ? keccak256(bytes(tag2)) : bytes32(0);
+
+        uint256 totalClients = _clients[agentId].length;
+        uint256 endIndex = startClientIndex + maxClients;
+        if (endIndex > totalClients) endIndex = totalClients;
+
+        // Enforce maximum per call
+        if (maxClients > MAX_CLIENTS_PER_CALL) maxClients = MAX_CLIENTS_PER_CALL;
+
+        for (uint256 i = startClientIndex; i < endIndex; i++) {
+            address client = _clients[agentId][i];
+            uint64 lastIdx = _lastIndex[agentId][client];
+
+            // Skip clients with too much feedback in paginated call
+            if (lastIdx > MAX_FEEDBACK_PER_CLIENT) continue;
+
+            for (uint64 j = 0; j < lastIdx; j++) {
+                FeedbackEntry storage entry = _feedback[agentId][client][j];
+
+                if (entry.isRevoked) continue;
+
+                // Check tag filters
+                if (tag1Hash != bytes32(0) && entry.tag1Hash != tag1Hash) continue;
+                if (tag2Hash != bytes32(0) && entry.tag2Hash != tag2Hash) continue;
+
+                count++;
+                summaryValue += entry.value;
+            }
+
+            processedClients++;
+        }
+
+        hasMore = endIndex < totalClients;
     }
 
     /**

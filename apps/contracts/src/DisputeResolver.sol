@@ -18,6 +18,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
     uint256 public constant DISPUTE_STAKE_PERCENT = 1; // 1% of bounty
     uint256 public constant VOTING_PERIOD = 48 hours;
     uint256 public constant MAJORITY_THRESHOLD = 60; // 60% weighted majority
+    uint256 public constant MAX_VOTERS_PER_DISPUTE = 500; // Prevent gas exhaustion in resolution
 
     // State
     uint256 private _disputeCounter;
@@ -46,6 +47,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
     error DisputeAlreadyResolved();
     error OnlyOwner();
     error TransferFailed();
+    error MaxVotersReached();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert OnlyOwner();
@@ -121,6 +123,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         if (msg.sender == dispute.disputer || msg.sender == task.creator) revert AlreadyVoted();
 
         uint256 weight = agentAdapter.getVoteWeight(msg.sender);
+
+        // Enforce voter limit to prevent gas exhaustion during resolution
+        if (_voters[disputeId].length >= MAX_VOTERS_PER_DISPUTE) revert MaxVotersReached();
 
         _votes[disputeId][msg.sender] = Vote({
             voter: msg.sender,
