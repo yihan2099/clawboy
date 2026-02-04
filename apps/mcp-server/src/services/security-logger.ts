@@ -3,7 +3,19 @@
  *
  * Logs security-relevant events for monitoring and incident response.
  * In production, these should be sent to a centralized logging system (e.g., Datadog, Splunk).
+ *
+ * SECURITY: SessionIds are hashed before logging to prevent exposure in logs.
  */
+
+import { createHash } from 'crypto';
+
+/**
+ * Hash a sessionId to prevent exposure in logs
+ * Uses SHA-256 truncated to 12 chars for readability while maintaining privacy
+ */
+function hashSessionId(sessionId: string): string {
+  return createHash('sha256').update(sessionId).digest('hex').slice(0, 12);
+}
 
 export type SecurityEventType =
   | 'auth_challenge_requested'
@@ -30,10 +42,13 @@ export interface SecurityEvent {
 /**
  * Log a security event
  * In production, send to centralized logging system
+ * SECURITY: SessionIds are hashed before logging
  */
 export function logSecurityEvent(event: SecurityEvent): void {
   const logEntry = {
     ...event,
+    // Hash sessionId before logging to prevent exposure
+    sessionId: event.sessionId ? hashSessionId(event.sessionId) : undefined,
     timestamp: event.timestamp || new Date().toISOString(),
     service: 'clawboy-mcp-server',
   };
