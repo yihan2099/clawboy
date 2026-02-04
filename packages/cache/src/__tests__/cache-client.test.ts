@@ -5,7 +5,6 @@ import {
   clearAllCache,
   getCacheStats,
 } from '../cache-client';
-import { TTL_CONFIG } from '../ttl-config';
 
 describe('Cache Client (In-Memory Fallback)', () => {
   beforeEach(() => {

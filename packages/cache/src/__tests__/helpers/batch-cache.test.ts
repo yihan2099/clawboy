@@ -6,7 +6,6 @@ import {
   getCachedOnly,
   deleteBatch,
 } from '../../helpers/batch-cache';
-import { TTL_CONFIG } from '../../ttl-config';
 
 describe('Batch Cache Utilities', () => {
   beforeEach(() => {

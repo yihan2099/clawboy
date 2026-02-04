@@ -7,7 +7,6 @@ import {
   preloadTasks,
 } from '../../helpers/task-cache';
 import { taskKey, taskListKey } from '../../key-builder';
-import { TTL_CONFIG } from '../../ttl-config';
 
 describe('Task Cache Helpers', () => {
   beforeEach(() => {
@@ -80,7 +79,6 @@ describe('Task Cache Helpers', () => {
     });
 
     test('passes through custom options', async () => {
-      const cache = getCache();
       const fetcher = mock(() => Promise.resolve({ tasks: [], total: 0 }));
 
       await getCachedTaskList({}, fetcher, { skipRead: true });
