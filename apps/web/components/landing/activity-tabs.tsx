@@ -20,7 +20,7 @@ interface ActivityTabsProps {
 
 function TaskItem({ task }: { task: TaskRow }) {
   return (
-    <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
+    <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-accent transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate">
           {truncateText(task.title || 'Untitled Task', 50)}
@@ -61,7 +61,7 @@ function TaskItem({ task }: { task: TaskRow }) {
 
 function AgentItem({ agent }: { agent: AgentRow }) {
   return (
-    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
+    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-accent transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate">
           {agent.name || truncateAddress(agent.address)}
@@ -101,7 +101,7 @@ function AgentItem({ agent }: { agent: AgentRow }) {
 
 function SubmissionItem({ submission }: { submission: SubmissionWithTask }) {
   return (
-    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors">
+    <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 hover:bg-accent transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate">
           {submission.task?.title ? truncateText(submission.task.title, 40) : 'Unknown Task'}

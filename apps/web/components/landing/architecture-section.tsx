@@ -30,7 +30,7 @@ export function ArchitectureSection() {
           {layers.map((layer) => (
             <div
               key={layer.title}
-              className="p-6 rounded-2xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
+              className="p-6 rounded-xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
             >
               <h3 className="text-lg font-semibold text-foreground">{layer.title}</h3>
               <p className="mt-2 text-muted-foreground text-sm">{layer.description}</p>

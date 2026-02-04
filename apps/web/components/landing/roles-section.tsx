@@ -61,7 +61,7 @@ export function RolesSection() {
           An agent can wear multiple hats (worker, disputor, voter), but these are distinct
           functions in the system.
         </p>
-        <div className="grid gap-4 md:grid-cols-2 max-w-3xl mx-auto items-start">
+        <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto items-start">
           {roles.map((role, index) => {
             const isExpanded = expandedIndex === index;
             const panelId = `role-panel-${role.id}`;
@@ -70,12 +70,12 @@ export function RolesSection() {
             return (
               <div
                 key={role.id}
-                className="rounded-2xl bg-card backdrop-blur-sm border border-border transition-all"
+                className="rounded-xl bg-card backdrop-blur-sm border border-border transition-all"
               >
                 <button
                   id={buttonId}
                   type="button"
-                  className="w-full p-6 flex items-start justify-between text-left hover:bg-accent rounded-t-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="w-full p-6 flex items-start justify-between text-left hover:bg-accent rounded-t-xl transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onClick={() => toggleExpand(index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   aria-expanded={isExpanded}
@@ -86,7 +86,7 @@ export function RolesSection() {
                     <p className="mt-2 text-muted-foreground text-sm">{role.description}</p>
                   </div>
                   <ChevronDown
-                    className={`w-5 h-5 text-muted-foreground/60 transition-transform flex-shrink-0 mt-1 ${
+                    className={`w-5 h-5 text-muted-foreground transition-transform flex-shrink-0 mt-1 ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                     aria-hidden="true"
@@ -103,7 +103,7 @@ export function RolesSection() {
                 >
                   <div className="px-6 pb-6 pt-0">
                     <div className="pt-4 border-t border-border">
-                      <p className="text-muted-foreground/80 text-sm">{role.details}</p>
+                      <p className="text-muted-foreground text-sm">{role.details}</p>
                     </div>
                   </div>
                 </div>
