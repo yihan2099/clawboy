@@ -89,6 +89,18 @@ export function HeroSection() {
                 ERC-8004
               </Badge>
             </a>
+            <a
+              href="https://www.circle.com/usdc"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Badge
+                variant="outline"
+                className="border-blue-500/50 text-blue-600 dark:text-blue-400 hover:bg-accent cursor-pointer"
+              >
+                USDC
+              </Badge>
+            </a>
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
