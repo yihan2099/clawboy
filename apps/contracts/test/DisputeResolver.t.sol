@@ -33,9 +33,8 @@ contract DisputeResolverTest is Test {
         // Deploy ERC-8004 IdentityRegistry
         identityRegistry = new ERC8004IdentityRegistry();
 
-        // Deploy ERC-8004 ReputationRegistry
-        reputationRegistry = new ERC8004ReputationRegistry();
-        reputationRegistry.initialize(address(identityRegistry));
+        // Deploy ERC-8004 ReputationRegistry (initialized with IdentityRegistry in constructor)
+        reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
         // Deploy ClawboyAgentAdapter
         agentAdapter =
@@ -52,10 +51,13 @@ contract DisputeResolverTest is Test {
         // Deploy DisputeResolver
         disputeResolver = new DisputeResolver(address(taskManager), address(agentAdapter));
 
-        // Configure access control
-        taskManager.setDisputeResolver(address(disputeResolver));
-        agentAdapter.setTaskManager(address(taskManager));
-        agentAdapter.setDisputeResolver(address(disputeResolver));
+        // Configure access control via emergency functions (timelock not set in tests)
+        taskManager.emergencySetDisputeResolver(address(disputeResolver));
+        agentAdapter.emergencySetTaskManager(address(taskManager));
+        agentAdapter.emergencySetDisputeResolver(address(disputeResolver));
+
+        // Authorize adapter to call registerFor on IdentityRegistry
+        identityRegistry.authorizeAdapter(address(agentAdapter));
 
         // Give accounts some ETH
         vm.deal(creator, 10 ether);
@@ -647,5 +649,644 @@ contract DisputeResolverTest is Test {
         disputeResolver.startDispute{ value: stake }(taskId1);
 
         assertEq(disputeResolver.disputeCount(), 1);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      OWNERSHIP TRANSFER TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_TransferOwnership() public {
+        address newOwner = address(0x999);
+
+        // Current owner initiates transfer
+        disputeResolver.transferOwnership(newOwner);
+        assertEq(disputeResolver.pendingOwner(), newOwner);
+        assertEq(disputeResolver.owner(), address(this)); // Still old owner
+
+        // Pending owner accepts
+        vm.prank(newOwner);
+        disputeResolver.acceptOwnership();
+
+        assertEq(disputeResolver.owner(), newOwner);
+        assertEq(disputeResolver.pendingOwner(), address(0));
+    }
+
+    function test_TransferOwnership_RevertIfNotOwner() public {
+        vm.prank(agent1);
+        vm.expectRevert(DisputeResolver.OnlyOwner.selector);
+        disputeResolver.transferOwnership(agent1);
+    }
+
+    function test_AcceptOwnership_RevertIfNotPendingOwner() public {
+        address newOwner = address(0x999);
+        disputeResolver.transferOwnership(newOwner);
+
+        vm.prank(agent1);
+        vm.expectRevert(DisputeResolver.NotPendingOwner.selector);
+        disputeResolver.acceptOwnership();
+    }
+
+    function test_TransferOwnership_RevertIfZeroAddress() public {
+        // DisputeResolver reuses TransferFailed error for zero address
+        vm.expectRevert(DisputeResolver.TransferFailed.selector);
+        disputeResolver.transferOwnership(address(0));
+    }
+
+    function test_TransferOwnership_OverwritesPending() public {
+        address firstPending = address(0x111);
+        address secondPending = address(0x222);
+
+        // First transfer
+        disputeResolver.transferOwnership(firstPending);
+        assertEq(disputeResolver.pendingOwner(), firstPending);
+
+        // Second transfer overwrites
+        disputeResolver.transferOwnership(secondPending);
+        assertEq(disputeResolver.pendingOwner(), secondPending);
+
+        // First pending can no longer accept
+        vm.prank(firstPending);
+        vm.expectRevert(DisputeResolver.NotPendingOwner.selector);
+        disputeResolver.acceptOwnership();
+
+        // Second pending can accept
+        vm.prank(secondPending);
+        disputeResolver.acceptOwnership();
+        assertEq(disputeResolver.owner(), secondPending);
+    }
+
+    function test_TransferOwnership_EmitsEvents() public {
+        address newOwner = address(0x999);
+
+        // Test OwnershipTransferInitiated event
+        vm.expectEmit(true, true, false, false);
+        emit DisputeResolver.OwnershipTransferInitiated(address(this), newOwner);
+        disputeResolver.transferOwnership(newOwner);
+
+        // Test OwnershipTransferred event
+        vm.expectEmit(true, true, false, false);
+        emit DisputeResolver.OwnershipTransferred(address(this), newOwner);
+        vm.prank(newOwner);
+        disputeResolver.acceptOwnership();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    DISPUTE CANCELLATION TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_CancelDispute() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+        uint256 agent1BalanceBefore = agent1.balance;
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Verify task is in Disputed status
+        ITaskManager.Task memory taskBefore = taskManager.getTask(taskId);
+        assertEq(uint256(taskBefore.status), uint256(ITaskManager.TaskStatus.Disputed));
+
+        // Owner cancels the dispute via emergency function
+        disputeResolver.emergencyCancelDispute(disputeId);
+
+        // Verify dispute is cancelled
+        IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
+        assertEq(uint256(dispute.status), uint256(IDisputeResolver.DisputeStatus.Cancelled));
+
+        // Verify stake was refunded
+        assertEq(agent1.balance, agent1BalanceBefore);
+
+        // Verify task reverted to InReview
+        ITaskManager.Task memory taskAfter = taskManager.getTask(taskId);
+        assertEq(uint256(taskAfter.status), uint256(ITaskManager.TaskStatus.InReview));
+        assertTrue(taskAfter.challengeDeadline > block.timestamp);
+    }
+
+    function test_CancelDispute_RequiresTimelock() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Direct call should revert (timelock not set)
+        vm.expectRevert(DisputeResolver.OnlyTimelock.selector);
+        disputeResolver.cancelDispute(disputeId);
+    }
+
+    function test_EmergencyCancelDispute_RevertIfNotOwner() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        vm.prank(agent1);
+        vm.expectRevert(DisputeResolver.OnlyOwner.selector);
+        disputeResolver.emergencyCancelDispute(disputeId);
+    }
+
+    function test_EmergencyCancelDispute_RevertIfNotActive() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Resolve the dispute first
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Try to cancel an already resolved dispute
+        vm.expectRevert(DisputeResolver.DisputeNotActive.selector);
+        disputeResolver.emergencyCancelDispute(disputeId);
+    }
+
+    function test_CancelledDisputeAllowsNewDispute() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        // First dispute
+        vm.prank(agent1);
+        uint256 disputeId1 = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Owner cancels the dispute via emergency function
+        disputeResolver.emergencyCancelDispute(disputeId1);
+
+        // Task is now in InReview, a new dispute can be created
+        // (by another submitter or the same one)
+        vm.prank(agent1);
+        uint256 disputeId2 = disputeResolver.startDispute{ value: stake }(taskId);
+
+        assertEq(disputeId2, 2); // New dispute ID
+        ITaskManager.Task memory task = taskManager.getTask(taskId);
+        assertEq(uint256(task.status), uint256(ITaskManager.TaskStatus.Disputed));
+    }
+
+    function test_EmergencyCancelDispute_RevertIfAlreadyCancelled() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // First cancellation succeeds
+        disputeResolver.emergencyCancelDispute(disputeId);
+
+        // Second cancellation fails - dispute is no longer active
+        vm.expectRevert(DisputeResolver.DisputeNotActive.selector);
+        disputeResolver.emergencyCancelDispute(disputeId);
+    }
+
+    function test_EmergencyCancelDispute_VotesNotCountedAfterCancel() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Submit some votes
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, true);
+
+        vm.prank(voter2);
+        disputeResolver.submitVote(disputeId, false);
+
+        // Owner cancels the dispute via emergency function
+        disputeResolver.emergencyCancelDispute(disputeId);
+
+        // Verify dispute is cancelled - votes should remain but not affect outcome
+        IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
+        assertEq(uint256(dispute.status), uint256(IDisputeResolver.DisputeStatus.Cancelled));
+        assertFalse(dispute.disputerWon); // No winner since cancelled
+
+        // Votes are still recorded (historical record)
+        assertTrue(disputeResolver.hasVoted(disputeId, voter1));
+        assertTrue(disputeResolver.hasVoted(disputeId, voter2));
+    }
+
+    function test_EmergencyCancelDispute_EmitsEvent() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        vm.expectEmit(true, true, true, false);
+        emit DisputeResolver.DisputeCancelled(disputeId, taskId, address(this));
+        disputeResolver.emergencyCancelDispute(disputeId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    SLASHED STAKES TRACKING TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_SlashedStakesTracking() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // All voters vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.prank(voter2);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+
+        // Verify no slashed stakes before resolution
+        assertEq(disputeResolver.totalSlashedStakes(), 0);
+
+        disputeResolver.resolveDispute(disputeId);
+
+        // Verify slashed stakes after resolution (disputer lost)
+        assertEq(disputeResolver.totalSlashedStakes(), stake);
+        assertEq(disputeResolver.availableSlashedStakes(), stake);
+    }
+
+    function test_WithdrawSlashedStakes() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // All voters vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Withdraw slashed stakes via emergency function
+        address recipient = address(0x888);
+        uint256 recipientBalanceBefore = recipient.balance;
+
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, stake);
+
+        assertEq(recipient.balance, recipientBalanceBefore + stake);
+        assertEq(disputeResolver.totalWithdrawnStakes(), stake);
+        assertEq(disputeResolver.availableSlashedStakes(), 0);
+    }
+
+    function test_WithdrawSlashedStakes_RequiresTimelock() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Direct call should revert (timelock not set)
+        vm.expectRevert(DisputeResolver.OnlyTimelock.selector);
+        disputeResolver.withdrawSlashedStakes(address(0x888), stake);
+    }
+
+    function test_EmergencyWithdrawSlashedStakes_RevertIfInsufficientBalance() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // All voters vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Try to withdraw more than available
+        vm.expectRevert(DisputeResolver.InsufficientSlashedStakes.selector);
+        disputeResolver.emergencyWithdrawSlashedStakes(address(0x888), stake + 1);
+    }
+
+    function test_DisputerWinNoSlash() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // All voters vote for disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, true);
+
+        vm.prank(voter2);
+        disputeResolver.submitVote(disputeId, true);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // No slashed stakes when disputer wins
+        assertEq(disputeResolver.totalSlashedStakes(), 0);
+    }
+
+    function test_SlashedStakes_MultipleDisputes() public {
+        // Create first task and lose dispute
+        uint256 taskId1 = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId1, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId1 = disputeResolver.startDispute{ value: stake }(taskId1);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId1, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId1);
+
+        assertEq(disputeResolver.totalSlashedStakes(), stake);
+
+        // Create second task and lose dispute
+        vm.prank(creator);
+        uint256 taskId2 = taskManager.createTask{ value: BOUNTY_AMOUNT }(
+            "task-spec-cid-2", address(0), BOUNTY_AMOUNT, 0
+        );
+
+        vm.prank(agent2);
+        taskManager.submitWork(taskId2, "submission-cid-2");
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId2, "reason");
+
+        vm.prank(agent2);
+        uint256 disputeId2 = disputeResolver.startDispute{ value: stake }(taskId2);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId2, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId2);
+
+        // Cumulative slashed stakes
+        assertEq(disputeResolver.totalSlashedStakes(), stake * 2);
+        assertEq(disputeResolver.availableSlashedStakes(), stake * 2);
+    }
+
+    function test_WithdrawSlashedStakes_Partial() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Partial withdrawal (half the slashed amount) via emergency function
+        address recipient = address(0x888);
+        uint256 partialAmount = stake / 2;
+        uint256 recipientBalanceBefore = recipient.balance;
+
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, partialAmount);
+
+        assertEq(recipient.balance, recipientBalanceBefore + partialAmount);
+        assertEq(disputeResolver.totalWithdrawnStakes(), partialAmount);
+        assertEq(disputeResolver.availableSlashedStakes(), stake - partialAmount);
+
+        // Withdraw remaining
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, stake - partialAmount);
+
+        assertEq(recipient.balance, recipientBalanceBefore + stake);
+        assertEq(disputeResolver.totalWithdrawnStakes(), stake);
+        assertEq(disputeResolver.availableSlashedStakes(), 0);
+    }
+
+    function test_WithdrawSlashedStakes_Zero() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Zero amount withdrawal should work (no-op) via emergency function
+        address recipient = address(0x888);
+        uint256 recipientBalanceBefore = recipient.balance;
+
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, 0);
+
+        assertEq(recipient.balance, recipientBalanceBefore);
+        assertEq(disputeResolver.totalWithdrawnStakes(), 0);
+        assertEq(disputeResolver.availableSlashedStakes(), stake);
+    }
+
+    function test_EmergencyWithdrawSlashedStakes_RevertIfNotOwner() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Non-owner cannot withdraw via emergency function
+        vm.prank(agent1);
+        vm.expectRevert(DisputeResolver.OnlyOwner.selector);
+        disputeResolver.emergencyWithdrawSlashedStakes(agent1, stake);
+    }
+
+    function test_WithdrawSlashedStakes_ExactBalance() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Withdraw exactly the available amount via emergency function
+        address recipient = address(0x888);
+        uint256 recipientBalanceBefore = recipient.balance;
+
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, stake);
+
+        assertEq(recipient.balance, recipientBalanceBefore + stake);
+        assertEq(disputeResolver.totalWithdrawnStakes(), stake);
+        assertEq(disputeResolver.availableSlashedStakes(), 0);
+    }
+
+    function test_AvailableSlashedStakes_AfterWithdrawals() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Verify initial available
+        assertEq(disputeResolver.availableSlashedStakes(), stake);
+
+        // Withdraw half via emergency function
+        address recipient = address(0x888);
+        uint256 halfStake = stake / 2;
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, halfStake);
+
+        // Verify view function is accurate after withdrawal
+        assertEq(disputeResolver.availableSlashedStakes(), stake - halfStake);
+        assertEq(disputeResolver.totalSlashedStakes(), stake);
+        assertEq(disputeResolver.totalWithdrawnStakes(), halfStake);
+    }
+
+    function test_SlashedStakes_EmitsEvent() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+
+        // Expect StakeSlashed event when disputer loses
+        vm.expectEmit(true, true, false, true);
+        emit DisputeResolver.StakeSlashed(disputeId, agent1, stake);
+        disputeResolver.resolveDispute(disputeId);
+    }
+
+    function test_WithdrawSlashedStakes_EmitsEvent() public {
+        uint256 taskId = _createTaskWithSubmission();
+
+        vm.prank(creator);
+        taskManager.rejectAll(taskId, "reason");
+
+        uint256 stake = disputeResolver.calculateDisputeStake(BOUNTY_AMOUNT);
+
+        vm.prank(agent1);
+        uint256 disputeId = disputeResolver.startDispute{ value: stake }(taskId);
+
+        // Vote against disputer
+        vm.prank(voter1);
+        disputeResolver.submitVote(disputeId, false);
+
+        vm.warp(block.timestamp + 48 hours + 1);
+        disputeResolver.resolveDispute(disputeId);
+
+        // Expect StakesWithdrawn event via emergency function
+        address recipient = address(0x888);
+        vm.expectEmit(true, false, false, true);
+        emit DisputeResolver.StakesWithdrawn(recipient, stake);
+        disputeResolver.emergencyWithdrawSlashedStakes(recipient, stake);
     }
 }

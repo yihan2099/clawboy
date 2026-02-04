@@ -10,6 +10,18 @@ import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegis
 import { DisputeResolver } from "../src/DisputeResolver.sol";
 import { ITaskManager } from "../src/interfaces/ITaskManager.sol";
 import { IClawboyAgentAdapter } from "../src/IClawboyAgentAdapter.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+/// @dev Simple mock ERC20 for testing
+contract MockERC20 is ERC20 {
+    constructor() ERC20("Mock Token", "MOCK") {
+        _mint(msg.sender, 1_000_000 ether);
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
 
 contract TaskManagerTest is Test {
     TaskManager public taskManager;
@@ -30,9 +42,8 @@ contract TaskManagerTest is Test {
         // Deploy ERC-8004 IdentityRegistry
         identityRegistry = new ERC8004IdentityRegistry();
 
-        // Deploy ERC-8004 ReputationRegistry
-        reputationRegistry = new ERC8004ReputationRegistry();
-        reputationRegistry.initialize(address(identityRegistry));
+        // Deploy ERC-8004 ReputationRegistry (initialized with IdentityRegistry in constructor)
+        reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
         // Deploy ClawboyAgentAdapter
         agentAdapter =
@@ -49,10 +60,13 @@ contract TaskManagerTest is Test {
         // Deploy DisputeResolver
         disputeResolver = new DisputeResolver(address(taskManager), address(agentAdapter));
 
-        // Configure access control
-        taskManager.setDisputeResolver(address(disputeResolver));
-        agentAdapter.setTaskManager(address(taskManager));
-        agentAdapter.setDisputeResolver(address(disputeResolver));
+        // Configure access control via emergency functions (timelock not set in tests)
+        taskManager.emergencySetDisputeResolver(address(disputeResolver));
+        agentAdapter.emergencySetTaskManager(address(taskManager));
+        agentAdapter.emergencySetDisputeResolver(address(disputeResolver));
+
+        // Authorize adapter to call registerFor on IdentityRegistry
+        identityRegistry.authorizeAdapter(address(agentAdapter));
 
         // Give accounts some ETH
         vm.deal(creator, 10 ether);
@@ -517,5 +531,245 @@ contract TaskManagerTest is Test {
         emit ITaskManager.TaskCompleted(taskId, agent1, BOUNTY_AMOUNT);
 
         taskManager.finalizeTask(taskId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      OWNERSHIP TRANSFER TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_TransferOwnership() public {
+        address newOwner = address(0x999);
+
+        // Current owner initiates transfer
+        taskManager.transferOwnership(newOwner);
+        assertEq(taskManager.pendingOwner(), newOwner);
+        assertEq(taskManager.owner(), address(this)); // Still old owner
+
+        // Pending owner accepts
+        vm.prank(newOwner);
+        taskManager.acceptOwnership();
+
+        assertEq(taskManager.owner(), newOwner);
+        assertEq(taskManager.pendingOwner(), address(0));
+    }
+
+    function test_TransferOwnership_RevertIfNotOwner() public {
+        vm.prank(agent1);
+        vm.expectRevert(TaskManager.OnlyOwner.selector);
+        taskManager.transferOwnership(agent1);
+    }
+
+    function test_TransferOwnership_RevertIfZeroAddress() public {
+        vm.expectRevert(TaskManager.ZeroAddress.selector);
+        taskManager.transferOwnership(address(0));
+    }
+
+    function test_AcceptOwnership_RevertIfNotPendingOwner() public {
+        address newOwner = address(0x999);
+        taskManager.transferOwnership(newOwner);
+
+        vm.prank(agent1);
+        vm.expectRevert(TaskManager.NotPendingOwner.selector);
+        taskManager.acceptOwnership();
+    }
+
+    function test_TransferOwnership_OverwritesPending() public {
+        address firstPending = address(0x111);
+        address secondPending = address(0x222);
+
+        // First transfer
+        taskManager.transferOwnership(firstPending);
+        assertEq(taskManager.pendingOwner(), firstPending);
+
+        // Second transfer overwrites
+        taskManager.transferOwnership(secondPending);
+        assertEq(taskManager.pendingOwner(), secondPending);
+
+        // First pending can no longer accept
+        vm.prank(firstPending);
+        vm.expectRevert(TaskManager.NotPendingOwner.selector);
+        taskManager.acceptOwnership();
+
+        // Second pending can accept
+        vm.prank(secondPending);
+        taskManager.acceptOwnership();
+        assertEq(taskManager.owner(), secondPending);
+    }
+
+    function test_TransferOwnership_EmitsEvents() public {
+        address newOwner = address(0x999);
+
+        // Test OwnershipTransferInitiated event
+        vm.expectEmit(true, true, false, false);
+        emit TaskManager.OwnershipTransferInitiated(address(this), newOwner);
+        taskManager.transferOwnership(newOwner);
+
+        // Test OwnershipTransferred event
+        vm.expectEmit(true, true, false, false);
+        emit TaskManager.OwnershipTransferred(address(this), newOwner);
+        vm.prank(newOwner);
+        taskManager.acceptOwnership();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         ERC20 TOKEN TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_CreateTask_WithERC20() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // Creator approves EscrowVault to spend tokens
+        vm.prank(creator);
+        token.approve(address(escrowVault), BOUNTY_AMOUNT);
+
+        // Create task with ERC20 bounty
+        vm.prank(creator);
+        uint256 taskId = taskManager.createTask(
+            "task-spec-cid", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        assertEq(taskId, 1);
+
+        // Verify task was created with ERC20 token
+        ITaskManager.Task memory task = taskManager.getTask(taskId);
+        assertEq(task.bountyToken, address(token));
+        assertEq(task.bountyAmount, BOUNTY_AMOUNT);
+
+        // Verify tokens were transferred to escrow
+        assertEq(token.balanceOf(address(escrowVault)), BOUNTY_AMOUNT);
+        assertEq(token.balanceOf(creator), 100 ether - BOUNTY_AMOUNT);
+    }
+
+    function test_CreateTask_WithERC20_AndRelease() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // Creator approves EscrowVault to spend tokens
+        vm.prank(creator);
+        token.approve(address(escrowVault), BOUNTY_AMOUNT);
+
+        // Create task with ERC20 bounty
+        vm.prank(creator);
+        uint256 taskId = taskManager.createTask(
+            "task-spec-cid", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        // Agent submits work
+        vm.prank(agent1);
+        taskManager.submitWork(taskId, "submission-cid-1");
+
+        // Creator selects winner
+        vm.prank(creator);
+        taskManager.selectWinner(taskId, agent1);
+
+        // Record balances before
+        uint256 agent1TokenBefore = token.balanceOf(agent1);
+
+        // Warp past challenge window
+        vm.warp(block.timestamp + 48 hours + 1);
+
+        // Finalize task
+        taskManager.finalizeTask(taskId);
+
+        // Verify tokens released to winner
+        assertEq(token.balanceOf(agent1), agent1TokenBefore + BOUNTY_AMOUNT);
+        assertEq(token.balanceOf(address(escrowVault)), 0);
+    }
+
+    function test_CreateTask_WithERC20_AndRefund() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // Creator approves EscrowVault to spend tokens
+        vm.prank(creator);
+        token.approve(address(escrowVault), BOUNTY_AMOUNT);
+
+        // Create task with ERC20 bounty
+        vm.prank(creator);
+        uint256 taskId = taskManager.createTask(
+            "task-spec-cid", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        // Record creator balance before
+        uint256 creatorTokenBefore = token.balanceOf(creator);
+
+        // Cancel task (no submissions yet)
+        vm.prank(creator);
+        taskManager.cancelTask(taskId);
+
+        // Verify tokens refunded to creator
+        assertEq(token.balanceOf(creator), creatorTokenBefore + BOUNTY_AMOUNT);
+        assertEq(token.balanceOf(address(escrowVault)), 0);
+    }
+
+    function test_CreateTask_WithERC20_RevertIfNoApproval() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // No approval given - this should revert
+        vm.prank(creator);
+        vm.expectRevert(); // ERC20: insufficient allowance
+        taskManager.createTask("task-spec-cid", address(token), BOUNTY_AMOUNT, 0);
+    }
+
+    function test_CreateTask_WithERC20_RevertIfInsufficientApproval() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // Creator approves less than needed
+        vm.prank(creator);
+        token.approve(address(escrowVault), BOUNTY_AMOUNT / 2);
+
+        // Should revert due to insufficient approval
+        vm.prank(creator);
+        vm.expectRevert(); // ERC20: insufficient allowance
+        taskManager.createTask("task-spec-cid", address(token), BOUNTY_AMOUNT, 0);
+    }
+
+    function test_CreateTask_WithERC20_MultipleTasksSameApproval() public {
+        // Deploy mock ERC20
+        MockERC20 token = new MockERC20();
+        token.mint(creator, 100 ether);
+
+        // Creator approves enough for multiple tasks
+        vm.prank(creator);
+        token.approve(address(escrowVault), BOUNTY_AMOUNT * 3);
+
+        // Create first task
+        vm.prank(creator);
+        uint256 taskId1 = taskManager.createTask(
+            "task-spec-cid-1", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        // Create second task
+        vm.prank(creator);
+        uint256 taskId2 = taskManager.createTask(
+            "task-spec-cid-2", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        // Create third task
+        vm.prank(creator);
+        uint256 taskId3 = taskManager.createTask(
+            "task-spec-cid-3", address(token), BOUNTY_AMOUNT, 0
+        );
+
+        assertEq(taskId1, 1);
+        assertEq(taskId2, 2);
+        assertEq(taskId3, 3);
+
+        // Verify all bounties deposited
+        assertEq(token.balanceOf(address(escrowVault)), BOUNTY_AMOUNT * 3);
+        assertEq(token.balanceOf(creator), 100 ether - (BOUNTY_AMOUNT * 3));
+
+        // Verify fourth task fails (approval exhausted)
+        vm.prank(creator);
+        vm.expectRevert(); // ERC20: insufficient allowance
+        taskManager.createTask("task-spec-cid-4", address(token), BOUNTY_AMOUNT, 0);
     }
 }

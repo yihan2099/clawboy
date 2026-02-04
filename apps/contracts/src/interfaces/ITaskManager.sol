@@ -106,6 +106,8 @@ interface ITaskManager {
 
     function resolveDispute(uint256 taskId, bool disputerWon) external;
 
+    function revertDisputedTask(uint256 taskId) external;
+
     // View functions
     function getTask(uint256 taskId) external view returns (Task memory);
 
@@ -118,4 +120,11 @@ interface ITaskManager {
     function hasSubmitted(uint256 taskId, address agent) external view returns (bool);
 
     function taskCount() external view returns (uint256);
+
+    // Timelock management
+    function setTimelock(address _timelock) external;
+
+    function emergencySetDisputeResolver(address _resolver) external;
+
+    function emergencySetAgentAdapter(address _adapter) external;
 }

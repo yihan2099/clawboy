@@ -33,6 +33,12 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
 
     // Access control
     address public owner;
+    address public pendingOwner;
+    address public timelock;
+
+    // Slashed stakes tracking
+    uint256 public totalSlashedStakes;
+    uint256 public totalWithdrawnStakes;
 
     // Errors
     error DisputeNotFound();
@@ -48,9 +54,33 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
     error OnlyOwner();
     error TransferFailed();
     error MaxVotersReached();
+    error DisputeNotActive();
+    error NotPendingOwner();
+    error InsufficientSlashedStakes();
+    error OnlyTimelock();
+    error ZeroAddress();
+
+    /// @notice Emitted when a dispute is cancelled
+    event DisputeCancelled(uint256 indexed disputeId, uint256 indexed taskId, address cancelledBy);
+
+    // Ownership events
+    event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Slashed stakes events
+    event StakeSlashed(uint256 indexed disputeId, address indexed disputer, uint256 amount);
+    event StakesWithdrawn(address indexed recipient, uint256 amount);
+
+    // Emergency bypass event
+    event EmergencyBypassUsed(address indexed caller, bytes4 indexed selector);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert OnlyOwner();
+        _;
+    }
+
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
@@ -58,6 +88,26 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         taskManager = ITaskManager(_taskManager);
         agentAdapter = IClawboyAgentAdapter(_agentAdapter);
         owner = msg.sender;
+    }
+
+    /**
+     * @notice Initiate ownership transfer (two-step process)
+     * @param newOwner The address to transfer ownership to
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert TransferFailed(); // Reuse error for zero address
+        pendingOwner = newOwner;
+        emit OwnershipTransferInitiated(owner, newOwner);
+    }
+
+    /**
+     * @notice Accept ownership transfer (must be called by pending owner)
+     */
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     /**
@@ -200,9 +250,11 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
             // Reputation handled by TaskManager.resolveDispute()
         } else {
             // Disputer loses - stake goes to protocol (or could be burned/redistributed)
-            // For now, keep in contract (could add treasury later)
+            // Track the slashed stake for accounting
+            totalSlashedStakes += dispute.disputeStake;
             agentAdapter.recordDisputeLoss(dispute.disputer, dispute.id);
 
+            emit StakeSlashed(dispute.id, dispute.disputer, dispute.disputeStake);
             emit DisputeStakeSlashed(dispute.id, dispute.disputer, dispute.disputeStake);
         }
 
@@ -296,7 +348,15 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
     }
 
     /**
-     * @notice Withdraw accumulated slashed stakes (owner only)
+     * @notice Get the available slashed stakes that can be withdrawn
+     * @return The available amount (total slashed minus already withdrawn)
+     */
+    function availableSlashedStakes() external view returns (uint256) {
+        return totalSlashedStakes - totalWithdrawnStakes;
+    }
+
+    /**
+     * @notice Withdraw accumulated slashed stakes (requires timelock)
      * @param recipient The address to receive funds
      * @param amount The amount to withdraw
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on withdrawals
@@ -306,10 +366,109 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         uint256 amount
     )
         external
+        onlyTimelock
+        nonReentrant
+    {
+        // Validate available balance
+        uint256 available = totalSlashedStakes - totalWithdrawnStakes;
+        if (amount > available) revert InsufficientSlashedStakes();
+
+        // Track withdrawal
+        totalWithdrawnStakes += amount;
+
+        (bool success,) = recipient.call{ value: amount }("");
+        if (!success) revert TransferFailed();
+
+        emit StakesWithdrawn(recipient, amount);
+    }
+
+    /**
+     * @notice Cancel a dispute (requires timelock, for fraudulent disputes or emergency)
+     * @param disputeId The dispute ID to cancel
+     * @dev This refunds the dispute stake to the disputer and marks the dispute as cancelled.
+     *      The task reverts to InReview status with a new challenge deadline.
+     *      Can only cancel active disputes that haven't been resolved yet.
+     */
+    function cancelDispute(uint256 disputeId) external onlyTimelock nonReentrant {
+        Dispute storage dispute = _disputes[disputeId];
+        if (dispute.id == 0) revert DisputeNotFound();
+        if (dispute.status != DisputeStatus.Active) revert DisputeNotActive();
+
+        // Mark dispute as cancelled
+        dispute.status = DisputeStatus.Cancelled;
+
+        // Clear the task dispute mapping
+        _taskDispute[dispute.taskId] = 0;
+
+        // Return stake to disputer
+        (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
+        if (!success) revert TransferFailed();
+
+        // Revert task to InReview status so it can be finalized normally or disputed again
+        taskManager.revertDisputedTask(dispute.taskId);
+
+        emit DisputeCancelled(disputeId, dispute.taskId, msg.sender);
+    }
+
+    /**
+     * @notice Set the timelock address (callable by owner, one-time setup)
+     * @param _timelock The TimelockController address
+     */
+    function setTimelock(address _timelock) external onlyOwner {
+        if (_timelock == address(0)) revert ZeroAddress();
+        timelock = _timelock;
+    }
+
+    /**
+     * @notice Emergency cancel dispute (owner only, emits event for monitoring)
+     * @param disputeId The dispute ID to cancel
+     */
+    function emergencyCancelDispute(uint256 disputeId) external onlyOwner nonReentrant {
+        Dispute storage dispute = _disputes[disputeId];
+        if (dispute.id == 0) revert DisputeNotFound();
+        if (dispute.status != DisputeStatus.Active) revert DisputeNotActive();
+
+        // Mark dispute as cancelled
+        dispute.status = DisputeStatus.Cancelled;
+
+        // Clear the task dispute mapping
+        _taskDispute[dispute.taskId] = 0;
+
+        // Return stake to disputer
+        (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
+        if (!success) revert TransferFailed();
+
+        // Revert task to InReview status so it can be finalized normally or disputed again
+        taskManager.revertDisputedTask(dispute.taskId);
+
+        emit EmergencyBypassUsed(msg.sender, this.cancelDispute.selector);
+        emit DisputeCancelled(disputeId, dispute.taskId, msg.sender);
+    }
+
+    /**
+     * @notice Emergency withdraw slashed stakes (owner only, emits event for monitoring)
+     * @param recipient The address to receive funds
+     * @param amount The amount to withdraw
+     */
+    function emergencyWithdrawSlashedStakes(
+        address recipient,
+        uint256 amount
+    )
+        external
         onlyOwner
         nonReentrant
     {
+        // Validate available balance
+        uint256 available = totalSlashedStakes - totalWithdrawnStakes;
+        if (amount > available) revert InsufficientSlashedStakes();
+
+        // Track withdrawal
+        totalWithdrawnStakes += amount;
+
         (bool success,) = recipient.call{ value: amount }("");
         if (!success) revert TransferFailed();
+
+        emit EmergencyBypassUsed(msg.sender, this.withdrawSlashedStakes.selector);
+        emit StakesWithdrawn(recipient, amount);
     }
 }

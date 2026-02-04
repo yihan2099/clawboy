@@ -26,6 +26,8 @@ contract TaskManager is ITaskManager {
 
     // Access control
     address public owner;
+    address public pendingOwner;
+    address public timelock;
 
     // Configuration
     uint256 public constant CHALLENGE_WINDOW = 48 hours;
@@ -53,9 +55,18 @@ contract TaskManager is ITaskManager {
     error TaskAlreadyDisputed();
     error NotInReviewOrDisputed();
     error DisputeResolverNotSet();
+    error ZeroAddress();
+    error NotPendingOwner();
+    error TaskNotDisputed();
+    error OnlyTimelock();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert OnlyOwner();
+        _;
+    }
+
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
@@ -70,20 +81,81 @@ contract TaskManager is ITaskManager {
         owner = msg.sender;
     }
 
+    // Ownership events
+    event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Dispute reversion event
+    event TaskDisputeReverted(uint256 indexed taskId, uint256 newChallengeDeadline);
+
+    // Emergency bypass event
+    event EmergencyBypassUsed(address indexed caller, bytes4 indexed selector);
+
     /**
-     * @notice Set the DisputeResolver address (callable by owner)
+     * @notice Initiate ownership transfer (two-step process)
+     * @param newOwner The address to transfer ownership to
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferInitiated(owner, newOwner);
+    }
+
+    /**
+     * @notice Accept ownership transfer (must be called by pending owner)
+     */
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    /**
+     * @notice Set the DisputeResolver address (requires timelock)
      * @param _resolver The DisputeResolver address
      */
-    function setDisputeResolver(address _resolver) external onlyOwner {
+    function setDisputeResolver(address _resolver) external onlyTimelock {
+        if (_resolver == address(0)) revert ZeroAddress();
         disputeResolver = IDisputeResolver(_resolver);
     }
 
     /**
-     * @notice Set the AgentAdapter address (callable by owner)
+     * @notice Set the AgentAdapter address (requires timelock)
      * @param _adapter The AgentAdapter address
      */
-    function setAgentAdapter(address _adapter) external onlyOwner {
+    function setAgentAdapter(address _adapter) external onlyTimelock {
+        if (_adapter == address(0)) revert ZeroAddress();
         agentAdapter = IClawboyAgentAdapter(_adapter);
+    }
+
+    /**
+     * @notice Set the timelock address (callable by owner, one-time setup)
+     * @param _timelock The TimelockController address
+     */
+    function setTimelock(address _timelock) external onlyOwner {
+        if (_timelock == address(0)) revert ZeroAddress();
+        timelock = _timelock;
+    }
+
+    /**
+     * @notice Emergency bypass for setDisputeResolver (owner only, emits event for monitoring)
+     * @param _resolver The DisputeResolver address
+     */
+    function emergencySetDisputeResolver(address _resolver) external onlyOwner {
+        if (_resolver == address(0)) revert ZeroAddress();
+        disputeResolver = IDisputeResolver(_resolver);
+        emit EmergencyBypassUsed(msg.sender, this.setDisputeResolver.selector);
+    }
+
+    /**
+     * @notice Emergency bypass for setAgentAdapter (owner only, emits event for monitoring)
+     * @param _adapter The AgentAdapter address
+     */
+    function emergencySetAgentAdapter(address _adapter) external onlyOwner {
+        if (_adapter == address(0)) revert ZeroAddress();
+        agentAdapter = IClawboyAgentAdapter(_adapter);
+        emit EmergencyBypassUsed(msg.sender, this.setAgentAdapter.selector);
     }
 
     /**
@@ -129,7 +201,13 @@ contract TaskManager is ITaskManager {
         });
 
         // Deposit bounty to escrow
-        escrowVault.deposit{ value: msg.value }(taskId, bountyToken, bountyAmount);
+        if (bountyToken == address(0)) {
+            // ETH deposit
+            escrowVault.deposit{ value: msg.value }(taskId, bountyToken, bountyAmount);
+        } else {
+            // ERC20 deposit - creator must have approved EscrowVault to spend tokens
+            escrowVault.depositFrom(taskId, bountyToken, bountyAmount, msg.sender);
+        }
 
         emit TaskCreated(taskId, msg.sender, bountyAmount, bountyToken, specificationCid, deadline);
     }
@@ -322,6 +400,27 @@ contract TaskManager is ITaskManager {
         _activeDisputeId[taskId] = disputeId;
 
         emit TaskDisputed(taskId, disputer, disputeId);
+    }
+
+    /**
+     * @notice Revert a disputed task back to InReview status (called by DisputeResolver on cancellation)
+     * @param taskId The task ID
+     * @dev Restores the challenge deadline to allow normal finalization or new disputes
+     */
+    function revertDisputedTask(uint256 taskId) external onlyDisputeResolver {
+        Task storage task = _tasks[taskId];
+        if (task.id == 0) revert TaskNotFound();
+        if (task.status != TaskStatus.Disputed) revert TaskNotDisputed();
+
+        // Revert to InReview status
+        task.status = TaskStatus.InReview;
+        // Reset challenge deadline to give participants time to react
+        task.challengeDeadline = block.timestamp + CHALLENGE_WINDOW;
+
+        // Clear the active dispute
+        _activeDisputeId[taskId] = 0;
+
+        emit TaskDisputeReverted(taskId, task.challengeDeadline);
     }
 
     /**

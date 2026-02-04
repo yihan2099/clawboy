@@ -85,4 +85,11 @@ interface IDisputeResolver {
     function VOTING_PERIOD() external view returns (uint256);
 
     function MAJORITY_THRESHOLD() external view returns (uint256);
+
+    // Timelock management
+    function setTimelock(address _timelock) external;
+
+    function emergencyCancelDispute(uint256 disputeId) external;
+
+    function emergencyWithdrawSlashedStakes(address recipient, uint256 amount) external;
 }

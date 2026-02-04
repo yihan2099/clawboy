@@ -71,6 +71,33 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard {
     }
 
     /**
+     * @notice Deposit ERC20 bounty for a task from a specific address
+     * @param taskId The task ID
+     * @param token Token address (must not be address(0))
+     * @param amount Amount to deposit
+     * @param from Address to transfer tokens from (must have approved this contract)
+     */
+    function depositFrom(
+        uint256 taskId,
+        address token,
+        uint256 amount,
+        address from
+    )
+        external
+        onlyTaskManager
+    {
+        if (amount == 0) revert InvalidAmount();
+        if (token == address(0)) revert InvalidAmount(); // Use deposit() for ETH
+
+        // ERC20 deposit from specified address
+        IERC20(token).safeTransferFrom(from, address(this), amount);
+
+        _escrows[taskId] = Escrow({ token: token, amount: amount, released: false });
+
+        emit Deposited(taskId, token, amount);
+    }
+
+    /**
      * @notice Release bounty to the recipient (agent)
      * @param taskId The task ID
      * @param recipient The address to receive the bounty

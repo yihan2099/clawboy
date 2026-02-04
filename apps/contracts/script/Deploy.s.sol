@@ -8,6 +8,7 @@ import { DisputeResolver } from "../src/DisputeResolver.sol";
 import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
+import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract DeployScript is Script {
     function run() public {
@@ -19,13 +20,9 @@ contract DeployScript is Script {
         ERC8004IdentityRegistry identityRegistry = new ERC8004IdentityRegistry();
         console.log("ERC8004IdentityRegistry deployed at:", address(identityRegistry));
 
-        // 2. Deploy ERC-8004 ReputationRegistry
-        ERC8004ReputationRegistry reputationRegistry = new ERC8004ReputationRegistry();
+        // 2. Deploy ERC-8004 ReputationRegistry (initialized with IdentityRegistry in constructor)
+        ERC8004ReputationRegistry reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
         console.log("ERC8004ReputationRegistry deployed at:", address(reputationRegistry));
-
-        // 3. Initialize ReputationRegistry with IdentityRegistry
-        reputationRegistry.initialize(address(identityRegistry));
-        console.log("ReputationRegistry initialized with IdentityRegistry");
 
         // 4. Deploy ClawboyAgentAdapter
         ClawboyAgentAdapter agentAdapter =
@@ -56,10 +53,35 @@ contract DeployScript is Script {
             new DisputeResolver(address(taskManager), address(agentAdapter));
         console.log("DisputeResolver deployed at:", address(disputeResolver));
 
-        // 9. Configure access control
-        taskManager.setDisputeResolver(address(disputeResolver));
-        agentAdapter.setTaskManager(address(taskManager));
-        agentAdapter.setDisputeResolver(address(disputeResolver));
+        // 9. Deploy TimelockController (48 hours = 172800 seconds)
+        address[] memory proposers = new address[](1);
+        proposers[0] = deployer;
+        address[] memory executors = new address[](1);
+        executors[0] = deployer;
+
+        TimelockController timelock = new TimelockController(
+            48 hours,
+            proposers,
+            executors,
+            deployer // admin
+        );
+        console.log("TimelockController deployed at:", address(timelock));
+
+        // 10. Configure timelock on all contracts BEFORE setting protected addresses
+        taskManager.setTimelock(address(timelock));
+        agentAdapter.setTimelock(address(timelock));
+        disputeResolver.setTimelock(address(timelock));
+        console.log("Timelock configured on all contracts");
+
+        // 11. Configure access control via emergency functions (for initial setup)
+        // These bypass timelock but emit EmergencyBypassUsed events
+        taskManager.emergencySetDisputeResolver(address(disputeResolver));
+        agentAdapter.emergencySetTaskManager(address(taskManager));
+        agentAdapter.emergencySetDisputeResolver(address(disputeResolver));
+
+        // 12. Authorize ClawboyAgentAdapter to call registerFor on IdentityRegistry
+        identityRegistry.authorizeAdapter(address(agentAdapter));
+        console.log("ClawboyAgentAdapter authorized for IdentityRegistry");
 
         vm.stopBroadcast();
 
@@ -71,5 +93,6 @@ contract DeployScript is Script {
         console.log("EscrowVault:", address(escrowVault));
         console.log("TaskManager:", address(taskManager));
         console.log("DisputeResolver:", address(disputeResolver));
+        console.log("TimelockController:", address(timelock));
     }
 }

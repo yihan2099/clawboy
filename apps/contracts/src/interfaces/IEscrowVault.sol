@@ -14,6 +14,8 @@ interface IEscrowVault {
 
     function deposit(uint256 taskId, address token, uint256 amount) external payable;
 
+    function depositFrom(uint256 taskId, address token, uint256 amount, address from) external;
+
     function release(uint256 taskId, address recipient) external;
 
     function refund(uint256 taskId, address creator) external;

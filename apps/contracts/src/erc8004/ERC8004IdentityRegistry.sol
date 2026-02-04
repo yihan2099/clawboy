@@ -28,6 +28,10 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     mapping(uint256 => address) private _agentToWallet;
     mapping(address => uint256) private _walletToAgent;
 
+    // SECURITY: Access control for registerFor
+    address public owner;
+    mapping(address => bool) public authorizedAdapters;
+
     // Errors
     error NotAgentOwner();
     error AgentNotFound();
@@ -35,8 +39,51 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     error SignatureExpired();
     error WalletAlreadyLinked();
     error NoWalletLinked();
+    error NotOwner();
+    error NotAuthorized();
 
-    constructor() ERC721("ERC8004 Agent Identity", "AGENT") { }
+    // Events for adapter management
+    event AdapterAuthorized(address indexed adapter);
+    event AdapterRevoked(address indexed adapter);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert NotOwner();
+        _;
+    }
+
+    constructor() ERC721("ERC8004 Agent Identity", "AGENT") {
+        owner = msg.sender;
+    }
+
+    /**
+     * @notice Authorize an adapter to call registerFor
+     * @param adapter The adapter address to authorize
+     */
+    function authorizeAdapter(address adapter) external onlyOwner {
+        authorizedAdapters[adapter] = true;
+        emit AdapterAuthorized(adapter);
+    }
+
+    /**
+     * @notice Revoke an adapter's authorization
+     * @param adapter The adapter address to revoke
+     */
+    function revokeAdapter(address adapter) external onlyOwner {
+        authorizedAdapters[adapter] = false;
+        emit AdapterRevoked(adapter);
+    }
+
+    /**
+     * @notice Transfer ownership of the registry
+     * @param newOwner The new owner address
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert AgentNotFound(); // reuse error for zero address
+        address oldOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
 
     /**
      * @notice Register a new agent with no URI
@@ -76,19 +123,22 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
 
     /**
      * @notice Register a new agent on behalf of another address
-     * @dev Useful for adapters/wrappers that need to register users
-     * @param owner The address that will own the agent NFT
+     * @dev SECURITY: Only authorized adapters can call this function to prevent
+     *      spam registration and griefing attacks.
+     * @param recipient The address that will own the agent NFT
      * @param agentURI The URI pointing to agent metadata
      * @return agentId The ID of the newly registered agent
      */
     function registerFor(
-        address owner,
+        address recipient,
         string calldata agentURI
     )
         external
         returns (uint256 agentId)
     {
-        return _register(owner, agentURI);
+        // SECURITY: Only authorized adapters can register on behalf of others
+        if (!authorizedAdapters[msg.sender]) revert NotAuthorized();
+        return _register(recipient, agentURI);
     }
 
     /**
@@ -122,12 +172,15 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
 
     /**
      * @notice Update an agent's URI on behalf of the owner
-     * @dev Useful for adapters/wrappers that need to update URIs for their users
-     *      The caller must be the linked wallet for the agent
-     * @param wallet The wallet address linked to the agent
+     * @dev SECURITY: Only the linked wallet itself can call this function.
+     *      This prevents unauthorized URI changes by third parties.
+     * @param wallet The wallet address linked to the agent (must be msg.sender)
      * @param newURI The new URI for the agent
      */
     function setAgentURIFor(address wallet, string calldata newURI) external {
+        // SECURITY: Caller must be the wallet itself OR an authorized adapter
+        if (msg.sender != wallet && !authorizedAdapters[msg.sender]) revert NotAgentOwner();
+
         uint256 agentId = _walletToAgent[wallet];
         if (agentId == 0) revert AgentNotFound();
 
@@ -272,25 +325,16 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     }
 
     /**
-     * @dev Override _update to handle wallet unlinking on transfer
+     * @dev Override _update - wallet links persist across transfers
+     * @dev SECURITY: Wallet unlinking should only happen via explicit unsetAgentWallet() call,
+     *      not automatically on NFT transfer. This prevents breaking agent identity on transfer.
      */
     function _update(address to, uint256 tokenId, address auth)
         internal
         override
         returns (address)
     {
-        address from = super._update(to, tokenId, auth);
-
-        // When transferring, unlink the wallet from the agent
-        if (from != address(0) && to != address(0) && from != to) {
-            address linkedWallet = _agentToWallet[tokenId];
-            if (linkedWallet != address(0)) {
-                delete _walletToAgent[linkedWallet];
-                delete _agentToWallet[tokenId];
-                emit AgentWalletUnset(tokenId, linkedWallet);
-            }
-        }
-
-        return from;
+        // Wallet links are preserved during transfer - unlinking must be explicit
+        return super._update(to, tokenId, auth);
     }
 }

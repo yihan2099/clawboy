@@ -38,16 +38,10 @@ interface IERC8004ReputationRegistry {
     );
 
     /**
-     * @notice Initialize the reputation registry with an identity registry
-     * @param identityRegistry_ The identity registry address
-     */
-    function initialize(address identityRegistry_) external;
-
-    /**
-     * @notice Get the identity registry address
+     * @notice Get the identity registry address (immutable, set at construction)
      * @return The identity registry address
      */
-    function getIdentityRegistry() external view returns (address);
+    function identityRegistry() external view returns (address);
 
     /**
      * @notice Give feedback to an agent

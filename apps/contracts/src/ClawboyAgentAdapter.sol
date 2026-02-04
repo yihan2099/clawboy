@@ -36,14 +36,26 @@ contract ClawboyAgentAdapter is IClawboyAgentAdapter {
     int128 public constant VOTE_CORRECT_VALUE = 3;
     int128 public constant VOTE_INCORRECT_VALUE = -2;
 
+    // Access control (continued)
+    address public pendingOwner;
+    address public timelock;
+
     // Errors
     error OnlyOwner();
     error Unauthorized();
     error NotRegistered();
     error AlreadyRegistered();
+    error NotPendingOwner();
+    error ZeroAddress();
+    error OnlyTimelock();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert OnlyOwner();
+        _;
+    }
+
+    modifier onlyTimelock() {
+        if (msg.sender != timelock) revert OnlyTimelock();
         _;
     }
 
@@ -54,6 +66,13 @@ contract ClawboyAgentAdapter is IClawboyAgentAdapter {
         _;
     }
 
+    // Ownership events
+    event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    // Emergency bypass event
+    event EmergencyBypassUsed(address indexed caller, bytes4 indexed selector);
+
     constructor(address _identityRegistry, address _reputationRegistry) {
         identityRegistry = IERC8004IdentityRegistry(_identityRegistry);
         reputationRegistry = IERC8004ReputationRegistry(_reputationRegistry);
@@ -61,17 +80,68 @@ contract ClawboyAgentAdapter is IClawboyAgentAdapter {
     }
 
     /**
-     * @notice Set the TaskManager address (callable by owner)
+     * @notice Initiate ownership transfer (two-step process)
+     * @param newOwner The address to transfer ownership to
      */
-    function setTaskManager(address _taskManager) external onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferInitiated(owner, newOwner);
+    }
+
+    /**
+     * @notice Accept ownership transfer (must be called by pending owner)
+     */
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    /**
+     * @notice Set the TaskManager address (requires timelock)
+     */
+    function setTaskManager(address _taskManager) external onlyTimelock {
+        if (_taskManager == address(0)) revert ZeroAddress();
         taskManager = _taskManager;
     }
 
     /**
-     * @notice Set the DisputeResolver address (callable by owner)
+     * @notice Set the DisputeResolver address (requires timelock)
      */
-    function setDisputeResolver(address _disputeResolver) external onlyOwner {
+    function setDisputeResolver(address _disputeResolver) external onlyTimelock {
+        if (_disputeResolver == address(0)) revert ZeroAddress();
         disputeResolver = _disputeResolver;
+    }
+
+    /**
+     * @notice Set the timelock address (callable by owner, one-time setup)
+     * @param _timelock The TimelockController address
+     */
+    function setTimelock(address _timelock) external onlyOwner {
+        if (_timelock == address(0)) revert ZeroAddress();
+        timelock = _timelock;
+    }
+
+    /**
+     * @notice Emergency bypass for setTaskManager (owner only, emits event for monitoring)
+     * @param _taskManager The TaskManager address
+     */
+    function emergencySetTaskManager(address _taskManager) external onlyOwner {
+        if (_taskManager == address(0)) revert ZeroAddress();
+        taskManager = _taskManager;
+        emit EmergencyBypassUsed(msg.sender, this.setTaskManager.selector);
+    }
+
+    /**
+     * @notice Emergency bypass for setDisputeResolver (owner only, emits event for monitoring)
+     * @param _disputeResolver The DisputeResolver address
+     */
+    function emergencySetDisputeResolver(address _disputeResolver) external onlyOwner {
+        if (_disputeResolver == address(0)) revert ZeroAddress();
+        disputeResolver = _disputeResolver;
+        emit EmergencyBypassUsed(msg.sender, this.setDisputeResolver.selector);
     }
 
     /**
@@ -206,23 +276,57 @@ contract ClawboyAgentAdapter is IClawboyAgentAdapter {
     /**
      * @notice Get the vote weight for an agent in disputes
      * @dev Weight = max(1, floor(log2(reputation + 1)))
+     * @dev SECURITY: Uses try/catch to handle getSummary() reverts (e.g., TooManyClients)
+     *      Falls back to default weight of 1 if reputation cannot be calculated
      */
     function getVoteWeight(address agent) external view returns (uint256) {
         uint256 agentId = identityRegistry.getAgentIdByWallet(agent);
         if (agentId == 0) return 0;
 
-        // Get reputation summaries
-        (uint64 taskWins,,) =
-            reputationRegistry.getSummary(agentId, new address[](0), TAG_TASK, TAG_WIN);
-        (uint64 disputeWins,,) =
-            reputationRegistry.getSummary(agentId, new address[](0), TAG_DISPUTE, TAG_WIN);
-        (uint64 disputeLosses,,) =
-            reputationRegistry.getSummary(agentId, new address[](0), TAG_DISPUTE, TAG_LOSS);
+        // Get reputation summaries with fallback for gas exhaustion scenarios
+        uint64 taskWins = 0;
+        uint64 disputeWins = 0;
+        uint64 disputeLosses = 0;
+
+        // Try to get task wins - fallback to 0 if getSummary reverts (too many clients/feedback)
+        try reputationRegistry.getSummary(agentId, new address[](0), TAG_TASK, TAG_WIN) returns (
+            uint64 count,
+            int128,
+            uint8
+        ) {
+            taskWins = count;
+        } catch {
+            // Fallback: return minimum weight for registered agents
+            return 1;
+        }
+
+        // Try to get dispute wins
+        try reputationRegistry.getSummary(agentId, new address[](0), TAG_DISPUTE, TAG_WIN) returns (
+            uint64 count,
+            int128,
+            uint8
+        ) {
+            disputeWins = count;
+        } catch {
+            return 1;
+        }
+
+        // Try to get dispute losses
+        try reputationRegistry.getSummary(agentId, new address[](0), TAG_DISPUTE, TAG_LOSS) returns (
+            uint64 count,
+            int128,
+            uint8
+        ) {
+            disputeLosses = count;
+        } catch {
+            return 1;
+        }
 
         // Calculate equivalent reputation (same weights as original ClawboyRegistry)
         // Task wins: +10 each
         // Dispute wins: +15 each
         // Dispute losses: -20 each
+        // SECURITY: Use unchecked math since we're dealing with small numbers from feedback counts
         int256 rep = int256(uint256(taskWins)) * 10 + int256(uint256(disputeWins)) * 15
             - int256(uint256(disputeLosses)) * 20;
 

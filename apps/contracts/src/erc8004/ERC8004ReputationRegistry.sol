@@ -21,9 +21,8 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         uint64 timestamp;
     }
 
-    // State
-    address private _identityRegistry;
-    bool private _initialized;
+    // State - identity registry is immutable after construction
+    address public immutable identityRegistry;
 
     // Feedback storage: agentId => clientAddress => feedbackIndex => FeedbackEntry
     mapping(uint256 => mapping(address => mapping(uint64 => FeedbackEntry))) private _feedback;
@@ -39,31 +38,18 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
     mapping(uint256 => mapping(bytes32 => mapping(bytes32 => uint64))) private _tagCounts;
 
     // Errors
-    error NotInitialized();
-    error AlreadyInitialized();
+    error InvalidIdentityRegistry();
     error AgentNotFound();
     error FeedbackNotFound();
     error FeedbackAlreadyRevoked();
 
-    modifier onlyInitialized() {
-        if (!_initialized) revert NotInitialized();
-        _;
-    }
-
     /**
-     * @notice Initialize the reputation registry with an identity registry
+     * @notice Constructor - initializes the reputation registry with an identity registry
+     * @param identityRegistry_ The address of the identity registry (immutable after deployment)
      */
-    function initialize(address identityRegistry_) external {
-        if (_initialized) revert AlreadyInitialized();
-        _identityRegistry = identityRegistry_;
-        _initialized = true;
-    }
-
-    /**
-     * @notice Get the identity registry address
-     */
-    function getIdentityRegistry() external view returns (address) {
-        return _identityRegistry;
+    constructor(address identityRegistry_) {
+        if (identityRegistry_ == address(0)) revert InvalidIdentityRegistry();
+        identityRegistry = identityRegistry_;
     }
 
     /**
@@ -80,7 +66,6 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         bytes32 feedbackHash
     )
         external
-        onlyInitialized
     {
         _giveFeedbackInternal(agentId, value, valueDecimals, tag1, tag2, feedbackHash);
     }
@@ -96,7 +81,7 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         private
     {
         // Verify agent exists
-        IERC8004IdentityRegistry registry = IERC8004IdentityRegistry(_identityRegistry);
+        IERC8004IdentityRegistry registry = IERC8004IdentityRegistry(identityRegistry);
         if (agentId > registry.totalAgents() || agentId == 0) revert AgentNotFound();
 
         // Track client if new
@@ -147,7 +132,7 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
     /**
      * @notice Revoke previously given feedback
      */
-    function revokeFeedback(uint256 agentId, uint64 feedbackIndex) external onlyInitialized {
+    function revokeFeedback(uint256 agentId, uint64 feedbackIndex) external {
         FeedbackEntry storage entry = _feedback[agentId][msg.sender][feedbackIndex];
 
         if (entry.timestamp == 0) revert FeedbackNotFound();
@@ -174,7 +159,6 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         bytes32 responseHash
     )
         external
-        onlyInitialized
     {
         FeedbackEntry storage entry = _feedback[agentId][clientAddress][feedbackIndex];
         if (entry.timestamp == 0) revert FeedbackNotFound();
