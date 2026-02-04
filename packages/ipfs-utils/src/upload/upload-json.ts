@@ -1,4 +1,4 @@
-import { getPinataClient } from '../client/pinata-client';
+import { getPinataClient, getPublicGroupId } from '../client/pinata-client';
 
 export interface UploadJsonOptions {
   /** Metadata name for the file */
@@ -7,6 +7,12 @@ export interface UploadJsonOptions {
   keyvalues?: Record<string, string>;
   /** Timeout in milliseconds (default: 30000) */
   timeoutMs?: number;
+  /**
+   * Whether to upload as public content (default: false).
+   * Public content is accessible via any IPFS gateway without signed URLs.
+   * Requires PINATA_PUBLIC_GROUP_ID environment variable to be set.
+   */
+  isPublic?: boolean;
 }
 
 export interface UploadResult {
@@ -38,10 +44,13 @@ export async function uploadJson(
   data: Record<string, unknown>,
   options: UploadJsonOptions = {}
 ): Promise<UploadResult> {
-  const { timeoutMs = 30000, ...pinataOptions } = options;
+  const { timeoutMs = 30000, isPublic = false, ...pinataOptions } = options;
 
   try {
     const pinata = getPinataClient();
+
+    // Get group ID for public uploads
+    const groupId = isPublic ? getPublicGroupId() : undefined;
 
     // Create abort controller for timeout
     const controller = new AbortController();
@@ -53,6 +62,7 @@ export async function uploadJson(
           name: pinataOptions.name || 'clawboy-data.json',
           keyvalues: pinataOptions.keyvalues,
         },
+        groupId,
       });
 
       clearTimeout(timeoutId);
@@ -88,7 +98,8 @@ export async function uploadJson(
 }
 
 /**
- * Upload a task specification to IPFS
+ * Upload a task specification to IPFS.
+ * Task specs are uploaded as public content for discoverability.
  */
 export async function uploadTaskSpecification(
   specification: import('@clawboy/shared-types').TaskSpecification
@@ -99,11 +110,13 @@ export async function uploadTaskSpecification(
       type: 'task-specification',
       version: specification.version,
     },
+    isPublic: true,
   });
 }
 
 /**
- * Upload an agent profile to IPFS
+ * Upload an agent profile to IPFS.
+ * Agent profiles are uploaded as public content for verifiability.
  */
 export async function uploadAgentProfile(
   profile: import('@clawboy/shared-types').AgentProfile
@@ -114,11 +127,13 @@ export async function uploadAgentProfile(
       type: 'agent-profile',
       version: profile.version,
     },
+    isPublic: true,
   });
 }
 
 /**
- * Upload a work submission to IPFS
+ * Upload a work submission to IPFS.
+ * Work submissions are kept private to protect proprietary solutions.
  */
 export async function uploadWorkSubmission(
   submission: import('@clawboy/shared-types').WorkSubmission
@@ -130,11 +145,13 @@ export async function uploadWorkSubmission(
       version: submission.version,
       taskId: submission.taskId,
     },
+    // isPublic: false (default) - submissions are private
   });
 }
 
 /**
- * Upload dispute evidence to IPFS
+ * Upload dispute evidence to IPFS.
+ * Dispute evidence is kept private as it may contain sensitive discussions.
  */
 export async function uploadDisputeEvidence(
   evidence: import('@clawboy/shared-types').DisputeEvidence
@@ -146,5 +163,6 @@ export async function uploadDisputeEvidence(
       version: evidence.version,
       taskId: evidence.taskId,
     },
+    // isPublic: false (default) - evidence is private
   });
 }

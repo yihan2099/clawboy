@@ -66,3 +66,11 @@ export function isValidCid(cid: string): boolean {
 
   return cidV0Regex.test(cid) || cidV1Regex.test(cid);
 }
+
+/**
+ * Get the public group ID for public content uploads.
+ * Returns undefined if not configured (content will be private).
+ */
+export function getPublicGroupId(): string | undefined {
+  return process.env.PINATA_PUBLIC_GROUP_ID;
+}

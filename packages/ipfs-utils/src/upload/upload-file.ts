@@ -1,4 +1,4 @@
-import { getPinataClient } from '../client/pinata-client';
+import { getPinataClient, getPublicGroupId } from '../client/pinata-client';
 import { IpfsUploadError } from './upload-json';
 
 export interface UploadFileOptions {
@@ -8,6 +8,12 @@ export interface UploadFileOptions {
   keyvalues?: Record<string, string>;
   /** Timeout in milliseconds (default: 60000 for files) */
   timeoutMs?: number;
+  /**
+   * Whether to upload as public content (default: false).
+   * Public content is accessible via any IPFS gateway without signed URLs.
+   * Requires PINATA_PUBLIC_GROUP_ID environment variable to be set.
+   */
+  isPublic?: boolean;
 }
 
 export interface FileUploadResult {
@@ -30,10 +36,13 @@ export async function uploadFile(
   file: File,
   options: UploadFileOptions = {}
 ): Promise<FileUploadResult> {
-  const { timeoutMs = 60000, ...pinataOptions } = options;
+  const { timeoutMs = 60000, isPublic = false, ...pinataOptions } = options;
 
   try {
     const pinata = getPinataClient();
+
+    // Get group ID for public uploads
+    const groupId = isPublic ? getPublicGroupId() : undefined;
 
     // Create abort controller for timeout
     const controller = new AbortController();
@@ -45,6 +54,7 @@ export async function uploadFile(
           name: pinataOptions.name || file.name,
           keyvalues: pinataOptions.keyvalues,
         },
+        groupId,
       });
 
       clearTimeout(timeoutId);
