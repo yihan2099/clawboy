@@ -18,8 +18,8 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
-    "@upstash/ratelimit": "^2.0.5",
-    "@upstash/redis": "^1.34.3"
+    "@clawboy/redis": "workspace:*",
+    "@upstash/ratelimit": "^2.0.5"
   },
   "devDependencies": {
     "@clawboy/eslint-config": "workspace:*",

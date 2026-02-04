@@ -1,47 +1,19 @@
 /**
- * Upstash Redis client singleton for rate limiting
+ * Re-export Redis client from foundational @clawboy/redis package
  *
- * Uses environment variables:
- * - UPSTASH_REDIS_REST_URL
- * - UPSTASH_REDIS_REST_TOKEN
+ * This maintains backward compatibility while consolidating Redis
+ * connection management in a single package.
  */
 
-import { Redis } from '@upstash/redis';
-
-let redisClient: Redis | null = null;
-
-/**
- * Get the Upstash Redis client singleton
- *
- * Returns null if environment variables are not configured,
- * allowing services to fail open when rate limiting is unavailable.
- */
-export function getRedisClient(): Redis | null {
-  if (redisClient) {
-    return redisClient;
-  }
-
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if (!url || !token) {
-    console.warn(
-      'Rate limiting disabled: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN not configured'
-    );
-    return null;
-  }
-
-  redisClient = new Redis({
-    url,
-    token,
-  });
-
-  return redisClient;
-}
+export { getRedisClient, isRedisEnabled } from '@clawboy/redis';
 
 /**
  * Check if rate limiting is available (Redis configured)
+ * @deprecated Use isRedisEnabled() instead
  */
 export function isRateLimitingEnabled(): boolean {
   return getRedisClient() !== null;
 }
+
+// Re-import to keep function available
+import { getRedisClient } from '@clawboy/redis';

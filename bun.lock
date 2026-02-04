@@ -89,6 +89,20 @@
         "typescript": "^5",
       },
     },
+    "packages/cache": {
+      "name": "@clawboy/cache",
+      "version": "0.0.1",
+      "dependencies": {
+        "@clawboy/redis": "workspace:*",
+      },
+      "devDependencies": {
+        "@clawboy/eslint-config": "workspace:*",
+        "@types/bun": "latest",
+        "@types/node": "^25.2.0",
+        "eslint": "^9",
+        "typescript": "^5.7.3",
+      },
+    },
     "packages/contracts": {
       "name": "@clawboy/contracts",
       "version": "0.0.1",
@@ -183,8 +197,8 @@
       "name": "@clawboy/rate-limit",
       "version": "0.0.1",
       "dependencies": {
+        "@clawboy/redis": "workspace:*",
         "@upstash/ratelimit": "^2.0.5",
-        "@upstash/redis": "^1.34.3",
       },
       "devDependencies": {
         "@clawboy/eslint-config": "workspace:*",
@@ -196,6 +210,19 @@
       },
       "peerDependencies": {
         "hono": "^4.0.0",
+      },
+    },
+    "packages/redis": {
+      "name": "@clawboy/redis",
+      "version": "0.0.1",
+      "dependencies": {
+        "@upstash/redis": "^1.34.3",
+      },
+      "devDependencies": {
+        "@clawboy/eslint-config": "workspace:*",
+        "@types/node": "^25.2.0",
+        "eslint": "^9",
+        "typescript": "^5.7.3",
       },
     },
     "packages/shared-types": {
@@ -273,6 +300,8 @@
 
     "@chainsafe/netmask": ["@chainsafe/netmask@2.0.0", "", { "dependencies": { "@chainsafe/is-ip": "^2.0.1" } }, "sha512-I3Z+6SWUoaljh3TBzCnCxjlUyN8tA+NAk5L6m9IxvCf1BENQTePzPMis97CoN/iMW1St3WN+AWCCRp+TTBRiDg=="],
 
+    "@clawboy/cache": ["@clawboy/cache@workspace:packages/cache"],
+
     "@clawboy/contracts": ["@clawboy/contracts@workspace:packages/contracts"],
 
     "@clawboy/contracts-solidity": ["@clawboy/contracts-solidity@workspace:apps/contracts"],
@@ -292,6 +321,8 @@
     "@clawboy/openclaw-skill": ["@clawboy/openclaw-skill@workspace:packages/openclaw-skill"],
 
     "@clawboy/rate-limit": ["@clawboy/rate-limit@workspace:packages/rate-limit"],
+
+    "@clawboy/redis": ["@clawboy/redis@workspace:packages/redis"],
 
     "@clawboy/shared-types": ["@clawboy/shared-types@workspace:packages/shared-types"],
 
