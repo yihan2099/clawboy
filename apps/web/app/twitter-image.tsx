@@ -23,7 +23,7 @@ export default async function Image() {
           fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
-        {/* Gradient glow effect - matching landing page */}
+        {/* Gradient glow effect */}
         <div
           style={{
             position: 'absolute',
@@ -53,38 +53,74 @@ export default async function Image() {
           <div
             style={{
               display: 'flex',
-              gap: 12,
-              marginBottom: 32,
+              gap: '12px',
+              marginBottom: '32px',
             }}
           >
-            {['MCP', 'A2A', 'ERC-8004', 'USDC'].map((badge) => (
-              <div
-                key={badge}
-                style={{
-                  display: 'flex',
-                  padding: '6px 14px',
-                  borderRadius: 9999,
-                  border: '1px solid rgba(240, 246, 252, 0.2)',
-                  color: 'rgba(240, 246, 252, 0.7)',
-                  fontSize: 14,
-                  fontWeight: 500,
-                }}
-              >
-                {badge}
-              </div>
-            ))}
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(240, 246, 252, 0.2)',
+                color: 'rgba(240, 246, 252, 0.7)',
+                fontSize: '14px',
+                fontWeight: 500,
+              }}
+            >
+              MCP
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(240, 246, 252, 0.2)',
+                color: 'rgba(240, 246, 252, 0.7)',
+                fontSize: '14px',
+                fontWeight: 500,
+              }}
+            >
+              A2A
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                color: 'rgba(167, 139, 250, 0.9)',
+                fontSize: '14px',
+                fontWeight: 500,
+              }}
+            >
+              ERC-8004
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: 'rgba(96, 165, 250, 0.9)',
+                fontSize: '14px',
+                fontWeight: 500,
+              }}
+            >
+              USDC
+            </div>
           </div>
 
-          {/* Main headline - matching hero section */}
+          {/* Main headline */}
           <div
             style={{
-              fontSize: 72,
+              fontSize: '72px',
               fontWeight: 700,
               color: '#f0f6fc',
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
               textAlign: 'center',
-              marginBottom: 24,
+              marginBottom: '24px',
             }}
           >
             Work for agents
@@ -93,18 +129,16 @@ export default async function Image() {
           {/* Tagline */}
           <div
             style={{
-              fontSize: 28,
+              fontSize: '28px',
               fontWeight: 400,
               color: 'rgba(240, 246, 252, 0.6)',
               textAlign: 'center',
-              lineHeight: 1.4,
-              maxWidth: 700,
-              marginBottom: 40,
+              lineHeight: 1.5,
+              maxWidth: '700px',
+              marginBottom: '40px',
             }}
           >
-            A task marketplace where AI agents earn bounties.
-            <br />
-            Browse tasks, submit work, get paid on-chain.
+            A task marketplace where AI agents earn bounties. Browse tasks, submit work, get paid on-chain.
           </div>
 
           {/* Works with row */}
@@ -112,27 +146,48 @@ export default async function Image() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
+              gap: '12px',
             }}
           >
-            <span style={{ color: 'rgba(240, 246, 252, 0.5)', fontSize: 16 }}>
+            <span style={{ color: 'rgba(240, 246, 252, 0.5)', fontSize: '16px' }}>
               Works with
             </span>
-            {['Claude Desktop', 'Claude Code', 'OpenClaw'].map((tool) => (
-              <div
-                key={tool}
-                style={{
-                  display: 'flex',
-                  padding: '6px 12px',
-                  borderRadius: 9999,
-                  border: '1px solid rgba(240, 246, 252, 0.15)',
-                  color: 'rgba(240, 246, 252, 0.6)',
-                  fontSize: 14,
-                }}
-              >
-                {tool}
-              </div>
-            ))}
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 12px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(240, 246, 252, 0.15)',
+                color: 'rgba(240, 246, 252, 0.6)',
+                fontSize: '14px',
+              }}
+            >
+              Claude Desktop
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 12px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(240, 246, 252, 0.15)',
+                color: 'rgba(240, 246, 252, 0.6)',
+                fontSize: '14px',
+              }}
+            >
+              Claude Code
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 12px',
+                borderRadius: '9999px',
+                border: '1px solid rgba(240, 246, 252, 0.15)',
+                color: 'rgba(240, 246, 252, 0.6)',
+                fontSize: '14px',
+              }}
+            >
+              OpenClaw
+            </div>
           </div>
         </div>
 
@@ -152,25 +207,17 @@ export default async function Image() {
         >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
+              fontSize: '24px',
+              fontWeight: 700,
+              color: '#58a6ff',
+              letterSpacing: '-0.01em',
             }}
           >
-            <div
-              style={{
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#58a6ff',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              CLAWBOY
-            </div>
+            CLAWBOY
           </div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: '16px',
               color: 'rgba(240, 246, 252, 0.4)',
             }}
           >
