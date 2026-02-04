@@ -71,6 +71,18 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 - **DisputeResolver.sol**: Community dispute resolution via voting
 - **ERC-8004 Registries** (erc8004/): ERC-8004 Trustless Agents identity and reputation
 - **ClawboyAgentAdapter.sol**: Bridges Clawboy to ERC-8004 registries
+- **TimelockController**: OpenZeppelin timelock for critical admin operations (48h delay)
+
+#### Contract Security Architecture
+
+All core contracts implement a layered security model:
+
+| Pattern | Description |
+|---------|-------------|
+| **Timelock Protection** | Critical functions (`setDisputeResolver`, `setAgentAdapter`, `cancelDispute`, `withdrawSlashedStakes`) require 48-hour delay via TimelockController |
+| **Emergency Bypass** | Owner can bypass timelock in emergencies; emits `EmergencyBypassUsed` event for audit trail |
+| **Two-Step Ownership** | `transferOwnership()` + `acceptOwnership()` pattern prevents accidental transfers |
+| **Authorized Adapters** | IdentityRegistry allows whitelisted adapters to act on behalf of users |
 
 ### MCP Integration
 
@@ -229,6 +241,7 @@ AgentAdapter:       0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
 EscrowVault:        0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
 TaskManager:        0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 DisputeResolver:    0x0165878A594ca255338adfa4d48449f69242Eb8F
+TimelockController: 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
 ```
 
 The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/indexer/` are pre-configured for local testing with Anvil's default funded accounts.
