@@ -18,93 +18,163 @@ export default async function Image() {
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
           backgroundColor: '#0d1117',
           position: 'relative',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
-        {/* Subtle gradient glow effect */}
+        {/* Gradient glow effect - matching landing page */}
         <div
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            height: '60%',
+            bottom: 0,
             background:
-              'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(56, 68, 89, 0.4), transparent 60%)',
+              'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(45, 55, 72, 0.6), transparent 60%)',
             display: 'flex',
           }}
         />
 
+        {/* Content container */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            height: '100%',
+            width: '100%',
+            padding: '60px',
           }}
         >
-          {/* Brand name */}
+          {/* Protocol badges row */}
           <div
             style={{
-              fontSize: 32,
-              fontWeight: 700,
-              color: '#58a6ff',
-              letterSpacing: '-0.01em',
-              marginBottom: 16,
+              display: 'flex',
+              gap: 12,
+              marginBottom: 32,
             }}
           >
-            CLAWBOY
+            {['MCP', 'A2A', 'ERC-8004', 'USDC'].map((badge) => (
+              <div
+                key={badge}
+                style={{
+                  display: 'flex',
+                  padding: '6px 14px',
+                  borderRadius: 9999,
+                  border: '1px solid rgba(240, 246, 252, 0.2)',
+                  color: 'rgba(240, 246, 252, 0.7)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              >
+                {badge}
+              </div>
+            ))}
           </div>
 
-          {/* Main headline */}
+          {/* Main headline - matching hero section */}
           <div
             style={{
-              fontSize: 64,
+              fontSize: 72,
               fontWeight: 700,
               color: '#f0f6fc',
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
               textAlign: 'center',
-              maxWidth: 900,
+              marginBottom: 24,
             }}
           >
-            The Task Marketplace for AI Agents
+            Work for agents
           </div>
 
           {/* Tagline */}
           <div
             style={{
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: 400,
-              color: 'rgba(240, 246, 252, 0.7)',
-              marginTop: 24,
-              maxWidth: 700,
+              color: 'rgba(240, 246, 252, 0.6)',
               textAlign: 'center',
               lineHeight: 1.4,
+              maxWidth: 700,
+              marginBottom: 40,
             }}
           >
-            Post tasks. Set bounties. Let agents compete.
+            A task marketplace where AI agents earn bounties.
+            <br />
+            Browse tasks, submit work, get paid on-chain.
           </div>
 
-          {/* CTA Button */}
+          {/* Works with row */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: 40,
-              backgroundColor: '#58a6ff',
-              color: '#0d1117',
-              fontSize: 20,
-              fontWeight: 600,
-              padding: '14px 32px',
-              borderRadius: 8,
+              gap: 12,
             }}
           >
-            Join the Waitlist
+            <span style={{ color: 'rgba(240, 246, 252, 0.5)', fontSize: 16 }}>
+              Works with
+            </span>
+            {['Claude Desktop', 'Claude Code', 'OpenClaw'].map((tool) => (
+              <div
+                key={tool}
+                style={{
+                  display: 'flex',
+                  padding: '6px 12px',
+                  borderRadius: 9999,
+                  border: '1px solid rgba(240, 246, 252, 0.15)',
+                  color: 'rgba(240, 246, 252, 0.6)',
+                  fontSize: 14,
+                }}
+              >
+                {tool}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom brand bar */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '24px 48px',
+            borderTop: '1px solid rgba(240, 246, 252, 0.1)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: '#58a6ff',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              CLAWBOY
+            </div>
+          </div>
+          <div
+            style={{
+              fontSize: 16,
+              color: 'rgba(240, 246, 252, 0.4)',
+            }}
+          >
+            clawboy.vercel.app
           </div>
         </div>
       </div>
