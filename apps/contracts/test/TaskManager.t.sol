@@ -4,15 +4,19 @@ pragma solidity ^0.8.24;
 import { Test, console } from "forge-std/Test.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
-import { ClawboyRegistry } from "../src/ClawboyRegistry.sol";
+import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
+import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
 import { ITaskManager } from "../src/interfaces/ITaskManager.sol";
-import { IClawboyRegistry } from "../src/interfaces/IClawboyRegistry.sol";
+import { IClawboyAgentAdapter } from "../src/IClawboyAgentAdapter.sol";
 
 contract TaskManagerTest is Test {
     TaskManager public taskManager;
     EscrowVault public escrowVault;
-    ClawboyRegistry public clawboyRegistry;
+    ClawboyAgentAdapter public agentAdapter;
+    ERC8004IdentityRegistry public identityRegistry;
+    ERC8004ReputationRegistry public reputationRegistry;
     DisputeResolver public disputeResolver;
 
     address public creator = address(0x1);
@@ -23,8 +27,15 @@ contract TaskManagerTest is Test {
     uint256 public constant BOUNTY_AMOUNT = 1 ether;
 
     function setUp() public {
-        // Deploy ClawboyRegistry first
-        clawboyRegistry = new ClawboyRegistry();
+        // Deploy ERC-8004 IdentityRegistry
+        identityRegistry = new ERC8004IdentityRegistry();
+
+        // Deploy ERC-8004 ReputationRegistry
+        reputationRegistry = new ERC8004ReputationRegistry();
+        reputationRegistry.initialize(address(identityRegistry));
+
+        // Deploy ClawboyAgentAdapter
+        agentAdapter = new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =
@@ -32,15 +43,15 @@ contract TaskManagerTest is Test {
         escrowVault = new EscrowVault(predictedTaskManager);
 
         // Deploy TaskManager
-        taskManager = new TaskManager(address(escrowVault), address(clawboyRegistry));
+        taskManager = new TaskManager(address(escrowVault), address(agentAdapter));
 
         // Deploy DisputeResolver
-        disputeResolver = new DisputeResolver(address(taskManager), address(clawboyRegistry));
+        disputeResolver = new DisputeResolver(address(taskManager), address(agentAdapter));
 
         // Configure access control
         taskManager.setDisputeResolver(address(disputeResolver));
-        clawboyRegistry.setTaskManager(address(taskManager));
-        clawboyRegistry.setDisputeResolver(address(disputeResolver));
+        agentAdapter.setTaskManager(address(taskManager));
+        agentAdapter.setDisputeResolver(address(disputeResolver));
 
         // Give accounts some ETH
         vm.deal(creator, 10 ether);
@@ -48,15 +59,15 @@ contract TaskManagerTest is Test {
         vm.deal(agent2, 1 ether);
         vm.deal(agent3, 1 ether);
 
-        // Register agents
+        // Register agents via adapter
         vm.prank(agent1);
-        clawboyRegistry.register("agent1-profile-cid");
+        agentAdapter.register("ipfs://agent1-profile-cid");
 
         vm.prank(agent2);
-        clawboyRegistry.register("agent2-profile-cid");
+        agentAdapter.register("ipfs://agent2-profile-cid");
 
         vm.prank(agent3);
-        clawboyRegistry.register("agent3-profile-cid");
+        agentAdapter.register("ipfs://agent3-profile-cid");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -361,10 +372,9 @@ contract TaskManagerTest is Test {
         // Verify bounty released to winner
         assertEq(agent1.balance, agent1BalanceBefore + BOUNTY_AMOUNT);
 
-        // Verify reputation updated
-        IClawboyRegistry.Agent memory agentData = clawboyRegistry.getAgent(agent1);
-        assertEq(agentData.tasksWon, 1);
-        assertEq(agentData.reputation, 10); // +10 for winning
+        // Verify ERC-8004 feedback recorded
+        (uint64 taskWins,,,) = agentAdapter.getReputationSummary(agent1);
+        assertEq(taskWins, 1);
     }
 
     function test_FinalizeTask_AllRejected() public {

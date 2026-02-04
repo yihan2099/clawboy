@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
 import { ITaskManager } from "./interfaces/ITaskManager.sol";
-import { IClawboyRegistry } from "./interfaces/IClawboyRegistry.sol";
+import { IClawboyAgentAdapter } from "./IClawboyAgentAdapter.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -28,7 +28,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
 
     // External contracts
     ITaskManager public immutable taskManager;
-    IClawboyRegistry public immutable clawboyRegistry;
+    IClawboyAgentAdapter public immutable agentAdapter;
 
     // Access control
     address public owner;
@@ -52,9 +52,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         _;
     }
 
-    constructor(address _taskManager, address _clawboyRegistry) {
+    constructor(address _taskManager, address _agentAdapter) {
         taskManager = ITaskManager(_taskManager);
-        clawboyRegistry = IClawboyRegistry(_clawboyRegistry);
+        agentAdapter = IClawboyAgentAdapter(_agentAdapter);
         owner = msg.sender;
     }
 
@@ -113,14 +113,14 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         if (dispute.id == 0) revert DisputeNotFound();
         if (dispute.status != DisputeStatus.Active) revert VotingNotActive();
         if (block.timestamp > dispute.votingDeadline) revert VotingNotActive();
-        if (!clawboyRegistry.isRegistered(msg.sender)) revert NotRegistered();
+        if (!agentAdapter.isRegistered(msg.sender)) revert NotRegistered();
         if (_votes[disputeId][msg.sender].timestamp != 0) revert AlreadyVoted();
 
         // Voters cannot be the disputer or the task creator
         ITaskManager.Task memory task = taskManager.getTask(dispute.taskId);
         if (msg.sender == dispute.disputer || msg.sender == task.creator) revert AlreadyVoted();
 
-        uint256 weight = clawboyRegistry.getVoteWeight(msg.sender);
+        uint256 weight = agentAdapter.getVoteWeight(msg.sender);
 
         _votes[disputeId][msg.sender] = Vote({
             voter: msg.sender,
@@ -196,8 +196,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
         } else {
             // Disputer loses - stake goes to protocol (or could be burned/redistributed)
             // For now, keep in contract (could add treasury later)
-            clawboyRegistry.incrementDisputesLost(dispute.disputer);
-            clawboyRegistry.updateReputation(dispute.disputer, -20); // -20 rep for losing dispute
+            agentAdapter.recordDisputeLoss(dispute.disputer, dispute.id);
 
             emit DisputeStakeSlashed(dispute.id, dispute.disputer, dispute.disputeStake);
         }
@@ -217,9 +216,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard {
             bool votedWithMajority = (vote.supportsDisputer == disputerWon);
 
             if (votedWithMajority) {
-                clawboyRegistry.updateReputation(voters[i], 3); // +3 for voting with majority
+                agentAdapter.updateVoterReputation(voters[i], 3); // +3 for voting with majority
             } else {
-                clawboyRegistry.updateReputation(voters[i], -2); // -2 for voting against majority
+                agentAdapter.updateVoterReputation(voters[i], -2); // -2 for voting against majority
             }
         }
     }

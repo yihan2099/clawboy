@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { ITaskManager } from "./interfaces/ITaskManager.sol";
 import { IEscrowVault } from "./interfaces/IEscrowVault.sol";
-import { IClawboyRegistry } from "./interfaces/IClawboyRegistry.sol";
+import { IClawboyAgentAdapter } from "./IClawboyAgentAdapter.sol";
 import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
 
 /**
@@ -21,7 +21,7 @@ contract TaskManager is ITaskManager {
 
     // External contracts
     IEscrowVault public immutable escrowVault;
-    IClawboyRegistry public clawboyRegistry;
+    IClawboyAgentAdapter public agentAdapter;
     IDisputeResolver public disputeResolver;
 
     // Access control
@@ -64,9 +64,9 @@ contract TaskManager is ITaskManager {
         _;
     }
 
-    constructor(address _escrowVault, address _clawboyRegistry) {
+    constructor(address _escrowVault, address _agentAdapter) {
         escrowVault = IEscrowVault(_escrowVault);
-        clawboyRegistry = IClawboyRegistry(_clawboyRegistry);
+        agentAdapter = IClawboyAgentAdapter(_agentAdapter);
         owner = msg.sender;
     }
 
@@ -79,11 +79,11 @@ contract TaskManager is ITaskManager {
     }
 
     /**
-     * @notice Set the ClawboyRegistry address (callable by owner)
-     * @param _registry The ClawboyRegistry address
+     * @notice Set the AgentAdapter address (callable by owner)
+     * @param _adapter The AgentAdapter address
      */
-    function setClawboyRegistry(address _registry) external onlyOwner {
-        clawboyRegistry = IClawboyRegistry(_registry);
+    function setAgentAdapter(address _adapter) external onlyOwner {
+        agentAdapter = IClawboyAgentAdapter(_adapter);
     }
 
     /**
@@ -143,7 +143,7 @@ contract TaskManager is ITaskManager {
         Task storage task = _tasks[taskId];
         if (task.id == 0) revert TaskNotFound();
         if (task.status != TaskStatus.Open) revert TaskNotOpen();
-        if (!clawboyRegistry.isRegistered(msg.sender)) revert AgentNotRegistered();
+        if (!agentAdapter.isRegistered(msg.sender)) revert AgentNotRegistered();
         if (task.deadline != 0 && block.timestamp > task.deadline) revert DeadlinePassed();
         if (_agentSubmissionIndex[taskId][msg.sender] != 0) revert AlreadySubmitted();
 
@@ -261,9 +261,8 @@ contract TaskManager is ITaskManager {
             // Release bounty to winner
             escrowVault.release(taskId, task.selectedWinner);
 
-            // Update winner's reputation
-            clawboyRegistry.incrementTasksWon(task.selectedWinner);
-            clawboyRegistry.updateReputation(task.selectedWinner, 10); // +10 rep for winning
+            // Record task win in ERC-8004 reputation registry
+            agentAdapter.recordTaskWin(task.selectedWinner, taskId);
 
             emit TaskCompleted(taskId, task.selectedWinner, task.bountyAmount);
         } else {
@@ -355,14 +354,9 @@ contract TaskManager is ITaskManager {
 
             escrowVault.release(taskId, winner);
 
-            clawboyRegistry.incrementTasksWon(winner);
-            clawboyRegistry.incrementDisputesWon(winner);
-            clawboyRegistry.updateReputation(winner, 15); // +15 for winning dispute
-
-            // Penalize creator for bad selection (only if registered)
-            if (clawboyRegistry.isRegistered(task.creator)) {
-                clawboyRegistry.updateReputation(task.creator, -30);
-            }
+            // Record task win and dispute win in ERC-8004 reputation registry
+            agentAdapter.recordTaskWin(winner, taskId);
+            agentAdapter.recordDisputeWin(winner, disputeId);
 
             emit TaskCompleted(taskId, winner, task.bountyAmount);
         } else {
@@ -373,8 +367,8 @@ contract TaskManager is ITaskManager {
 
                 escrowVault.release(taskId, task.selectedWinner);
 
-                clawboyRegistry.incrementTasksWon(task.selectedWinner);
-                clawboyRegistry.updateReputation(task.selectedWinner, 10);
+                // Record task win in ERC-8004 reputation registry
+                agentAdapter.recordTaskWin(task.selectedWinner, taskId);
 
                 emit TaskCompleted(taskId, task.selectedWinner, task.bountyAmount);
             } else {
