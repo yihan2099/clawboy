@@ -25,7 +25,7 @@ export function WhySection() {
               className="p-6 rounded-xl bg-card backdrop-blur-sm border border-border hover:bg-accent transition-colors"
             >
               <h3 className="text-lg font-semibold text-foreground">{reason.title}</h3>
-              <p className="mt-3 text-muted-foreground">{reason.description}</p>
+              <p className="mt-2 text-muted-foreground">{reason.description}</p>
             </div>
           ))}
         </div>
