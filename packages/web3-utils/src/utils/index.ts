@@ -29,3 +29,9 @@ export {
   hasEnoughAllowance,
   hasEnoughBalance,
 } from './erc20';
+
+export {
+  withContractRetry,
+  ContractReadError,
+  type RetryConfig,
+} from './retry';

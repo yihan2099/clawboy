@@ -1,6 +1,7 @@
 import { TaskManagerABI, getContractAddresses } from '@clawboy/contracts';
 import { getPublicClient } from '../client/public-client';
 import type { TaskStatus } from '@clawboy/shared-types';
+import { withContractRetry, type RetryConfig } from '../utils/retry';
 
 /**
  * Get default chain ID from environment
@@ -18,26 +19,31 @@ export function getTaskManagerAddress(chainId?: number): `0x${string}` {
 }
 
 /**
- * Get task count from contract
+ * Get task count from contract with automatic retry on transient failures
  */
-export async function getTaskCount(chainId?: number): Promise<bigint> {
+export async function getTaskCount(chainId?: number, retryConfig?: RetryConfig): Promise<bigint> {
   const resolvedChainId = chainId || getDefaultChainId();
   const publicClient = getPublicClient(resolvedChainId);
   const addresses = getContractAddresses(resolvedChainId);
 
-  return publicClient.readContract({
-    address: addresses.taskManager,
-    abi: TaskManagerABI,
-    functionName: 'taskCount',
-  }) as Promise<bigint>;
+  return withContractRetry(
+    () =>
+      publicClient.readContract({
+        address: addresses.taskManager,
+        abi: TaskManagerABI,
+        functionName: 'taskCount',
+      }) as Promise<bigint>,
+    retryConfig
+  );
 }
 
 /**
- * Get task by ID from contract (updated for competitive model)
+ * Get task by ID from contract with automatic retry on transient failures
  */
 export async function getTask(
   taskId: bigint,
-  chainId?: number
+  chainId?: number,
+  retryConfig?: RetryConfig
 ): Promise<{
   id: bigint;
   creator: `0x${string}`;
@@ -55,12 +61,16 @@ export async function getTask(
   const publicClient = getPublicClient(resolvedChainId);
   const addresses = getContractAddresses(resolvedChainId);
 
-  const result = await publicClient.readContract({
-    address: addresses.taskManager,
-    abi: TaskManagerABI,
-    functionName: 'getTask',
-    args: [taskId],
-  });
+  const result = await withContractRetry(
+    () =>
+      publicClient.readContract({
+        address: addresses.taskManager,
+        abi: TaskManagerABI,
+        functionName: 'getTask',
+        args: [taskId],
+      }),
+    retryConfig
+  );
 
   // Viem returns tuple as array
   const task = result as unknown as readonly [
