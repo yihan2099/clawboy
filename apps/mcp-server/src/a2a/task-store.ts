@@ -41,7 +41,9 @@ export async function createA2ATask(
 
   // SECURITY: Detect anonymous sessions and apply reduced TTL
   const isAnonymous = sessionId.startsWith('anonymous-');
-  const expirationSeconds = isAnonymous ? ANONYMOUS_TASK_EXPIRATION_SECONDS : TASK_EXPIRATION_SECONDS;
+  const expirationSeconds = isAnonymous
+    ? ANONYMOUS_TASK_EXPIRATION_SECONDS
+    : TASK_EXPIRATION_SECONDS;
 
   const task: A2ATask = {
     id: taskId,

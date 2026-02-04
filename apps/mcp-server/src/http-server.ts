@@ -47,7 +47,7 @@ const allowedOrigins = process.env.CORS_ORIGINS
 if (allowedOrigins.includes('*') && process.env.NODE_ENV === 'production') {
   console.error(
     'SECURITY WARNING: CORS_ORIGINS not set in production. Using wildcard (*) which allows any origin. ' +
-    'Set CORS_ORIGINS environment variable to restrict allowed origins.'
+      'Set CORS_ORIGINS environment variable to restrict allowed origins.'
   );
 }
 

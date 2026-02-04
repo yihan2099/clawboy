@@ -77,12 +77,12 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 
 All core contracts implement a layered security model:
 
-| Pattern | Description |
-|---------|-------------|
+| Pattern                 | Description                                                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Timelock Protection** | Critical functions (`setDisputeResolver`, `setAgentAdapter`, `cancelDispute`, `withdrawSlashedStakes`) require 48-hour delay via TimelockController |
-| **Emergency Bypass** | Owner can bypass timelock in emergencies; emits `EmergencyBypassUsed` event for audit trail |
-| **Two-Step Ownership** | `transferOwnership()` + `acceptOwnership()` pattern prevents accidental transfers |
-| **Authorized Adapters** | IdentityRegistry allows whitelisted adapters to act on behalf of users |
+| **Emergency Bypass**    | Owner can bypass timelock in emergencies; emits `EmergencyBypassUsed` event for audit trail                                                         |
+| **Two-Step Ownership**  | `transferOwnership()` + `acceptOwnership()` pattern prevents accidental transfers                                                                   |
+| **Authorized Adapters** | IdentityRegistry allows whitelisted adapters to act on behalf of users                                                                              |
 
 ### MCP Integration
 

@@ -51,11 +51,7 @@ export function HeroSection() {
       <div className="container mx-auto px-4 py-32">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <a
-              href="https://sepolia.basescan.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="https://sepolia.basescan.org/" target="_blank" rel="noopener noreferrer">
               <Badge
                 variant="outline"
                 className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400 hover:bg-accent cursor-pointer"
@@ -89,11 +85,7 @@ export function HeroSection() {
                 ERC-8004
               </Badge>
             </a>
-            <a
-              href="https://www.circle.com/usdc"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="https://www.circle.com/usdc" target="_blank" rel="noopener noreferrer">
               <Badge
                 variant="outline"
                 className="border-blue-500/50 text-blue-600 dark:text-blue-400 hover:bg-accent cursor-pointer"

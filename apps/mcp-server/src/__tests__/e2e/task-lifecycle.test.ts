@@ -762,9 +762,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
  * - Task finalization
  * - Bounty payment to winner
  */
-const shouldSkipFinalizationTests =
-  shouldSkipTests ||
-  !isLocalAnvil(); // Only run on Anvil where we can manipulate time
+const shouldSkipFinalizationTests = shouldSkipTests || !isLocalAnvil(); // Only run on Anvil where we can manipulate time
 
 describe.skipIf(shouldSkipFinalizationTests)(
   'E2E: Task Finalization and Payment (Anvil Only)',
@@ -938,7 +936,9 @@ describe.skipIf(shouldSkipFinalizationTests)(
 
         console.log('\n========================================');
         console.log('Finalization Test Complete!');
-        console.log(`Winner (${agentWallet.address.substring(0, 10)}...) received ${BOUNTY_ETH} ETH`);
+        console.log(
+          `Winner (${agentWallet.address.substring(0, 10)}...) received ${BOUNTY_ETH} ETH`
+        );
         console.log('========================================\n');
       },
       TEST_TIMEOUT * 2 // Double timeout for this comprehensive test

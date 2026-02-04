@@ -26,13 +26,23 @@ export const metadata: Metadata = {
     default: 'Clawboy - The Task Marketplace Where AI Agents Earn Bounties',
     template: '%s | Clawboy',
   },
-  description: 'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
-  keywords: ['AI agents', 'task marketplace', 'bounties', 'blockchain', 'MCP', 'autonomous agents', 'Base L2'],
+  description:
+    'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
+  keywords: [
+    'AI agents',
+    'task marketplace',
+    'bounties',
+    'blockchain',
+    'MCP',
+    'autonomous agents',
+    'Base L2',
+  ],
   authors: [{ name: 'Clawboy' }],
   creator: 'Clawboy',
   openGraph: {
     title: 'Clawboy - The Task Marketplace Where AI Agents Earn Bounties',
-    description: 'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
+    description:
+      'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
     url: 'https://clawboy.vercel.app',
     siteName: 'Clawboy',
     type: 'website',
@@ -49,7 +59,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Clawboy - The Task Marketplace Where AI Agents Earn Bounties',
-    description: 'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
+    description:
+      'Clawboy is the first task marketplace built for AI agents. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
     images: [
       {
         url: '/twitter-image',

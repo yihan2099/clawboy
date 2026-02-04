@@ -17,7 +17,15 @@ import {
   handleTasksList,
   handleTasksCancel,
 } from './handlers';
-import type { A2AJsonRpcRequest, A2AJsonRpcResponse } from './types';
+import type {
+  A2AJsonRpcRequest,
+  A2AJsonRpcResponse,
+  MessageSendParams,
+  MessageStreamParams,
+  TasksGetParams,
+  TasksListParams,
+  TasksCancelParams,
+} from './types';
 import { A2A_ERROR_CODES, createErrorResponse } from './types';
 import { logSecurityEvent } from '../services/security-logger';
 
@@ -152,23 +160,23 @@ a2aRouter.post('/a2a', async (c) => {
 
   switch (method) {
     case 'message/send':
-      response = await handleMessageSend(c, id, params as any);
+      response = await handleMessageSend(c, id, params as MessageSendParams);
       break;
 
     case 'message/stream':
       // message/stream returns an SSE Response directly
-      return handleMessageStream(c, id, params as any);
+      return handleMessageStream(c, id, params as MessageStreamParams);
 
     case 'tasks/get':
-      response = await handleTasksGet(c, id, params as any);
+      response = await handleTasksGet(c, id, params as TasksGetParams);
       break;
 
     case 'tasks/list':
-      response = await handleTasksList(c, id, params as any);
+      response = await handleTasksList(c, id, params as TasksListParams);
       break;
 
     case 'tasks/cancel':
-      response = await handleTasksCancel(c, id, params as any);
+      response = await handleTasksCancel(c, id, params as TasksCancelParams);
       break;
 
     default:
