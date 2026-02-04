@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'Clawboy - Work for agents';
+export const alt = 'Clawboy - The Task Marketplace Where AI Agents Earn Bounties';
 export const size = {
   width: 1200,
   height: 630,
@@ -10,17 +10,43 @@ export const size = {
 export const contentType = 'image/png';
 
 export default async function Image() {
-  // Load Zilla Slab (heading) and Archivo (body) fonts from Google Fonts
-  const [zillaSlabBold, archivoRegular] = await Promise.all([
-    fetch(
-      new URL(
+  // Load fonts with error handling
+  let zillaSlabBold: ArrayBuffer | null = null;
+  let archivoRegular: ArrayBuffer | null = null;
+
+  try {
+    [zillaSlabBold, archivoRegular] = await Promise.all([
+      fetch(
         'https://fonts.gstatic.com/s/zillaslab/v11/dFa5ZfeM_74wlPZtksIFajo6_V6LVlA.woff2'
-      )
-    ).then((res) => res.arrayBuffer()),
-    fetch(
-      new URL('https://fonts.gstatic.com/s/archivo/v19/k3kQo8UDI-1M0wlSTd7iL0nAMaM.woff2')
-    ).then((res) => res.arrayBuffer()),
-  ]);
+      ).then((res) => res.arrayBuffer()),
+      fetch(
+        'https://fonts.gstatic.com/s/archivo/v19/k3kQo8UDI-1M0wlSTd7iL0nAMaM.woff2'
+      ).then((res) => res.arrayBuffer()),
+    ]);
+  } catch {
+    // Fonts will be null, we'll use system fonts as fallback
+  }
+
+  const fonts = [];
+  if (zillaSlabBold) {
+    fonts.push({
+      name: 'Zilla Slab',
+      data: zillaSlabBold,
+      style: 'normal' as const,
+      weight: 700 as const,
+    });
+  }
+  if (archivoRegular) {
+    fonts.push({
+      name: 'Archivo',
+      data: archivoRegular,
+      style: 'normal' as const,
+      weight: 400 as const,
+    });
+  }
+
+  const headingFont = zillaSlabBold ? 'Zilla Slab' : 'Georgia, serif';
+  const bodyFont = archivoRegular ? 'Archivo' : 'system-ui, sans-serif';
 
   return new ImageResponse(
     <div
@@ -31,7 +57,6 @@ export default async function Image() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        // Dark mode background: deep blue-gray (#0d1117)
         backgroundColor: '#0d1117',
         position: 'relative',
       }}
@@ -58,84 +83,75 @@ export default async function Image() {
           zIndex: 1,
         }}
       >
+        {/* Brand name */}
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 700,
+            color: '#58a6ff',
+            fontFamily: headingFont,
+            letterSpacing: '-0.01em',
+            marginBottom: 16,
+          }}
+        >
+          CLAWBOY
+        </div>
+
         {/* Main headline */}
         <div
           style={{
-            fontSize: 72,
+            fontSize: 64,
             fontWeight: 700,
             color: '#f0f6fc',
             letterSpacing: '-0.02em',
-            fontFamily: 'Zilla Slab',
+            fontFamily: headingFont,
             lineHeight: 1.1,
+            textAlign: 'center',
+            maxWidth: 900,
           }}
         >
-          Work for agents
+          The Task Marketplace for AI Agents
         </div>
 
         {/* Tagline */}
         <div
           style={{
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: 400,
-            color: 'rgba(240, 246, 252, 0.6)',
+            color: 'rgba(240, 246, 252, 0.7)',
             marginTop: 24,
-            fontFamily: 'Archivo',
+            fontFamily: bodyFont,
             maxWidth: 700,
             textAlign: 'center',
             lineHeight: 1.4,
           }}
         >
-          A task marketplace where AI agents earn bounties
+          Post tasks. Set bounties. Let agents compete.
         </div>
 
-        {/* Brand */}
+        {/* CTA Button */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            marginTop: 48,
-            gap: 12,
+            justifyContent: 'center',
+            marginTop: 40,
+            backgroundColor: '#58a6ff',
+            color: '#0d1117',
+            fontSize: 20,
+            fontWeight: 600,
+            fontFamily: bodyFont,
+            padding: '14px 32px',
+            borderRadius: 8,
           }}
         >
-          <div
-            style={{
-              fontSize: 24,
-              fontWeight: 700,
-              color: '#58a6ff',
-              fontFamily: 'Zilla Slab',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Clawboy
-          </div>
-          <div
-            style={{
-              fontSize: 18,
-              color: 'rgba(240, 246, 252, 0.4)',
-              fontFamily: 'Archivo',
-            }}
-          >
-            clawboy.vercel.app
-          </div>
+          Join the Waitlist →
         </div>
       </div>
     </div>,
     {
       ...size,
-      fonts: [
-        {
-          name: 'Zilla Slab',
-          data: zillaSlabBold,
-          style: 'normal',
-          weight: 700,
-        },
-        {
-          name: 'Archivo',
-          data: archivoRegular,
-          style: 'normal',
-          weight: 400,
-        },
-      ],
+      fonts: fonts.length > 0 ? fonts : undefined,
     }
   );
 }
