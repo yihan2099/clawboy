@@ -10,20 +10,6 @@ export const size = {
 export const contentType = 'image/png';
 
 export default async function Image() {
-  // Light mode colors matching the landing page
-  const colors = {
-    background: '#faf9f7', // warm cream
-    foreground: '#1c1917', // dark text
-    mutedForeground: '#78716c', // muted text
-    border: '#e7e5e4', // light border
-    yellowBorder: 'rgba(234, 179, 8, 0.5)',
-    yellowText: '#ca8a04',
-    purpleBorder: 'rgba(168, 85, 247, 0.5)',
-    purpleText: '#9333ea',
-    blueBorder: 'rgba(59, 130, 246, 0.5)',
-    blueText: '#2563eb',
-  };
-
   return new ImageResponse(
     (
       <div
@@ -45,8 +31,8 @@ export default async function Image() {
             display: 'flex',
             padding: '6px 14px',
             borderRadius: '9999px',
-            border: `1px solid ${colors.yellowBorder}`,
-            color: colors.yellowText,
+            border: '1px solid rgba(234, 179, 8, 0.5)',
+            color: '#ca8a04',
             fontSize: '14px',
             marginBottom: '16px',
           }}
@@ -61,8 +47,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 14px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.border}`,
-              color: colors.mutedForeground,
+              border: '1px solid #e7e5e4',
+              color: '#78716c',
               fontSize: '14px',
             }}
           >
@@ -73,8 +59,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 14px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.border}`,
-              color: colors.mutedForeground,
+              border: '1px solid #e7e5e4',
+              color: '#78716c',
               fontSize: '14px',
             }}
           >
@@ -85,8 +71,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 14px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.purpleBorder}`,
-              color: colors.purpleText,
+              border: '1px solid rgba(168, 85, 247, 0.5)',
+              color: '#9333ea',
               fontSize: '14px',
             }}
           >
@@ -97,8 +83,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 14px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.blueBorder}`,
-              color: colors.blueText,
+              border: '1px solid rgba(59, 130, 246, 0.5)',
+              color: '#2563eb',
               fontSize: '14px',
             }}
           >
@@ -111,7 +97,7 @@ export default async function Image() {
           style={{
             fontSize: '72px',
             fontWeight: 700,
-            color: colors.foreground,
+            color: '#1c1917',
             marginBottom: '20px',
             letterSpacing: '-0.02em',
           }}
@@ -123,7 +109,7 @@ export default async function Image() {
         <div
           style={{
             fontSize: '24px',
-            color: colors.mutedForeground,
+            color: '#78716c',
             textAlign: 'center',
             marginBottom: '32px',
             lineHeight: 1.5,
@@ -134,16 +120,14 @@ export default async function Image() {
 
         {/* Works with row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: colors.mutedForeground, fontSize: '14px' }}>
-            Works with
-          </span>
+          <span style={{ color: '#78716c', fontSize: '14px' }}>Works with</span>
           <div
             style={{
               display: 'flex',
               padding: '6px 12px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.border}`,
-              color: colors.mutedForeground,
+              border: '1px solid #e7e5e4',
+              color: '#78716c',
               fontSize: '14px',
             }}
           >
@@ -154,8 +138,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 12px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.border}`,
-              color: colors.mutedForeground,
+              border: '1px solid #e7e5e4',
+              color: '#78716c',
               fontSize: '14px',
             }}
           >
@@ -166,8 +150,8 @@ export default async function Image() {
               display: 'flex',
               padding: '6px 12px',
               borderRadius: '9999px',
-              border: `1px solid ${colors.border}`,
-              color: colors.mutedForeground,
+              border: '1px solid #e7e5e4',
+              color: '#78716c',
               fontSize: '14px',
             }}
           >
