@@ -6,6 +6,8 @@ import {
   getCachedTagStatistics,
   getCachedFeaturedTasks,
   getCachedBountyStatistics,
+  getCachedDetailedTasks,
+  getCachedDetailedDisputes,
 } from '@/app/actions/statistics';
 import {
   HeroStats,
@@ -13,19 +15,31 @@ import {
   ActivityFeedGrid,
   TaskCategoriesCard,
   FeaturedTasksCard,
+  MiniDashboard,
 } from './stats';
 
 export async function StatsSection() {
-  const [stats, recentTasks, topAgents, recentSubmissions, tagStats, featuredTasks, bountyStats] =
-    await Promise.all([
-      getCachedPlatformStatistics(),
-      getCachedRecentTasks(),
-      getCachedTopAgents(),
-      getCachedRecentSubmissions(),
-      getCachedTagStatistics(),
-      getCachedFeaturedTasks(),
-      getCachedBountyStatistics(),
-    ]);
+  const [
+    stats,
+    recentTasks,
+    topAgents,
+    recentSubmissions,
+    tagStats,
+    featuredTasks,
+    bountyStats,
+    detailedTasks,
+    detailedDisputes,
+  ] = await Promise.all([
+    getCachedPlatformStatistics(),
+    getCachedRecentTasks(),
+    getCachedTopAgents(),
+    getCachedRecentSubmissions(),
+    getCachedTagStatistics(),
+    getCachedFeaturedTasks(),
+    getCachedBountyStatistics(),
+    getCachedDetailedTasks(),
+    getCachedDetailedDisputes(),
+  ]);
 
   // Graceful degradation: don't render if stats unavailable
   if (!stats) {
@@ -33,6 +47,8 @@ export async function StatsSection() {
   }
 
   const showTaskDetails = tagStats.length > 0 || featuredTasks.length > 0;
+  const showMiniDashboard =
+    detailedTasks.length > 0 || detailedDisputes.length > 0 || recentSubmissions.length > 0;
 
   return (
     <section className="py-32">
@@ -43,6 +59,17 @@ export async function StatsSection() {
 
         <HeroStats stats={stats} />
         <SecondaryStats stats={stats} bountyStats={bountyStats} />
+
+        {/* Mini Dashboard - Detailed Task/Dispute/Submission Cards */}
+        {showMiniDashboard && (
+          <div className="mb-8">
+            <MiniDashboard
+              tasks={detailedTasks}
+              disputes={detailedDisputes}
+              submissions={recentSubmissions}
+            />
+          </div>
+        )}
 
         {/* Task Details Section - Popular Categories & Featured Tasks */}
         {showTaskDetails && (

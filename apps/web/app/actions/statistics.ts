@@ -7,6 +7,8 @@ import {
   getTagStatistics,
   getFeaturedCompletedTasks,
   getBountyStatistics,
+  getDetailedTasks,
+  getDetailedDisputes,
   type PlatformStatistics,
   type TaskRow,
   type AgentRow,
@@ -14,6 +16,8 @@ import {
   type TagStatistic,
   type FeaturedTask,
   type BountyStatistics,
+  type DetailedTask,
+  type DetailedDispute,
 } from '@clawboy/database';
 
 /**
@@ -127,5 +131,37 @@ export async function getCachedBountyStatistics(): Promise<BountyStatistics | nu
   } catch (error) {
     console.error('Failed to fetch bounty statistics:', error);
     return null;
+  }
+}
+
+/**
+ * Cached detailed tasks for mini dashboard with 5-minute revalidation.
+ */
+export async function getCachedDetailedTasks(): Promise<DetailedTask[]> {
+  'use cache';
+  cacheLife('minutes');
+  cacheTag('detailed-tasks');
+
+  try {
+    return await getDetailedTasks(3);
+  } catch (error) {
+    console.error('Failed to fetch detailed tasks:', error);
+    return [];
+  }
+}
+
+/**
+ * Cached detailed disputes for mini dashboard with 5-minute revalidation.
+ */
+export async function getCachedDetailedDisputes(): Promise<DetailedDispute[]> {
+  'use cache';
+  cacheLife('minutes');
+  cacheTag('detailed-disputes');
+
+  try {
+    return await getDetailedDisputes(3);
+  } catch (error) {
+    console.error('Failed to fetch detailed disputes:', error);
+    return [];
   }
 }

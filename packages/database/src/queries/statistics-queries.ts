@@ -148,7 +148,7 @@ export async function getRecentOpenTasks(limit = 5): Promise<TaskRow[]> {
  * Submission with associated task information
  */
 export interface SubmissionWithTask extends SubmissionRow {
-  task: Pick<TaskRow, 'title' | 'bounty_amount'> | null;
+  task: Pick<TaskRow, 'title' | 'bounty_amount' | 'status'> | null;
 }
 
 /**
@@ -164,7 +164,8 @@ export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTas
       *,
       task:tasks!task_id (
         title,
-        bounty_amount
+        bounty_amount,
+        status
       )
     `
     )
@@ -176,6 +177,97 @@ export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTas
   }
 
   return (data ?? []) as SubmissionWithTask[];
+}
+
+/**
+ * Detailed task info for the mini dashboard
+ */
+export interface DetailedTask {
+  id: string;
+  chain_task_id: string;
+  title: string;
+  description: string;
+  status: string;
+  bounty_amount: string;
+  bounty_token: string;
+  creator_address: string;
+  winner_address: string | null;
+  specification_cid: string;
+  tags: string[];
+  deadline: string | null;
+  submission_count: number;
+  selected_at: string | null;
+  challenge_deadline: string | null;
+  created_at: string;
+}
+
+/**
+ * Get detailed tasks for the mini dashboard.
+ * Returns recent tasks with full details for display.
+ */
+export async function getDetailedTasks(limit = 3): Promise<DetailedTask[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      'id, chain_task_id, title, description, status, bounty_amount, bounty_token, creator_address, winner_address, specification_cid, tags, deadline, submission_count, selected_at, challenge_deadline, created_at'
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to get detailed tasks: ${error.message}`);
+  }
+
+  return (data ?? []) as DetailedTask[];
+}
+
+/**
+ * Detailed dispute info for the mini dashboard
+ */
+export interface DetailedDispute {
+  id: string;
+  chain_dispute_id: string;
+  task_id: string;
+  disputer_address: string;
+  dispute_stake: string;
+  voting_deadline: string;
+  status: string;
+  disputer_won: boolean | null;
+  votes_for_disputer: string;
+  votes_against_disputer: string;
+  tx_hash: string;
+  created_at: string;
+  resolved_at: string | null;
+  task: Pick<TaskRow, 'title' | 'bounty_amount'> | null;
+}
+
+/**
+ * Get detailed disputes for the mini dashboard.
+ */
+export async function getDetailedDisputes(limit = 3): Promise<DetailedDispute[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('disputes')
+    .select(
+      `
+      *,
+      task:tasks!task_id (
+        title,
+        bounty_amount
+      )
+    `
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to get detailed disputes: ${error.message}`);
+  }
+
+  return (data ?? []) as DetailedDispute[];
 }
 
 /**
