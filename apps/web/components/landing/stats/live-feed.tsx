@@ -23,6 +23,7 @@ interface FeedItem {
   id: string;
   type: FeedItemType;
   title: string;
+  overlayTitle: string; // Clean title for expanded overlay
   bounty?: string;
   timestamp: string;
   data: DetailedTask | DetailedDispute | SubmissionWithTask;
@@ -40,11 +41,13 @@ function buildFeed(
   const items: FeedItem[] = [];
 
   for (const task of tasks) {
+    const taskTitle = truncateText(task.title || 'Untitled', 35);
     if (task.status === 'completed' && task.winner_address) {
       items.push({
         id: `task-completed-${task.id}`,
         type: 'task_completed',
-        title: truncateText(task.title || 'Untitled', 40),
+        title: taskTitle,
+        overlayTitle: task.title || 'Untitled',
         timestamp: task.selected_at || task.created_at,
         bounty: task.bounty_amount,
         data: task,
@@ -53,7 +56,8 @@ function buildFeed(
       items.push({
         id: `task-created-${task.id}`,
         type: 'task_created',
-        title: truncateText(task.title || 'Untitled', 40),
+        title: taskTitle,
+        overlayTitle: task.title || 'Untitled',
         timestamp: task.created_at,
         bounty: task.bounty_amount,
         data: task,
@@ -63,10 +67,12 @@ function buildFeed(
 
   for (const sub of submissions) {
     const agentPrefix = truncateAddress(sub.agent_address);
+    const taskTitle = sub.task?.title || 'Task';
     items.push({
       id: `submission-${sub.id}`,
       type: sub.is_winner ? 'submission_won' : 'submission',
-      title: `${agentPrefix} → ${truncateText(sub.task?.title || 'Task', 25)}`,
+      title: `${agentPrefix} → ${truncateText(taskTitle, 20)}`,
+      overlayTitle: taskTitle,
       timestamp: sub.submitted_at,
       bounty: sub.is_winner ? sub.task?.bounty_amount : undefined,
       data: sub,
@@ -74,10 +80,12 @@ function buildFeed(
   }
 
   for (const dispute of disputes) {
+    const taskTitle = dispute.task?.title || 'Task';
     items.push({
       id: `dispute-${dispute.id}`,
       type: 'dispute',
-      title: truncateText(dispute.task?.title || 'Task', 35),
+      title: truncateText(taskTitle, 35),
+      overlayTitle: taskTitle,
       timestamp: dispute.created_at,
       bounty: dispute.dispute_stake,
       data: dispute,
@@ -247,7 +255,7 @@ function ExpandedOverlay({ item, onClose }: ExpandedOverlayProps) {
               {getEventLabel(item.type)}
             </span>
             <h3 className="text-lg font-semibold text-foreground mt-1 pr-8 leading-tight">
-              {item.title}
+              {item.overlayTitle}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
               {formatTimeAgo(item.timestamp)}
@@ -296,7 +304,7 @@ function FeedRow({ item, onClick }: FeedRowProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 py-3 px-1 text-left group cursor-pointer hover:bg-muted/30 rounded-lg transition-colors"
+      className="w-full flex items-center gap-3 py-2.5 px-3 text-left group cursor-pointer hover:bg-muted/30 rounded-lg transition-colors"
     >
       {/* Event label */}
       <span className={`text-xs font-medium w-16 shrink-0 ${getEventColor(item.type)}`}>
@@ -348,8 +356,8 @@ export function LiveFeed({ tasks, submissions, disputes }: LiveFeedProps) {
 
   return (
     <>
-      <div className="rounded-xl border border-border/60 bg-card/30 overflow-hidden">
-        <div className="divide-y divide-border/40 px-3">
+      <div className="rounded-xl border border-border/60 bg-card/30 overflow-hidden p-1">
+        <div className="space-y-0.5">
           {feedItems.map((item) => (
             <FeedRow
               key={item.id}
