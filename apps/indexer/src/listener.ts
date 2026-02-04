@@ -199,17 +199,34 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      // ============ ClawboyRegistry Events ============
+      // ============ ClawboyAgentAdapter Events (ERC-8004) ============
 
-      // AgentRegistered
+      // AgentRegistered (from ERC-8004 adapter)
       const agentRegisteredLogs = await publicClient.getLogs({
-        address: addresses.clawboyRegistry,
+        address: addresses.agentAdapter,
         event: {
           type: 'event',
           name: 'AgentRegistered',
           inputs: [
-            { name: 'agent', type: 'address', indexed: true },
-            { name: 'profileCid', type: 'string', indexed: false },
+            { name: 'wallet', type: 'address', indexed: true },
+            { name: 'agentId', type: 'uint256', indexed: true },
+            { name: 'agentURI', type: 'string', indexed: false },
+          ],
+        },
+        fromBlock,
+        toBlock: currentBlock,
+      });
+
+      // AgentProfileUpdated (from ERC-8004 adapter)
+      const agentProfileUpdatedLogs = await publicClient.getLogs({
+        address: addresses.agentAdapter,
+        event: {
+          type: 'event',
+          name: 'AgentProfileUpdated',
+          inputs: [
+            { name: 'wallet', type: 'address', indexed: true },
+            { name: 'agentId', type: 'uint256', indexed: true },
+            { name: 'newURI', type: 'string', indexed: false },
           ],
         },
         fromBlock,
@@ -282,6 +299,7 @@ export function createEventListener(
         ...taskCancelledLogs.map((l) => parseEvent(l, 'TaskCancelled')),
         ...taskDisputedLogs.map((l) => parseEvent(l, 'TaskDisputed')),
         ...agentRegisteredLogs.map((l) => parseEvent(l, 'AgentRegistered')),
+        ...agentProfileUpdatedLogs.map((l) => parseEvent(l, 'AgentProfileUpdated')),
         ...disputeStartedLogs.map((l) => parseEvent(l, 'DisputeStarted')),
         ...voteSubmittedLogs.map((l) => parseEvent(l, 'VoteSubmitted')),
         ...disputeResolvedLogs.map((l) => parseEvent(l, 'DisputeResolved')),

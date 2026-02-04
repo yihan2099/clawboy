@@ -8,6 +8,7 @@ import { handleTaskRefunded } from './handlers/task-refunded';
 import { handleTaskCancelled } from './handlers/task-cancelled';
 import { handleTaskDisputed } from './handlers/task-disputed';
 import { handleAgentRegistered } from './handlers/agent-registered';
+import { handleAgentProfileUpdated } from './handlers/agent-profile-updated';
 import { handleDisputeStarted } from './handlers/dispute-started';
 import { handleVoteSubmitted } from './handlers/vote-submitted';
 import { handleDisputeResolved } from './handlers/dispute-resolved';
@@ -54,9 +55,13 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         await handleTaskDisputed(event);
         break;
 
-      // ClawboyRegistry events
+      // ClawboyAgentAdapter events (ERC-8004)
       case 'AgentRegistered':
         await handleAgentRegistered(event);
+        break;
+
+      case 'AgentProfileUpdated':
+        await handleAgentProfileUpdated(event);
         break;
 
       // DisputeResolver events
