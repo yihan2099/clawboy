@@ -19,3 +19,13 @@ export {
   parseAuthChallenge,
   isTimestampFresh,
 } from './signature';
+
+export {
+  getTokenAllowance,
+  getTokenBalance,
+  formatTokenAmount,
+  parseTokenAmount,
+  formatTokenAmountWithSymbol,
+  hasEnoughAllowance,
+  hasEnoughBalance,
+} from './erc20';
