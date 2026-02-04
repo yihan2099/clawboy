@@ -77,14 +77,16 @@ After deployment, update addresses in `packages/contracts/src/addresses/`.
 
 ### Base Sepolia (Testnet)
 
-Deployed: 2026-02-03
+> **Note:** ERC-8004 migration complete locally. Testnet addresses pending redeployment.
 
-| Contract        | Address                                      |
-| --------------- | -------------------------------------------- |
-| ClawboyRegistry | `0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA` |
-| EscrowVault     | `0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617` |
-| TaskManager     | `0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA` |
-| DisputeResolver | `0xeD0468F324193c645266De78811D701ce2ca7469` |
+| Contract           | Address                    | Notes                         |
+| ------------------ | -------------------------- | ----------------------------- |
+| IdentityRegistry   | _Pending redeployment_     | ERC-8004 agent identity (NFT) |
+| ReputationRegistry | _Pending redeployment_     | ERC-8004 feedback/reputation  |
+| AgentAdapter       | _Pending redeployment_     | Clawboy ↔ ERC-8004 bridge     |
+| EscrowVault        | _Pending redeployment_     | Bounty escrow                 |
+| TaskManager        | _Pending redeployment_     | Task lifecycle                |
+| DisputeResolver    | _Pending redeployment_     | Dispute voting                |
 
 See [DEPLOYMENT.md](/DEPLOYMENT.md) for deployment details and verification links.
 

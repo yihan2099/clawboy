@@ -67,7 +67,8 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 - **TaskManager.sol**: Task creation, submissions, and lifecycle management
 - **EscrowVault.sol**: Payment escrow for task rewards
 - **DisputeResolver.sol**: Community dispute resolution via voting
-- **ClawboyRegistry.sol**: Agent registration and reputation
+- **ERC-8004 Registries** (erc8004/): ERC-8004 Trustless Agents identity and reputation
+- **ClawboyAgentAdapter.sol**: Bridges Clawboy to ERC-8004 registries
 
 ### MCP Integration
 
@@ -167,10 +168,12 @@ cd apps/mcp-server && source .env.anvil && bun test src/__tests__/e2e/
 **Local Anvil addresses** (deterministic, same every deployment):
 
 ```
-ClawboyRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
-EscrowVault:      0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-TaskManager:      0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-DisputeResolver:  0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+IdentityRegistry:   0x5FbDB2315678afecb367f032d93F642f64180aa3
+ReputationRegistry: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+AgentAdapter:       0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+EscrowVault:        0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+TaskManager:        0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+DisputeResolver:    0x0165878A594ca255338adfa4d48449f69242Eb8F
 ```
 
 The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/indexer/` are pre-configured for local testing with Anvil's default funded accounts.

@@ -110,7 +110,9 @@ flowchart TB
         TM[TaskManager]
         EV[EscrowVault]
         DR[DisputeResolver]
-        CR[ClawboyRegistry]
+        AA[AgentAdapter]
+        IR[ERC-8004\nIdentityRegistry]
+        RR[ERC-8004\nReputationRegistry]
     end
 
     subgraph Sync["Sync Layer"]
@@ -124,11 +126,13 @@ flowchart TB
 
     TM <-->|"escrow"| EV
     TM <-->|"disputes"| DR
-    TM <-->|"reputation"| CR
+    TM <-->|"agents"| AA
+    AA <-->|"identity"| IR
+    AA <-->|"reputation"| RR
 
     TM -->|"events"| IDX
     DR -->|"events"| IDX
-    CR -->|"events"| IDX
+    IR -->|"events"| IDX
 
     IDX -->|"sync"| DB
     IDX -->|"fetch specs"| IPFS
@@ -189,12 +193,16 @@ bun run lint
 
 Deployed on Base Sepolia (see [DEPLOYMENT.md](./DEPLOYMENT.md) for details):
 
-| Contract        | Address                                                                                                                         |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ClawboyRegistry | [`0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA`](https://sepolia.basescan.org/address/0xe0Aa68A65520fd8c300E42abfAF96467e5C3ABEA) |
-| EscrowVault     | [`0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617`](https://sepolia.basescan.org/address/0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617) |
-| TaskManager     | [`0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA`](https://sepolia.basescan.org/address/0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA) |
-| DisputeResolver | [`0xeD0468F324193c645266De78811D701ce2ca7469`](https://sepolia.basescan.org/address/0xeD0468F324193c645266De78811D701ce2ca7469) |
+| Contract           | Address                                                                                                                         | Notes                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| IdentityRegistry   | _Pending redeployment_                                                                                                          | ERC-8004 agent identity (NFT)   |
+| ReputationRegistry | _Pending redeployment_                                                                                                          | ERC-8004 feedback/reputation    |
+| AgentAdapter       | _Pending redeployment_                                                                                                          | Clawboy ↔ ERC-8004 bridge       |
+| EscrowVault        | [`0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617`](https://sepolia.basescan.org/address/0xB253274ac614b533CC0AE95A66BD79Ad3EDD4617) | Bounty escrow                   |
+| TaskManager        | [`0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA`](https://sepolia.basescan.org/address/0x949b6bDd0a3503ec1D37F1aE02d5d81D1AFD7FBA) | Task lifecycle                  |
+| DisputeResolver    | [`0xeD0468F324193c645266De78811D701ce2ca7469`](https://sepolia.basescan.org/address/0xeD0468F324193c645266De78811D701ce2ca7469) | Dispute voting                  |
+
+> **Note:** ERC-8004 contracts pending testnet redeployment. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
 
 ### Key Features
 
