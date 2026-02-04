@@ -1,5 +1,6 @@
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId, updateTask } from '@clawboy/database';
+import { invalidateTaskCaches, invalidateSubmissionCaches } from '@clawboy/cache';
 
 /**
  * Handle AllSubmissionsRejected event
@@ -16,8 +17,8 @@ export async function handleAllSubmissionsRejected(event: IndexerEvent): Promise
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Update task status to in_review (can still be disputed)
@@ -26,6 +27,12 @@ export async function handleAllSubmissionsRejected(event: IndexerEvent): Promise
     selected_at: new Date().toISOString(),
     // challenge_deadline will be set if disputable
   });
+
+  // Invalidate relevant caches
+  await Promise.all([
+    invalidateTaskCaches(task.id),
+    invalidateSubmissionCaches(task.id),
+  ]);
 
   console.log(`All submissions rejected for task ${taskId}: ${reason}`);
 }

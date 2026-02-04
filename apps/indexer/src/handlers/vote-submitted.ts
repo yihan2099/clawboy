@@ -1,5 +1,6 @@
 import type { IndexerEvent } from '../listener';
 import { getDisputeByChainId, createDisputeVote } from '@clawboy/database';
+import { invalidateDisputeCaches } from '@clawboy/cache';
 
 /**
  * Handle VoteSubmitted event
@@ -20,8 +21,8 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
   // Find dispute in database
   const dispute = await getDisputeByChainId(disputeId.toString());
   if (!dispute) {
-    console.error(`Dispute ${disputeId} not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry (dispute may be created by pending DisputeStarted event)
+    throw new Error(`Dispute ${disputeId} not found in database`);
   }
 
   // Create vote record
@@ -33,6 +34,9 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
     tx_hash: event.transactionHash,
     voted_at: new Date().toISOString(),
   });
+
+  // Invalidate dispute caches (vote counts changed)
+  await invalidateDisputeCaches(dispute.id);
 
   console.log(
     `Vote submitted for dispute ${disputeId} by ${voter}, weight: ${weight}, supports disputer: ${supportsDisputer}`

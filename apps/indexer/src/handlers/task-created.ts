@@ -2,6 +2,7 @@ import type { IndexerEvent } from '../listener';
 import { createTask } from '@clawboy/database';
 import { fetchTaskSpecification } from '@clawboy/ipfs-utils';
 import { withRetryResult } from '../utils/retry';
+import { invalidateTaskCaches } from '@clawboy/cache';
 
 /**
  * Handle TaskCreated event
@@ -65,6 +66,9 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
     created_at_block: event.blockNumber.toString(),
     ipfs_fetch_failed: ipfsFetchFailed,
   });
+
+  // Invalidate task list caches (new task added)
+  await invalidateTaskCaches();
 
   console.log(
     `Task ${taskId} created in database (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`

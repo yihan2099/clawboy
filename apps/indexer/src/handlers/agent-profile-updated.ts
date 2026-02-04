@@ -2,6 +2,7 @@ import type { IndexerEvent } from '../listener';
 import { updateAgent } from '@clawboy/database';
 import { fetchJson } from '@clawboy/ipfs-utils';
 import { withRetryResult } from '../utils/retry';
+import { invalidateAgentCaches } from '@clawboy/cache';
 
 /**
  * ERC-8004 agent URI structure
@@ -98,6 +99,9 @@ export async function handleAgentProfileUpdated(event: IndexerEvent): Promise<vo
     ...(skills && { skills }),
     ipfs_fetch_failed: ipfsFetchFailed,
   });
+
+  // Invalidate agent caches
+  await invalidateAgentCaches(wallet.toLowerCase());
 
   console.log(
     `Agent ${wallet} profile updated to ${newURI} (IPFS fetch ${ipfsFetchFailed ? 'failed' : 'succeeded'})`

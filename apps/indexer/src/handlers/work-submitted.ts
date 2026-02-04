@@ -6,6 +6,7 @@ import {
   getSubmissionByTaskAndAgent,
   getSubmissionsByTaskId,
 } from '@clawboy/database';
+import { invalidateSubmissionCaches, invalidateTaskCaches } from '@clawboy/cache';
 
 /**
  * Handle WorkSubmitted event
@@ -23,8 +24,8 @@ export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
   // Find task in database (filter by chainId for multi-chain support)
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry (task may be created by pending TaskCreated event)
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Check if agent already has a submission for this task
@@ -54,4 +55,10 @@ export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
     });
     console.log(`New submission created for task ${taskId} by agent ${agent}`);
   }
+
+  // Invalidate relevant caches
+  await Promise.all([
+    invalidateSubmissionCaches(task.id, agent.toLowerCase()),
+    invalidateTaskCaches(task.id), // Task may show submission count
+  ]);
 }

@@ -1,6 +1,7 @@
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId, updateTask } from '@clawboy/database';
 import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
+import { invalidateTaskCaches, invalidateSubmissionCaches } from '@clawboy/cache';
 
 /**
  * Handle WinnerSelected event
@@ -18,8 +19,8 @@ export async function handleWinnerSelected(event: IndexerEvent): Promise<void> {
   // Find task in database (filter by chainId for multi-chain support)
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Validate status transition
@@ -34,6 +35,12 @@ export async function handleWinnerSelected(event: IndexerEvent): Promise<void> {
     selected_at: new Date().toISOString(),
     challenge_deadline: new Date(Number(challengeDeadline) * 1000).toISOString(),
   });
+
+  // Invalidate relevant caches
+  await Promise.all([
+    invalidateTaskCaches(task.id),
+    invalidateSubmissionCaches(task.id), // Submission winner status changed
+  ]);
 
   console.log(
     `Winner ${winner} selected for task ${taskId}, challenge deadline: ${challengeDeadline}`

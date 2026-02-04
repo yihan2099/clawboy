@@ -1,6 +1,7 @@
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId, updateTask } from '@clawboy/database';
 import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
+import { invalidateTaskCaches } from '@clawboy/cache';
 
 /**
  * Handle TaskRefunded event
@@ -20,8 +21,8 @@ export async function handleTaskRefunded(event: IndexerEvent): Promise<void> {
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Validate status transition
@@ -33,6 +34,9 @@ export async function handleTaskRefunded(event: IndexerEvent): Promise<void> {
   await updateTask(task.id, {
     status: newStatus,
   });
+
+  // Invalidate task caches
+  await invalidateTaskCaches(task.id);
 
   console.log(`Task ${taskId} refunded ${refundAmount} to ${creator}`);
 }

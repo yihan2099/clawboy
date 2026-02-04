@@ -2,15 +2,19 @@ import type { IndexerEvent } from '../listener';
 import {
   getTaskByChainId,
   updateTask,
-  updateAgent,
-  getAgentByAddress,
+  incrementTasksWon,
   markSubmissionAsWinner,
 } from '@clawboy/database';
 import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
+import {
+  invalidateTaskCaches,
+  invalidateAgentCaches,
+  invalidateSubmissionCaches,
+} from '@clawboy/cache';
 
 /**
  * Handle TaskCompleted event
- * Updated for competitive model - updates tasks_won instead of tasks_completed
+ * Updated for competitive model - uses atomic increment for tasks_won
  */
 export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
   const { taskId, winner, bountyAmount } = event.args as {
@@ -24,8 +28,8 @@ export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry (task may be created by pending TaskCreated event)
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Validate status transition
@@ -42,14 +46,21 @@ export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
   // Mark the winning submission
   await markSubmissionAsWinner(task.id, winner.toLowerCase());
 
-  // Update agent stats (tasks_won in competitive model)
-  const agentRecord = await getAgentByAddress(winner);
-  if (agentRecord) {
-    await updateAgent(winner, {
-      tasks_won: agentRecord.tasks_won + 1,
-    });
-    console.log(`Updated agent ${winner} tasks won count`);
+  // Update agent stats atomically (avoids N+1 query and race conditions)
+  try {
+    await incrementTasksWon(winner);
+    console.log(`Incremented tasks_won for agent ${winner}`);
+  } catch (error) {
+    // Agent may not exist in database yet - log but don't fail the event
+    console.warn(`Could not increment tasks_won for ${winner}: ${error}`);
   }
+
+  // Invalidate relevant caches
+  await Promise.all([
+    invalidateTaskCaches(task.id),
+    invalidateAgentCaches(winner.toLowerCase()),
+    invalidateSubmissionCaches(task.id),
+  ]);
 
   console.log(`Task ${taskId} completed, ${bountyAmount} paid to ${winner}`);
 }

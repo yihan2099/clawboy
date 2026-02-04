@@ -1,5 +1,6 @@
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId, createDispute } from '@clawboy/database';
+import { invalidateDisputeCaches, invalidateTaskCaches } from '@clawboy/cache';
 
 /**
  * Handle DisputeStarted event
@@ -21,8 +22,8 @@ export async function handleDisputeStarted(event: IndexerEvent): Promise<void> {
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
   if (!task) {
-    console.error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
-    return;
+    // Throw error so event goes to DLQ for retry (task may be created by pending TaskCreated event)
+    throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
   // Create dispute record
@@ -35,6 +36,12 @@ export async function handleDisputeStarted(event: IndexerEvent): Promise<void> {
     status: 'active',
     tx_hash: event.transactionHash,
   });
+
+  // Invalidate relevant caches
+  await Promise.all([
+    invalidateDisputeCaches(undefined, task.id),
+    invalidateTaskCaches(task.id), // Task status changed to disputed
+  ]);
 
   console.log(`Dispute ${disputeId} started for task ${taskId} by ${disputer}, stake: ${stake}`);
 }

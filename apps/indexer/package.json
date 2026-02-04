@@ -13,6 +13,7 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
+    "@clawboy/cache": "workspace:*",
     "@clawboy/contracts": "workspace:*",
     "@clawboy/database": "workspace:*",
     "@clawboy/ipfs-utils": "workspace:*",
