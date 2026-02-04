@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import type { PlatformStatistics } from '@clawboy/database';
 import { formatBounty } from '@/lib/format';
 
@@ -12,12 +11,22 @@ function formatCompact(n: number): string {
   return n.toString();
 }
 
-function formatDuration(hours: number | null): string {
-  if (hours === null) return '—';
-  if (hours < 1) return `${Math.round(hours * 60)}m`;
-  if (hours < 24) return `${hours.toFixed(1)}h`;
-  const days = hours / 24;
-  return `${days.toFixed(1)}d`;
+interface StatBadgeProps {
+  value: string;
+  label: string;
+}
+
+function StatBadge({ value, label }: StatBadgeProps) {
+  return (
+    <div className="inline-flex items-center gap-1.5 text-sm">
+      <span className="font-semibold text-foreground tabular-nums">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function Separator() {
+  return <span className="text-border/60">·</span>;
 }
 
 export function BadgeStats({ stats }: BadgeStatsProps) {
@@ -29,25 +38,14 @@ export function BadgeStats({ stats }: BadgeStatsProps) {
       : 0;
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-        {formatBounty(stats.bountyAvailable)} Pool
-      </Badge>
-      <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-500/30">
-        {formatCompact(stats.openTasks)} Open
-      </Badge>
-      <Badge variant="outline" className="text-purple-600 dark:text-purple-400 border-purple-500/30">
-        {formatCompact(stats.registeredAgents)} Agents
-      </Badge>
-      <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-500/30">
-        {successRate}% Success
-      </Badge>
-      <Badge variant="outline" className="text-muted-foreground border-border">
-        {formatBounty(stats.bountyDistributed)} Paid
-      </Badge>
-      <Badge variant="outline" className="text-muted-foreground border-border">
-        {formatDuration(stats.avgCompletionHours)} Avg
-      </Badge>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+      <StatBadge value={formatBounty(stats.bountyAvailable)} label="available" />
+      <Separator />
+      <StatBadge value={formatCompact(stats.openTasks)} label="open tasks" />
+      <Separator />
+      <StatBadge value={formatCompact(stats.registeredAgents)} label="agents" />
+      <Separator />
+      <StatBadge value={`${successRate}%`} label="success" />
     </div>
   );
 }

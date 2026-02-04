@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, ExternalLink, FileText, User, Trophy, Gavel, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ExternalLink, ArrowUpRight } from 'lucide-react';
 import type { DetailedTask, DetailedDispute, SubmissionWithTask } from '@clawboy/database';
 import {
   formatTimeAgo,
@@ -16,15 +16,14 @@ import {
 // TYPES
 // ============================================================================
 
-type FeedItemType = 'task_created' | 'task_completed' | 'submission' | 'dispute';
+type FeedItemType = 'task_created' | 'task_completed' | 'submission' | 'submission_won' | 'dispute';
 
 interface FeedItem {
   id: string;
   type: FeedItemType;
   title: string;
-  subtitle: string;
-  timestamp: string;
   bounty?: string;
+  timestamp: string;
   data: DetailedTask | DetailedDispute | SubmissionWithTask;
 }
 
@@ -39,14 +38,12 @@ function buildFeed(
 ): FeedItem[] {
   const items: FeedItem[] = [];
 
-  // Add tasks
   for (const task of tasks) {
     if (task.status === 'completed' && task.winner_address) {
       items.push({
         id: `task-completed-${task.id}`,
         type: 'task_completed',
-        title: `Task completed`,
-        subtitle: truncateText(task.title || 'Untitled', 30),
+        title: truncateText(task.title || 'Untitled', 40),
         timestamp: task.selected_at || task.created_at,
         bounty: task.bounty_amount,
         data: task,
@@ -55,8 +52,7 @@ function buildFeed(
       items.push({
         id: `task-created-${task.id}`,
         type: 'task_created',
-        title: `New task`,
-        subtitle: truncateText(task.title || 'Untitled', 30),
+        title: truncateText(task.title || 'Untitled', 40),
         timestamp: task.created_at,
         bounty: task.bounty_amount,
         data: task,
@@ -64,142 +60,143 @@ function buildFeed(
     }
   }
 
-  // Add submissions
   for (const sub of submissions) {
     items.push({
       id: `submission-${sub.id}`,
-      type: 'submission',
-      title: sub.is_winner
-        ? `${truncateAddress(sub.agent_address)} won`
-        : `${truncateAddress(sub.agent_address)} submitted`,
-      subtitle: truncateText(sub.task?.title || 'Task', 25),
+      type: sub.is_winner ? 'submission_won' : 'submission',
+      title: truncateText(sub.task?.title || 'Task', 35),
       timestamp: sub.submitted_at,
-      bounty: sub.task?.bounty_amount,
+      bounty: sub.is_winner ? sub.task?.bounty_amount : undefined,
       data: sub,
     });
   }
 
-  // Add disputes
   for (const dispute of disputes) {
     items.push({
       id: `dispute-${dispute.id}`,
       type: 'dispute',
-      title: `Dispute ${dispute.status === 'active' ? 'opened' : dispute.status}`,
-      subtitle: truncateText(dispute.task?.title || 'Task', 25),
+      title: truncateText(dispute.task?.title || 'Task', 35),
       timestamp: dispute.created_at,
       bounty: dispute.dispute_stake,
       data: dispute,
     });
   }
 
-  // Sort by timestamp descending
   items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
   return items.slice(0, 10);
+}
+
+function getEventLabel(type: FeedItemType): string {
+  switch (type) {
+    case 'task_completed':
+      return 'Completed';
+    case 'task_created':
+      return 'New task';
+    case 'submission':
+      return 'Submitted';
+    case 'submission_won':
+      return 'Won';
+    case 'dispute':
+      return 'Dispute';
+  }
 }
 
 function getEventColor(type: FeedItemType): string {
   switch (type) {
     case 'task_completed':
-      return 'bg-emerald-500/60';
+    case 'submission_won':
+      return 'text-emerald-500';
     case 'task_created':
-      return 'bg-blue-500/60';
+      return 'text-blue-500';
     case 'submission':
-      return 'bg-amber-500/60';
+      return 'text-muted-foreground';
     case 'dispute':
-      return 'bg-red-500/60';
-    default:
-      return 'bg-muted-foreground/60';
+      return 'text-amber-500';
   }
 }
 
 // ============================================================================
-// EXPANDED CARD OVERLAY
+// EXPANDED OVERLAY
 // ============================================================================
 
-interface ExpandedCardProps {
+interface ExpandedOverlayProps {
   item: FeedItem;
   onClose: () => void;
 }
 
-function ExpandedCard({ item, onClose }: ExpandedCardProps) {
-  const renderContent = () => {
+function ExpandedOverlay({ item, onClose }: ExpandedOverlayProps) {
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  const renderLinks = () => {
     if (item.type === 'task_created' || item.type === 'task_completed') {
       const task = item.data as DetailedTask;
       return (
         <>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              {task.title || 'Untitled Task'}
-            </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {task.description || 'No description'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Bounty</p>
-              <p className="text-sm font-semibold text-emerald-500">{formatBounty(task.bounty_amount)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Status</p>
-              <p className="text-sm font-medium text-foreground capitalize">{task.status}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Submissions</p>
-              <p className="text-sm font-medium text-foreground">{task.submission_count}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <LinkRow href={getBaseScanUrl(task.creator_address)} label="Creator on BaseScan" />
-            {task.winner_address && (
-              <LinkRow href={getBaseScanUrl(task.winner_address)} label="Winner on BaseScan" />
-            )}
-            <LinkRow href={getIpfsUrl(task.specification_cid)} label="Task Specification (IPFS)" />
-          </div>
+          <LinkItem href={getBaseScanUrl(task.creator_address)} label="Creator" />
+          {task.winner_address && (
+            <LinkItem href={getBaseScanUrl(task.winner_address)} label="Winner" />
+          )}
+          <LinkItem href={getIpfsUrl(task.specification_cid)} label="Specification" />
         </>
       );
     }
 
-    if (item.type === 'submission') {
+    if (item.type === 'submission' || item.type === 'submission_won') {
       const sub = item.data as SubmissionWithTask;
       return (
         <>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              {sub.is_winner ? 'Winning Submission' : 'Submission'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              To: {sub.task?.title || 'Unknown Task'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Agent</p>
-              <p className="text-sm font-mono text-foreground">{truncateAddress(sub.agent_address)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Status</p>
-              <p className="text-sm font-medium text-foreground">
-                {sub.is_winner ? (
-                  <span className="text-emerald-500">Won</span>
-                ) : sub.task?.status === 'completed' ? (
-                  <span className="text-muted-foreground">Not Selected</span>
-                ) : (
-                  <span className="text-amber-500">Pending</span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <LinkRow href={getBaseScanUrl(sub.agent_address)} label="Agent on BaseScan" />
-            <LinkRow href={getIpfsUrl(sub.submission_cid)} label="Submission Content (IPFS)" />
-          </div>
+          <LinkItem href={getBaseScanUrl(sub.agent_address)} label="Agent" />
+          <LinkItem href={getIpfsUrl(sub.submission_cid)} label="Submission" />
         </>
+      );
+    }
+
+    if (item.type === 'dispute') {
+      const dispute = item.data as DetailedDispute;
+      return (
+        <>
+          <LinkItem href={getBaseScanUrl(dispute.disputer_address)} label="Disputer" />
+          <LinkItem
+            href={`https://sepolia.basescan.org/tx/${dispute.tx_hash}`}
+            label="Transaction"
+          />
+        </>
+      );
+    }
+
+    return null;
+  };
+
+  const getDetails = () => {
+    if (item.type === 'task_created' || item.type === 'task_completed') {
+      const task = item.data as DetailedTask;
+      return (
+        <div className="flex items-center gap-4 text-sm">
+          {item.bounty && (
+            <span className="text-foreground font-medium">{formatBounty(item.bounty)}</span>
+          )}
+          <span className="text-muted-foreground">{task.submission_count} submissions</span>
+          <span className="text-muted-foreground capitalize">{task.status}</span>
+        </div>
+      );
+    }
+
+    if (item.type === 'submission' || item.type === 'submission_won') {
+      const sub = item.data as SubmissionWithTask;
+      return (
+        <div className="flex items-center gap-4 text-sm">
+          <span className="font-mono text-muted-foreground">{truncateAddress(sub.agent_address)}</span>
+          {item.type === 'submission_won' && item.bounty && (
+            <span className="text-emerald-500 font-medium">{formatBounty(item.bounty)}</span>
+          )}
+        </div>
       );
     }
 
@@ -207,42 +204,15 @@ function ExpandedCard({ item, onClose }: ExpandedCardProps) {
       const dispute = item.data as DetailedDispute;
       const votesFor = parseInt(dispute.votes_for_disputer) || 0;
       const votesAgainst = parseInt(dispute.votes_against_disputer) || 0;
-
       return (
-        <>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              Dispute #{dispute.chain_dispute_id}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              On: {dispute.task?.title || 'Unknown Task'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Stake</p>
-              <p className="text-sm font-semibold text-red-500">{formatBounty(dispute.dispute_stake)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Votes</p>
-              <p className="text-sm font-medium">
-                <span className="text-emerald-500">{votesFor}↑</span>
-                {' / '}
-                <span className="text-red-500">{votesAgainst}↓</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Status</p>
-              <p className="text-sm font-medium text-foreground capitalize">{dispute.status}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <LinkRow href={getBaseScanUrl(dispute.disputer_address)} label="Disputer on BaseScan" />
-            <LinkRow href={`https://sepolia.basescan.org/tx/${dispute.tx_hash}`} label="Transaction on BaseScan" />
-          </div>
-        </>
+        <div className="flex items-center gap-4 text-sm">
+          {item.bounty && (
+            <span className="text-foreground font-medium">{formatBounty(item.bounty)} stake</span>
+          )}
+          <span className="text-muted-foreground">
+            {votesFor} for · {votesAgainst} against
+          </span>
+        </div>
       );
     }
 
@@ -251,87 +221,102 @@ function ExpandedCard({ item, onClose }: ExpandedCardProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" />
 
-      {/* Card */}
       <div
-        className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg"
+        className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           aria-label="Close"
         >
           <X className="size-4" />
         </button>
 
-        {/* Type badge */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className={`size-2 rounded-full ${getEventColor(item.type)}`} />
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">
-            {item.type.replace('_', ' ')}
-          </span>
-          <span className="text-xs text-muted-foreground ml-auto">
-            {formatTimeAgo(item.timestamp)}
-          </span>
-        </div>
+        <div className="space-y-4">
+          {/* Header */}
+          <div>
+            <span className={`text-xs font-medium uppercase tracking-wider ${getEventColor(item.type)}`}>
+              {getEventLabel(item.type)}
+            </span>
+            <h3 className="text-lg font-semibold text-foreground mt-1 pr-8 leading-tight">
+              {item.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatTimeAgo(item.timestamp)}
+            </p>
+          </div>
 
-        {renderContent()}
+          {/* Details */}
+          <div className="py-3 border-y border-border">
+            {getDetails()}
+          </div>
+
+          {/* Links */}
+          <div className="space-y-1.5">
+            {renderLinks()}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function LinkRow({ href, label }: { href: string; label: string }) {
+function LinkItem({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
+      className="flex items-center justify-between py-2.5 px-3 -mx-1 rounded-lg text-sm text-foreground hover:bg-muted/60 transition-colors group"
     >
-      <span className="text-sm text-foreground">{label}</span>
-      <ExternalLink className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+      <span>{label}</span>
+      <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
     </a>
   );
 }
 
 // ============================================================================
-// FEED ITEM ROW
+// FEED ROW
 // ============================================================================
 
-interface FeedItemRowProps {
+interface FeedRowProps {
   item: FeedItem;
   onClick: () => void;
 }
 
-function FeedItemRow({ item, onClick }: FeedItemRowProps) {
+function FeedRow({ item, onClick }: FeedRowProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+      className="w-full flex items-center gap-3 py-3 px-1 text-left group transition-colors"
     >
-      <span className={`size-2 rounded-full shrink-0 ${getEventColor(item.type)}`} />
-      <div className="flex-1 min-w-0">
-        <span className="text-sm text-foreground">{item.title}</span>
-        <span className="text-muted-foreground mx-1.5">·</span>
-        <span className="text-sm text-muted-foreground truncate">{item.subtitle}</span>
-      </div>
+      {/* Event label */}
+      <span className={`text-xs font-medium w-16 shrink-0 ${getEventColor(item.type)}`}>
+        {getEventLabel(item.type)}
+      </span>
+
+      {/* Title */}
+      <span className="flex-1 text-sm text-foreground truncate group-hover:text-foreground/80 transition-colors">
+        {item.title}
+      </span>
+
+      {/* Bounty */}
       {item.bounty && (
-        <span className="text-xs font-medium text-emerald-500 shrink-0">
+        <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
           {formatBounty(item.bounty)}
         </span>
       )}
-      <span className="text-xs text-muted-foreground shrink-0 w-12 text-right">
+
+      {/* Time */}
+      <span className="text-xs text-muted-foreground/60 shrink-0 w-10 text-right tabular-nums">
         {formatTimeAgo(item.timestamp)}
       </span>
-      <ChevronRight className="size-4 text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 transition-colors" />
     </button>
   );
 }
@@ -353,21 +338,18 @@ export function LiveFeed({ tasks, submissions, disputes }: LiveFeedProps) {
 
   if (feedItems.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card/50 p-6">
-        <p className="text-sm text-muted-foreground text-center">No activity yet</p>
+      <div className="py-12 text-center">
+        <p className="text-sm text-muted-foreground">No activity yet</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-medium text-foreground">Live Activity</h3>
-        </div>
-        <div className="divide-y divide-border/50">
+      <div className="rounded-xl border border-border/60 bg-card/30 overflow-hidden">
+        <div className="divide-y divide-border/40 px-3">
           {feedItems.map((item) => (
-            <FeedItemRow
+            <FeedRow
               key={item.id}
               item={item}
               onClick={() => setExpandedItem(item)}
@@ -376,9 +358,8 @@ export function LiveFeed({ tasks, submissions, disputes }: LiveFeedProps) {
         </div>
       </div>
 
-      {/* Expanded overlay */}
       {expandedItem && (
-        <ExpandedCard item={expandedItem} onClose={() => setExpandedItem(null)} />
+        <ExpandedOverlay item={expandedItem} onClose={() => setExpandedItem(null)} />
       )}
     </>
   );
