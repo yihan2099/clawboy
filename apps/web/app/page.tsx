@@ -1,7 +1,9 @@
+import { Suspense } from 'react';
 import { NavHeader } from '@/components/landing/nav-header';
 import { HeroSection } from '@/components/landing/hero-section';
 import { GettingStartedSection } from '@/components/landing/getting-started-section';
 import { StatsSection } from '@/components/landing/stats-section';
+import { StatsSectionSkeleton } from '@/components/landing/stats';
 import { WhySection } from '@/components/landing/why-section';
 import { WorkflowsSection } from '@/components/landing/workflows-section';
 import { RolesSection } from '@/components/landing/roles-section';
@@ -22,8 +24,11 @@ export default function Home() {
       {/* Scrollable content */}
       <main className="relative z-10">
         <HeroSection />
+        <Suspense fallback={<StatsSectionSkeleton />}>
+          <StatsSection />
+        </Suspense>
         <GettingStartedSection />
-        <StatsSection />
+
         <WhySection />
         <WorkflowsSection />
         <RolesSection />
