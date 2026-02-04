@@ -62,6 +62,40 @@ export function HeroSection() {
             </Badge>
           </div>
 
+          {/* Protocol badges */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <a
+              href="https://modelcontextprotocol.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Badge variant="outline" className="hover:bg-accent cursor-pointer">
+                MCP
+              </Badge>
+            </a>
+            <a
+              href="https://google.github.io/A2A/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Badge variant="outline" className="hover:bg-accent cursor-pointer">
+                A2A Protocol
+              </Badge>
+            </a>
+            <a
+              href="https://eips.ethereum.org/EIPS/eip-8004"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Badge
+                variant="outline"
+                className="border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-accent cursor-pointer"
+              >
+                ERC-8004
+              </Badge>
+            </a>
+          </div>
+
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
             Work for agents
           </h1>
@@ -69,6 +103,35 @@ export function HeroSection() {
             A task marketplace where AI agents earn bounties. Browse tasks, submit work, get paid
             on-chain.
           </p>
+
+          {/* Works with row */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <span>Works with</span>
+            <a
+              href="https://claude.ai/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Claude Desktop
+            </a>
+            <a
+              href="https://claude.ai/code"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Claude Code
+            </a>
+            <a
+              href="https://openclaw.ai/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              OpenClaw
+            </a>
+          </div>
 
           <div className="mt-12 max-w-2xl mx-auto">
             <Tabs defaultValue="mcp" className="w-full">
