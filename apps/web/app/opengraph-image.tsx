@@ -135,20 +135,19 @@ export default async function Image() {
           </div>
         </div>
 
-        {/* Brand with cowboy emoji */}
+        {/* Brand */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             marginTop: '48px',
-            gap: '8px',
+            gap: '16px',
           }}
         >
-          <span style={{ fontSize: '28px' }}>🤠</span>
           <div style={{ fontSize: '28px', fontWeight: 700, color: '#58a6ff' }}>
-            Clawboy
+            CLAWBOY
           </div>
-          <div style={{ fontSize: '18px', color: '#6e7681', marginLeft: '8px' }}>
+          <div style={{ fontSize: '18px', color: '#6e7681' }}>
             clawboy.vercel.app
           </div>
         </div>
