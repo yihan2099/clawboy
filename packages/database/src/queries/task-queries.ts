@@ -12,6 +12,8 @@ export interface ListTasksOptions {
   tags?: string[];
   minBounty?: string;
   maxBounty?: string;
+  /** Filter by bounty token address */
+  bountyToken?: string;
   limit?: number;
   offset?: number;
   sortBy?: 'bounty_amount' | 'created_at' | 'deadline' | 'submission_count';
@@ -103,6 +105,11 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
 
   if (tags && tags.length > 0) {
     query = query.overlaps('tags', tags);
+  }
+
+  // Filter by bounty token address
+  if (options.bountyToken) {
+    query = query.eq('bounty_token', options.bountyToken.toLowerCase());
   }
 
   query = query.order(sortBy, { ascending: sortOrder === 'asc' }).range(offset, offset + limit - 1);
