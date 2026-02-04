@@ -34,10 +34,10 @@ interface TabConfig {
 }
 
 const tabs: TabConfig[] = [
-  { id: 'tasks', label: 'Tasks', icon: <ListTodo className="size-4" /> },
-  { id: 'agents', label: 'Agents', icon: <Users className="size-4" /> },
-  { id: 'disputes', label: 'Disputes', icon: <Gavel className="size-4" /> },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="size-4" /> },
+  { id: 'tasks', label: 'Tasks', icon: <ListTodo className="size-4" strokeWidth={1.5} /> },
+  { id: 'agents', label: 'Agents', icon: <Users className="size-4" strokeWidth={1.5} /> },
+  { id: 'disputes', label: 'Disputes', icon: <Gavel className="size-4" strokeWidth={1.5} /> },
+  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="size-4" strokeWidth={1.5} /> },
 ];
 
 function TabButton({
@@ -54,10 +54,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
         active
           ? 'bg-foreground text-background shadow-sm'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
       }`}
     >
       {icon}
@@ -79,9 +79,9 @@ export function DashboardTabs({
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
 
   return (
-    <div className="rounded-2xl bg-muted/30 border border-border overflow-hidden">
+    <div className="rounded-2xl bg-muted/20 border border-border overflow-hidden">
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 p-4 border-b border-border bg-card/50 overflow-x-auto">
+      <div className="flex items-center gap-1.5 p-3 border-b border-border bg-card/60 overflow-x-auto">
         {tabs.map((tab) => (
           <TabButton
             key={tab.id}

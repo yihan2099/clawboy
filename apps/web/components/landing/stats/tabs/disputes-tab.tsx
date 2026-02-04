@@ -1,5 +1,4 @@
 import {
-  ExternalLink,
   User,
   Hash,
   Clock,
@@ -13,33 +12,20 @@ import {
 import type { DetailedDispute, PlatformStatistics } from '@clawboy/database';
 import { Badge } from '@/components/ui/badge';
 import { formatTimeAgo, getBaseScanUrl, getBaseScanTxUrl, formatBounty } from '@/lib/format';
+import {
+  DashboardCard,
+  SidebarCard,
+  SectionHeader,
+  LinkButton,
+  StatRow,
+  EmptyState,
+  CardDivider,
+  StatusDot,
+} from '../shared';
 
 interface DisputesTabProps {
   disputes: DetailedDispute[];
   stats: PlatformStatistics;
-}
-
-function LinkButton({
-  href,
-  title,
-  children,
-}: {
-  href: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded bg-muted/50 hover:bg-muted"
-      title={title}
-    >
-      {children}
-      <ExternalLink className="size-3" />
-    </a>
-  );
 }
 
 function getDisputeStatusColor(status: string, won: boolean | null) {
@@ -65,7 +51,7 @@ function DisputeDetailCard({ dispute }: { dispute: DetailedDispute }) {
   const forPercent = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 50;
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border hover:border-foreground/20 transition-colors">
+    <DashboardCard>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
@@ -85,130 +71,131 @@ function DisputeDetailCard({ dispute }: { dispute: DetailedDispute }) {
       </div>
 
       {/* Key Info */}
-      <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Coins className="size-3" />
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Coins className="size-3.5 opacity-70" strokeWidth={1.5} />
           <span className="font-medium text-foreground">{formatBounty(dispute.dispute_stake)}</span>
-          <span>stake</span>
+          <span className="text-xs">stake</span>
         </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Clock className="size-3" />
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="size-3.5 opacity-70" strokeWidth={1.5} />
           <span>{formatTimeAgo(dispute.created_at)}</span>
         </div>
       </div>
 
       {/* Voting Progress (if active) */}
       {dispute.status === 'active' && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1 text-xs">
-            <div className="flex items-center gap-1 text-green-500">
-              <CheckCircle2 className="size-3" />
-              <span>{votesFor} for</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 text-green-500 text-sm">
+              <CheckCircle2 className="size-3.5" strokeWidth={1.5} />
+              <span className="font-medium">{votesFor} for</span>
             </div>
-            <div className="flex items-center gap-1 text-red-500">
-              <span>{votesAgainst} against</span>
-              <XCircle className="size-3" />
+            <div className="flex items-center gap-1.5 text-red-500 text-sm">
+              <span className="font-medium">{votesAgainst} against</span>
+              <XCircle className="size-3.5" strokeWidth={1.5} />
             </div>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden flex">
+          <div className="h-2.5 bg-muted rounded-full overflow-hidden flex">
             <div
-              className="h-full bg-green-500 transition-all"
+              className="h-full bg-green-500 transition-all duration-300"
               style={{ width: `${forPercent}%` }}
             />
             <div
-              className="h-full bg-red-500 transition-all"
+              className="h-full bg-red-500 transition-all duration-300"
               style={{ width: `${100 - forPercent}%` }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1 text-center">
+          <p className="text-xs text-muted-foreground mt-2 text-center">
             Voting ends {formatTimeAgo(dispute.voting_deadline)}
           </p>
         </div>
       )}
 
+      <CardDivider />
+
       {/* Links Section */}
-      <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
+      <div className="flex flex-wrap gap-2">
         <LinkButton
           href={getBaseScanUrl(dispute.disputer_address)}
           title="View disputer on BaseScan"
         >
-          <User className="size-3" />
+          <User className="size-3.5" strokeWidth={1.5} />
           Disputer
         </LinkButton>
         <LinkButton href={getBaseScanTxUrl(dispute.tx_hash)} title="View transaction on BaseScan">
-          <Hash className="size-3" />
+          <Hash className="size-3.5" strokeWidth={1.5} />
           Transaction
         </LinkButton>
       </div>
-    </div>
+    </DashboardCard>
   );
 }
 
-function DisputeStats({ stats, disputes }: { stats: PlatformStatistics; disputes: DetailedDispute[] }) {
+function DisputeStats({
+  stats,
+  disputes,
+}: {
+  stats: PlatformStatistics;
+  disputes: DetailedDispute[];
+}) {
   const resolved = disputes.filter((d) => d.status === 'resolved');
   const disputerWins = resolved.filter((d) => d.disputer_won === true).length;
   const creatorWins = resolved.filter((d) => d.disputer_won === false).length;
   const winRate = resolved.length > 0 ? ((disputerWins / resolved.length) * 100).toFixed(0) : '—';
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border">
-      <h4 className="font-semibold text-foreground text-sm mb-4">Dispute Statistics</h4>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <AlertCircle className="size-4 text-yellow-500" />
-            <span className="text-xs">Active</span>
-          </div>
-          <span className="font-semibold text-foreground">{stats.activeDisputes}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <CheckCircle2 className="size-4 text-green-500" />
-            <span className="text-xs">Resolved</span>
-          </div>
-          <span className="font-semibold text-foreground">{resolved.length}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <TrendingUp className="size-4" />
-            <span className="text-xs">Disputer Win Rate</span>
-          </div>
-          <span className="font-semibold text-foreground">{winRate}%</span>
-        </div>
+    <SidebarCard>
+      <SectionHeader icon={<Gavel className="size-4" strokeWidth={1.5} />} title="Dispute Statistics" />
+      <div className="space-y-1">
+        <StatRow
+          icon={<AlertCircle className="size-4" strokeWidth={1.5} />}
+          iconColor="text-yellow-500"
+          label="Active"
+          value={stats.activeDisputes}
+        />
+        <StatRow
+          icon={<CheckCircle2 className="size-4" strokeWidth={1.5} />}
+          iconColor="text-green-500"
+          label="Resolved"
+          value={resolved.length}
+        />
+        <StatRow
+          icon={<TrendingUp className="size-4" strokeWidth={1.5} />}
+          label="Disputer Win Rate"
+          value={`${winRate}%`}
+        />
       </div>
 
       {resolved.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-2">Resolution History</p>
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="size-2 rounded-full bg-green-500" />
-              <span className="text-muted-foreground">Disputer Won: {disputerWins}</span>
+        <>
+          <CardDivider />
+          <p className="text-xs text-muted-foreground mb-3">Resolution History</p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <StatusDot color="green" />
+              <span className="text-sm text-muted-foreground">Disputer: {disputerWins}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="size-2 rounded-full bg-red-500" />
-              <span className="text-muted-foreground">Creator Won: {creatorWins}</span>
+            <div className="flex items-center gap-2">
+              <StatusDot color="red" />
+              <span className="text-sm text-muted-foreground">Creator: {creatorWins}</span>
             </div>
           </div>
-        </div>
+        </>
       )}
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <Gavel className="size-10 mb-3 opacity-50" />
-      <p className="text-sm">No disputes yet</p>
-      <p className="text-xs mt-1">Disputes will appear here when filed</p>
-    </div>
+    </SidebarCard>
   );
 }
 
 export function DisputesTab({ disputes, stats }: DisputesTabProps) {
   if (disputes.length === 0) {
-    return <EmptyState />;
+    return (
+      <EmptyState
+        icon={<Gavel className="size-12" strokeWidth={1} />}
+        title="No disputes yet"
+        description="Disputes will appear here when filed"
+      />
+    );
   }
 
   return (

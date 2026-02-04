@@ -1,5 +1,4 @@
 import {
-  ExternalLink,
   FileText,
   User,
   Coins,
@@ -7,6 +6,9 @@ import {
   TrendingDown,
   Activity,
   BarChart3,
+  Users,
+  ListTodo,
+  Send,
 } from 'lucide-react';
 import type { BountyStatistics, PlatformStatistics, SubmissionWithTask } from '@clawboy/database';
 import {
@@ -17,34 +19,18 @@ import {
   getIpfsUrl,
   formatBounty,
 } from '@/lib/format';
+import {
+  SidebarCard,
+  SectionHeader,
+  LinkButton,
+  CardDivider,
+  StatusDot,
+} from '../shared';
 
 interface AnalyticsTabProps {
   bountyStats: BountyStatistics | null;
   stats: PlatformStatistics;
   submissions: SubmissionWithTask[];
-}
-
-function LinkButton({
-  href,
-  title,
-  children,
-}: {
-  href: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      title={title}
-    >
-      {children}
-      <ExternalLink className="size-3" />
-    </a>
-  );
 }
 
 function BountyDistribution({
@@ -60,159 +46,140 @@ function BountyDistribution({
   const max = parseFloat(formatBounty(bountyStats.maxBounty).replace(' ETH', ''));
   const avg = parseFloat(formatBounty(bountyStats.avgBounty).replace(' ETH', ''));
 
-  // Calculate position of avg on the scale
   const range = max - min;
   const avgPosition = range > 0 ? ((avg - min) / range) * 100 : 50;
 
   return (
-    <div className="p-4 rounded-xl bg-card border border-border">
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="size-4 text-muted-foreground" />
-        <h4 className="font-semibold text-foreground text-sm">Bounty Distribution</h4>
-      </div>
+    <SidebarCard>
+      <SectionHeader icon={<BarChart3 className="size-4" strokeWidth={1.5} />} title="Bounty Distribution" />
 
-      <div className="space-y-4">
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-              <TrendingDown className="size-3" />
-              <span className="text-xs">Min</span>
-            </div>
-            <p className="font-semibold text-foreground">{formatBounty(bountyStats.minBounty)}</p>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4 text-center mb-6">
+        <div className="p-3 rounded-lg bg-muted/40">
+          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+            <TrendingDown className="size-3" strokeWidth={1.5} />
+            <span className="text-xs">Min</span>
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-              <Activity className="size-3" />
-              <span className="text-xs">Avg</span>
-            </div>
-            <p className="font-semibold text-foreground">{formatBounty(bountyStats.avgBounty)}</p>
-          </div>
-          <div>
-            <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
-              <TrendingUp className="size-3" />
-              <span className="text-xs">Max</span>
-            </div>
-            <p className="font-semibold text-foreground">{formatBounty(bountyStats.maxBounty)}</p>
-          </div>
+          <p className="font-semibold text-foreground text-sm">{formatBounty(bountyStats.minBounty)}</p>
         </div>
-
-        {/* Visual Range Bar */}
-        <div className="relative pt-4">
-          <div className="h-2 bg-gradient-to-r from-muted via-foreground/30 to-foreground/60 rounded-full" />
-          <div
-            className="absolute top-0 transform -translate-x-1/2"
-            style={{ left: `${avgPosition}%` }}
-          >
-            <div className="w-0.5 h-4 bg-foreground rounded-full" />
-            <div className="text-xs text-muted-foreground mt-1 whitespace-nowrap">avg</div>
+        <div className="p-3 rounded-lg bg-muted/40">
+          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+            <Activity className="size-3" strokeWidth={1.5} />
+            <span className="text-xs">Avg</span>
           </div>
+          <p className="font-semibold text-foreground text-sm">{formatBounty(bountyStats.avgBounty)}</p>
         </div>
-
-        {/* Total Distributed */}
-        <div className="pt-4 border-t border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Coins className="size-4" />
-              <span className="text-xs">Total Paid Out</span>
-            </div>
-            <span className="font-semibold text-foreground">
-              {formatBounty(stats.bountyDistributed)}
-            </span>
+        <div className="p-3 rounded-lg bg-muted/40">
+          <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
+            <TrendingUp className="size-3" strokeWidth={1.5} />
+            <span className="text-xs">Max</span>
           </div>
+          <p className="font-semibold text-foreground text-sm">{formatBounty(bountyStats.maxBounty)}</p>
         </div>
       </div>
-    </div>
+
+      {/* Visual Range Bar */}
+      <div className="relative pt-6 mb-4">
+        <div className="h-2.5 bg-gradient-to-r from-muted via-foreground/20 to-foreground/50 rounded-full" />
+        <div
+          className="absolute top-0 transform -translate-x-1/2"
+          style={{ left: `${avgPosition}%` }}
+        >
+          <div className="w-0.5 h-6 bg-foreground rounded-full" />
+          <div className="text-xs text-muted-foreground mt-1 whitespace-nowrap font-medium">avg</div>
+        </div>
+      </div>
+
+      <CardDivider />
+
+      {/* Total Distributed */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Coins className="size-4" strokeWidth={1.5} />
+          <span className="text-sm">Total Paid Out</span>
+        </div>
+        <span className="font-semibold text-foreground">{formatBounty(stats.bountyDistributed)}</span>
+      </div>
+    </SidebarCard>
   );
 }
 
 function ActivityTimeline({ submissions }: { submissions: SubmissionWithTask[] }) {
-  if (submissions.length === 0) {
-    return (
-      <div className="p-4 rounded-xl bg-card border border-border">
-        <div className="flex items-center gap-2 mb-4">
-          <Activity className="size-4 text-muted-foreground" />
-          <h4 className="font-semibold text-foreground text-sm">Activity Timeline</h4>
-        </div>
-        <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4 rounded-xl bg-card border border-border">
-      <div className="flex items-center gap-2 mb-4">
-        <Activity className="size-4 text-muted-foreground" />
-        <h4 className="font-semibold text-foreground text-sm">Activity Timeline</h4>
-      </div>
+    <SidebarCard>
+      <SectionHeader icon={<Activity className="size-4" strokeWidth={1.5} />} title="Activity Timeline" />
 
-      <div className="space-y-3">
-        {submissions.map((submission) => (
-          <div
-            key={submission.id}
-            className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            <div className="size-2 rounded-full bg-green-500 mt-1.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-foreground">
-                <span className="font-medium">{truncateAddress(submission.agent_address)}</span>
-                {' submitted to '}
-                <span className="font-medium">
-                  {truncateText(submission.task?.title || 'Unknown Task', 25)}
-                </span>
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-muted-foreground">
-                  {formatTimeAgo(submission.submitted_at)}
-                </span>
-                <LinkButton
-                  href={getBaseScanUrl(submission.agent_address)}
-                  title="View agent on BaseScan"
-                >
-                  <User className="size-3" />
-                </LinkButton>
-                <LinkButton
-                  href={getIpfsUrl(submission.submission_cid)}
-                  title="View submission on IPFS"
-                >
-                  <FileText className="size-3" />
-                </LinkButton>
+      {submissions.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
+      ) : (
+        <div className="space-y-4">
+          {submissions.map((submission) => (
+            <div key={submission.id} className="flex items-start gap-3">
+              <StatusDot color="green" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-foreground">
+                  <span className="font-medium">{truncateAddress(submission.agent_address)}</span>
+                  <span className="text-muted-foreground"> submitted to </span>
+                  <span className="font-medium">
+                    {truncateText(submission.task?.title || 'Unknown Task', 20)}
+                  </span>
+                </p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {formatTimeAgo(submission.submitted_at)}
+                  </span>
+                  <LinkButton
+                    href={getBaseScanUrl(submission.agent_address)}
+                    title="View agent"
+                    variant="ghost"
+                  >
+                    <User className="size-3" strokeWidth={1.5} />
+                  </LinkButton>
+                  <LinkButton
+                    href={getIpfsUrl(submission.submission_cid)}
+                    title="View submission"
+                    variant="ghost"
+                  >
+                    <FileText className="size-3" strokeWidth={1.5} />
+                  </LinkButton>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+    </SidebarCard>
   );
 }
 
 function PlatformSummary({ stats }: { stats: PlatformStatistics }) {
+  const summaryItems = [
+    { icon: <ListTodo className="size-5" strokeWidth={1.5} />, value: stats.totalTasks, label: 'Total Tasks' },
+    { icon: <Send className="size-5" strokeWidth={1.5} />, value: stats.totalSubmissions, label: 'Submissions' },
+    { icon: <Users className="size-5" strokeWidth={1.5} />, value: stats.registeredAgents, label: 'Agents' },
+    {
+      icon: <Activity className="size-5" strokeWidth={1.5} />,
+      value:
+        stats.totalSubmissions > 0
+          ? (stats.totalSubmissions / Math.max(stats.totalTasks, 1)).toFixed(1)
+          : '0',
+      label: 'Avg Subs/Task',
+    },
+  ];
+
   return (
-    <div className="p-4 rounded-xl bg-card border border-border">
-      <h4 className="font-semibold text-foreground text-sm mb-4">Platform Summary</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <p className="text-2xl font-bold text-foreground">{stats.totalTasks}</p>
-          <p className="text-xs text-muted-foreground">Total Tasks</p>
-        </div>
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <p className="text-2xl font-bold text-foreground">{stats.totalSubmissions}</p>
-          <p className="text-xs text-muted-foreground">Total Submissions</p>
-        </div>
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <p className="text-2xl font-bold text-foreground">{stats.registeredAgents}</p>
-          <p className="text-xs text-muted-foreground">Registered Agents</p>
-        </div>
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <p className="text-2xl font-bold text-foreground">
-            {stats.totalSubmissions > 0
-              ? (stats.totalSubmissions / Math.max(stats.totalTasks, 1)).toFixed(1)
-              : '0'}
-          </p>
-          <p className="text-xs text-muted-foreground">Avg Submissions/Task</p>
-        </div>
+    <SidebarCard>
+      <SectionHeader icon={<BarChart3 className="size-4" strokeWidth={1.5} />} title="Platform Summary" />
+      <div className="grid grid-cols-2 gap-3">
+        {summaryItems.map(({ icon, value, label }) => (
+          <div key={label} className="text-center p-4 rounded-lg bg-muted/40">
+            <div className="text-muted-foreground mb-2 flex justify-center">{icon}</div>
+            <p className="text-xl font-bold text-foreground tabular-nums">{value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+          </div>
+        ))}
       </div>
-    </div>
+    </SidebarCard>
   );
 }
 
