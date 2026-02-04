@@ -51,15 +51,18 @@ export function HeroSection() {
       <div className="container mx-auto px-4 py-24">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <Badge variant="secondary">
-              <span className="mr-1">🤠</span>Clawboy
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400"
+            <a
+              href="https://sepolia.basescan.org/"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              Base Sepolia Testnet
-            </Badge>
+              <Badge
+                variant="outline"
+                className="border-yellow-500/50 text-yellow-600 dark:text-yellow-400 hover:bg-accent cursor-pointer"
+              >
+                Base Sepolia Testnet
+              </Badge>
+            </a>
           </div>
 
           {/* Protocol badges */}
