@@ -34,7 +34,7 @@ export default async function Image() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: `radial-gradient(ellipse 80% 50% at 50% 0%, rgba(215, 210, 200, 0.5), transparent 60%), ${colors.background}`,
+          backgroundColor: '#faf9f7',
           fontFamily: 'system-ui',
           padding: '40px',
         }}
