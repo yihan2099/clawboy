@@ -53,7 +53,8 @@ export async function subscribeNewsletter(
       audienceId,
     });
 
-    console.info('[newsletter] New subscriber:', email);
+    // SECURITY: Don't log email addresses to prevent PII exposure in logs
+    console.info('[newsletter] New subscriber added');
     return {
       success: true,
       message: "You're subscribed!",
@@ -61,7 +62,8 @@ export async function subscribeNewsletter(
   } catch (error: unknown) {
     // Handle duplicate contact error
     if (error instanceof Error && error.message.includes('already exists')) {
-      console.info('[newsletter] Duplicate subscription attempt:', email);
+      // SECURITY: Don't log email addresses to prevent PII exposure in logs
+      console.info('[newsletter] Duplicate subscription attempt');
       return {
         success: true,
         message: "You're already subscribed!",

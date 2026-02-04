@@ -5,19 +5,49 @@ import { createWaitlistLimiter } from '@clawboy/rate-limit';
 // Get the cached rate limiter from the shared package
 const ratelimit = createWaitlistLimiter();
 
+// SECURITY: Whether to trust proxy headers for client IP detection
+// Only set this to true if you're behind a trusted reverse proxy (e.g., Vercel, Cloudflare)
+const TRUST_PROXY_HEADERS = process.env.TRUST_PROXY_HEADERS === 'true';
+
+// SECURITY: Simple IPv4/IPv6 validation pattern
+const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}|(?:[a-fA-F0-9:]+:+)+[a-fA-F0-9]+)$/;
+
+/**
+ * SECURITY: Get client IP address with validation
+ *
+ * WARNING: x-forwarded-for and x-real-ip headers can be spoofed by attackers
+ * unless you're behind a trusted reverse proxy that overwrites these headers.
+ *
+ * In production (Vercel), the x-forwarded-for header is set by the edge network
+ * and can be trusted. For other deployments, ensure your proxy is configured
+ * to overwrite (not append to) these headers.
+ */
 function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  const realIp = request.headers.get('x-real-ip');
+  // Only trust proxy headers if explicitly configured
+  if (TRUST_PROXY_HEADERS) {
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
 
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    if (forwarded) {
+      // Take the first IP (client IP when proxy is trusted)
+      const clientIp = forwarded.split(',')[0].trim();
+      // Validate IP format to prevent injection
+      if (IP_PATTERN.test(clientIp)) {
+        return clientIp;
+      }
+    }
+
+    if (realIp) {
+      // Validate IP format
+      if (IP_PATTERN.test(realIp)) {
+        return realIp;
+      }
+    }
   }
 
-  if (realIp) {
-    return realIp;
-  }
-
-  return 'unknown';
+  // Fallback: Return a consistent identifier for unknown IPs
+  // This prevents rate limit bypass but may group multiple users
+  return 'unknown-client';
 }
 
 export async function proxy(request: NextRequest) {
