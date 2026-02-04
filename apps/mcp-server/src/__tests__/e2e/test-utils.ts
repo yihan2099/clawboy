@@ -582,11 +582,14 @@ export async function finalizeTaskOnChain(
 
 /**
  * Get the challenge deadline for a task (useful for timing finalization)
+ * Uses blockchain time (block.timestamp) for comparison, which is important
+ * when testing with Anvil's evm_increaseTime
  */
 export async function getTaskChallengeDeadline(taskId: bigint): Promise<{
   deadline: Date;
   isPassed: boolean;
   remainingMs: number;
+  blockTimestamp: number;
 }> {
   const publicClient = getPublicClient(CHAIN_ID);
 
@@ -598,16 +601,21 @@ export async function getTaskChallengeDeadline(taskId: bigint): Promise<{
     args: [taskId],
   });
 
+  // Get current block to compare against blockchain time (not Date.now())
+  // This is important when using Anvil's evm_increaseTime
+  const block = await publicClient.getBlock();
+  const blockTimestamp = Number(block.timestamp);
+
   // viem returns tuple as object with named properties
   const taskData = result as { challengeDeadline: bigint };
-  const challengeDeadline = taskData.challengeDeadline;
-  const deadlineMs = Number(challengeDeadline) * 1000;
-  const now = Date.now();
+  const challengeDeadline = Number(taskData.challengeDeadline);
+  const deadlineMs = challengeDeadline * 1000;
 
   return {
     deadline: new Date(deadlineMs),
-    isPassed: now > deadlineMs,
-    remainingMs: Math.max(0, deadlineMs - now),
+    isPassed: blockTimestamp > challengeDeadline,
+    remainingMs: Math.max(0, (challengeDeadline - blockTimestamp) * 1000),
+    blockTimestamp,
   };
 }
 

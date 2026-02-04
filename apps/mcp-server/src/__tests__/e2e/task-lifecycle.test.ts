@@ -892,8 +892,10 @@ describe.skipIf(shouldSkipFinalizationTests)(
         await skipPastChallengeWindow();
         console.log('Time advanced');
 
-        // Verify challenge deadline has passed
+        // Verify challenge deadline has passed (uses blockchain time, not Date.now())
         const deadline = await getTaskChallengeDeadline(chainTaskId);
+        console.log(`Block timestamp: ${deadline.blockTimestamp}`);
+        console.log(`Challenge deadline: ${Number(deadline.deadline) / 1000}`);
         console.log(`Challenge deadline passed: ${deadline.isPassed}`);
         expect(deadline.isPassed).toBe(true);
 
