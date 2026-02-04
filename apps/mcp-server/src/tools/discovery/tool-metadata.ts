@@ -6,7 +6,7 @@
  */
 
 import type { EnhancedToolDefinition } from '../types';
-import { getCapabilitiesDef, getWorkflowGuideDef } from './definitions';
+import { getCapabilitiesDef, getWorkflowGuideDef, getSupportedTokensDef } from './definitions';
 
 /**
  * All enhanced tool definitions
@@ -15,6 +15,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   // === Discovery Tools ===
   getCapabilitiesDef,
   getWorkflowGuideDef,
+  getSupportedTokensDef,
 
   // === Auth Tools ===
   {
@@ -110,7 +111,8 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   // === Task Tools ===
   {
     name: 'list_tasks',
-    description: 'List available tasks with optional filters',
+    description:
+      'List available tasks with optional filters for status, tags, bounty token, and bounty range',
     inputSchema: {
       type: 'object',
       properties: {
@@ -119,8 +121,18 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
           enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
         },
         tags: { type: 'array', items: { type: 'string' } },
-        minBounty: { type: 'string' },
-        maxBounty: { type: 'string' },
+        bountyToken: {
+          type: 'string',
+          description: 'Filter by bounty token symbol ("ETH", "USDC") or address',
+        },
+        minBounty: {
+          type: 'string',
+          description: 'Minimum bounty amount in token units',
+        },
+        maxBounty: {
+          type: 'string',
+          description: 'Maximum bounty amount in token units',
+        },
         limit: { type: 'number' },
         offset: { type: 'number' },
         sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'deadline'] },
@@ -135,8 +147,12 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         input: { status: 'open' },
       },
       {
-        description: 'Find high-value Python tasks',
-        input: { status: 'open', tags: ['python'], minBounty: '0.1', sortBy: 'bounty' },
+        description: 'Find USDC bounty tasks',
+        input: { status: 'open', bountyToken: 'USDC', minBounty: '50' },
+      },
+      {
+        description: 'Find high-value ETH tasks',
+        input: { status: 'open', bountyToken: 'ETH', minBounty: '0.1', sortBy: 'bounty' },
       },
     ],
   },
@@ -161,14 +177,22 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   },
   {
     name: 'create_task',
-    description: 'Create a new task with a bounty',
+    description:
+      'Create a new task with a bounty. Supports ETH and stablecoins (USDC, USDT, DAI).',
     inputSchema: {
       type: 'object',
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
         deliverables: { type: 'array' },
-        bountyAmount: { type: 'string' },
+        bountyAmount: {
+          type: 'string',
+          description: 'Bounty amount in token units (e.g., "100" for 100 USDC, "0.1" for 0.1 ETH)',
+        },
+        bountyToken: {
+          type: 'string',
+          description: 'Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH"',
+        },
         deadline: { type: 'string' },
         tags: { type: 'array', items: { type: 'string' } },
       },
@@ -179,13 +203,24 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
     prerequisite: 'Requires authentication and on-chain registration',
     examples: [
       {
-        description: 'Create a coding task',
+        description: 'Create a task with ETH bounty',
         input: {
           title: 'Build REST API',
           description: 'Create a Node.js REST API with JWT auth',
           deliverables: [{ type: 'code', description: 'API source code', format: 'ts' }],
           bountyAmount: '0.1',
           tags: ['nodejs', 'api'],
+        },
+      },
+      {
+        description: 'Create a task with USDC bounty',
+        input: {
+          title: 'Write documentation',
+          description: 'Write comprehensive API documentation',
+          deliverables: [{ type: 'document', description: 'API docs', format: 'md' }],
+          bountyAmount: '100',
+          bountyToken: 'USDC',
+          tags: ['documentation'],
         },
       },
     ],

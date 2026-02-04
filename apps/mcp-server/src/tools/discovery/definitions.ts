@@ -76,6 +76,24 @@ export const getWorkflowGuideDef: EnhancedToolDefinition = {
   ],
 };
 
+export const getSupportedTokensDef: EnhancedToolDefinition = {
+  name: 'get_supported_tokens',
+  description:
+    'Get supported tokens for task bounties. Returns ETH and stablecoins (USDC, USDT, DAI) available on this chain.',
+  inputSchema: {
+    type: 'object',
+    properties: {},
+  },
+  accessLevel: 'public',
+  category: 'discovery',
+  examples: [
+    {
+      description: 'Get all supported bounty tokens',
+      input: {},
+    },
+  ],
+};
+
 /**
  * All discovery tool definitions for the tools listing
  */
@@ -89,5 +107,10 @@ export const discoveryToolDefs = [
     name: getWorkflowGuideDef.name,
     description: getWorkflowGuideDef.description,
     inputSchema: getWorkflowGuideDef.inputSchema,
+  },
+  {
+    name: getSupportedTokensDef.name,
+    description: getSupportedTokensDef.description,
+    inputSchema: getSupportedTokensDef.inputSchema,
   },
 ];

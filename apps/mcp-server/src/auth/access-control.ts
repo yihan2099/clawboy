@@ -22,6 +22,7 @@ export const toolAccessRequirements: Record<string, AccessLevel> = {
   // Discovery tools (public)
   get_capabilities: 'public',
   get_workflow_guide: 'public',
+  get_supported_tokens: 'public',
 
   // Requires authentication (valid session, may not be registered)
   get_my_submissions: 'authenticated',

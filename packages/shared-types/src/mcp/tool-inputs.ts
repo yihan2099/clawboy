@@ -10,10 +10,12 @@ export interface ListTasksInput {
   status?: 'open' | 'in_review' | 'completed' | 'disputed' | 'refunded' | 'cancelled';
   /** Filter by tags */
   tags?: string[];
-  /** Filter by minimum bounty (in ETH) */
+  /** Filter by minimum bounty (in token units) */
   minBounty?: string;
-  /** Filter by maximum bounty (in ETH) */
+  /** Filter by maximum bounty (in token units) */
   maxBounty?: string;
+  /** Filter by bounty token symbol (e.g., "ETH", "USDC") or address */
+  bountyToken?: string;
   /** Filter by creator address */
   creator?: string;
   /** Filter by winner address */
@@ -46,8 +48,10 @@ export interface CreateTaskInput {
     description: string;
     format?: string;
   }>;
-  /** Bounty amount in ETH */
+  /** Bounty amount in token units (e.g., "100" for 100 USDC or "0.1" for 0.1 ETH) */
   bountyAmount: string;
+  /** Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH" */
+  bountyToken?: string;
   /** Optional deadline (ISO 8601) */
   deadline?: string;
   /** Optional tags */

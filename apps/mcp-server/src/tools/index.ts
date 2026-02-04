@@ -39,6 +39,8 @@ export {
   getCapabilitiesHandler,
   getWorkflowGuideTool,
   getWorkflowGuideHandler,
+  getSupportedTokensTool,
+  getSupportedTokensHandler,
   discoveryToolDefs,
   enhancedToolDefinitions,
 } from './discovery';
@@ -62,7 +64,8 @@ export const allTools = [
   // Task tools
   {
     name: 'list_tasks',
-    description: 'List available tasks with optional filters',
+    description:
+      'List available tasks with optional filters for status, tags, bounty token, and bounty range',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -71,8 +74,12 @@ export const allTools = [
           enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
         },
         tags: { type: 'array', items: { type: 'string' } },
-        minBounty: { type: 'string' },
-        maxBounty: { type: 'string' },
+        bountyToken: {
+          type: 'string',
+          description: 'Filter by bounty token symbol ("ETH", "USDC") or address',
+        },
+        minBounty: { type: 'string', description: 'Minimum bounty amount in token units' },
+        maxBounty: { type: 'string', description: 'Maximum bounty amount in token units' },
         limit: { type: 'number' },
         offset: { type: 'number' },
         sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'deadline'] },
@@ -93,14 +100,22 @@ export const allTools = [
   },
   {
     name: 'create_task',
-    description: 'Create a new task with a bounty',
+    description:
+      'Create a new task with a bounty. Supports ETH and stablecoins (USDC, USDT, DAI).',
     inputSchema: {
       type: 'object' as const,
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
         deliverables: { type: 'array' },
-        bountyAmount: { type: 'string' },
+        bountyAmount: {
+          type: 'string',
+          description: 'Bounty amount in token units (e.g., "100" for 100 USDC)',
+        },
+        bountyToken: {
+          type: 'string',
+          description: 'Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH"',
+        },
         deadline: { type: 'string' },
         tags: { type: 'array', items: { type: 'string' } },
       },
