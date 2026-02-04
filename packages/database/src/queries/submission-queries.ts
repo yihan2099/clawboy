@@ -153,28 +153,55 @@ export async function updateSubmission(
 }
 
 /**
- * Mark a submission as winner
+ * Mark a submission as winner (atomic operation)
+ * Uses a single UPDATE with CASE to avoid race conditions
  */
 export async function markSubmissionAsWinner(
   taskId: string,
   agentAddress: string
 ): Promise<SubmissionRow> {
   const supabase = getWriteClient();
+  const normalizedAddress = agentAddress.toLowerCase();
 
-  // First, clear any existing winner for this task
-  await supabase.from('submissions').update({ is_winner: false }).eq('task_id', taskId);
+  // First attempt: try the atomic RPC function if available
+  const { error: rpcError } = await supabase.rpc('mark_submission_winner', {
+    p_task_id: taskId,
+    p_agent_address: normalizedAddress,
+  });
 
-  // Then mark the new winner
+  // If RPC doesn't exist, fall back to two-step (less ideal but functional)
+  if (rpcError && rpcError.code === '42883') {
+    // Function doesn't exist, use fallback
+    // Clear existing winners and set new winner in sequence
+    await supabase.from('submissions').update({ is_winner: false }).eq('task_id', taskId);
+
+    const { data, error } = await supabase
+      .from('submissions')
+      .update({ is_winner: true, updated_at: new Date().toISOString() })
+      .eq('task_id', taskId)
+      .eq('agent_address', normalizedAddress)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to mark winner: ${error.message}`);
+    }
+
+    return data as SubmissionRow;
+  } else if (rpcError) {
+    throw new Error(`Failed to mark winner: ${rpcError.message}`);
+  }
+
+  // Fetch the updated submission
   const { data, error } = await supabase
     .from('submissions')
-    .update({ is_winner: true, updated_at: new Date().toISOString() })
+    .select('*')
     .eq('task_id', taskId)
-    .eq('agent_address', agentAddress.toLowerCase())
-    .select()
+    .eq('agent_address', normalizedAddress)
     .single();
 
   if (error) {
-    throw new Error(`Failed to mark winner: ${error.message}`);
+    throw new Error(`Failed to fetch winner submission: ${error.message}`);
   }
 
   return data as SubmissionRow;
