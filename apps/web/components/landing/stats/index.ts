@@ -1,6 +1,3 @@
-export { HeroStats } from './hero-stats';
-export { SecondaryStats } from './secondary-stats';
-export { ActivityFeedGrid } from './activity-feed-grid';
+export { BadgeStats } from './badge-stats';
+export { LiveFeed } from './live-feed';
 export { StatsSectionSkeleton } from './stats-section-skeleton';
-export { TaskCategoriesCard } from './task-categories-card';
-export { FeaturedTasksCard } from './featured-tasks-card';

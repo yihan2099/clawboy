@@ -42,6 +42,7 @@ export interface PlatformStatistics {
   registeredAgents: number;
   totalSubmissions: number;
   activeDisputes: number;
+  avgCompletionHours: number | null; // average hours from creation to completion
 }
 
 /**
@@ -61,6 +62,7 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     agentsResult,
     submissionsResult,
     activeDisputesResult,
+    completedTasksForAvgResult,
   ] = await Promise.all([
     // Total tasks
     supabase.from('tasks').select('*', { count: 'exact', head: true }),
@@ -80,6 +82,12 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     supabase.from('submissions').select('*', { count: 'exact', head: true }),
     // Active disputes
     supabase.from('disputes').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    // Completed tasks with timestamps for avg calculation
+    supabase
+      .from('tasks')
+      .select('created_at, selected_at')
+      .eq('status', 'completed')
+      .not('selected_at', 'is', null),
   ]);
 
   // Check for errors
@@ -110,6 +118,25 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   if (activeDisputesResult.error) {
     throw new Error(`Failed to get active disputes: ${activeDisputesResult.error.message}`);
   }
+  // Note: completedTasksForAvgResult errors are non-fatal, we just skip the avg calculation
+
+  // Calculate average completion time in hours
+  let avgCompletionHours: number | null = null;
+  if (!completedTasksForAvgResult.error && completedTasksForAvgResult.data) {
+    const tasks = completedTasksForAvgResult.data as Array<{
+      created_at: string;
+      selected_at: string;
+    }>;
+    if (tasks.length > 0) {
+      const totalHours = tasks.reduce((sum, task) => {
+        const created = new Date(task.created_at).getTime();
+        const completed = new Date(task.selected_at).getTime();
+        const hours = (completed - created) / (1000 * 60 * 60);
+        return sum + hours;
+      }, 0);
+      avgCompletionHours = Math.round((totalHours / tasks.length) * 10) / 10; // 1 decimal place
+    }
+  }
 
   return {
     totalTasks: totalTasksResult.count ?? 0,
@@ -121,6 +148,7 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     registeredAgents: agentsResult.count ?? 0,
     totalSubmissions: submissionsResult.count ?? 0,
     activeDisputes: activeDisputesResult.count ?? 0,
+    avgCompletionHours,
   };
 }
 
@@ -148,7 +176,7 @@ export async function getRecentOpenTasks(limit = 5): Promise<TaskRow[]> {
  * Submission with associated task information
  */
 export interface SubmissionWithTask extends SubmissionRow {
-  task: Pick<TaskRow, 'title' | 'bounty_amount'> | null;
+  task: Pick<TaskRow, 'title' | 'bounty_amount' | 'status'> | null;
 }
 
 /**
@@ -164,7 +192,8 @@ export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTas
       *,
       task:tasks!task_id (
         title,
-        bounty_amount
+        bounty_amount,
+        status
       )
     `
     )
@@ -176,6 +205,97 @@ export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTas
   }
 
   return (data ?? []) as SubmissionWithTask[];
+}
+
+/**
+ * Detailed task info for the mini dashboard
+ */
+export interface DetailedTask {
+  id: string;
+  chain_task_id: string;
+  title: string;
+  description: string;
+  status: string;
+  bounty_amount: string;
+  bounty_token: string;
+  creator_address: string;
+  winner_address: string | null;
+  specification_cid: string;
+  tags: string[];
+  deadline: string | null;
+  submission_count: number;
+  selected_at: string | null;
+  challenge_deadline: string | null;
+  created_at: string;
+}
+
+/**
+ * Get detailed tasks for the mini dashboard.
+ * Returns recent tasks with full details for display.
+ */
+export async function getDetailedTasks(limit = 3): Promise<DetailedTask[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      'id, chain_task_id, title, description, status, bounty_amount, bounty_token, creator_address, winner_address, specification_cid, tags, deadline, submission_count, selected_at, challenge_deadline, created_at'
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to get detailed tasks: ${error.message}`);
+  }
+
+  return (data ?? []) as DetailedTask[];
+}
+
+/**
+ * Detailed dispute info for the mini dashboard
+ */
+export interface DetailedDispute {
+  id: string;
+  chain_dispute_id: string;
+  task_id: string;
+  disputer_address: string;
+  dispute_stake: string;
+  voting_deadline: string;
+  status: string;
+  disputer_won: boolean | null;
+  votes_for_disputer: string;
+  votes_against_disputer: string;
+  tx_hash: string;
+  created_at: string;
+  resolved_at: string | null;
+  task: Pick<TaskRow, 'title' | 'bounty_amount'> | null;
+}
+
+/**
+ * Get detailed disputes for the mini dashboard.
+ */
+export async function getDetailedDisputes(limit = 3): Promise<DetailedDispute[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('disputes')
+    .select(
+      `
+      *,
+      task:tasks!task_id (
+        title,
+        bounty_amount
+      )
+    `
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to get detailed disputes: ${error.message}`);
+  }
+
+  return (data ?? []) as DetailedDispute[];
 }
 
 /**

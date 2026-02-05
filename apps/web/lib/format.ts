@@ -37,6 +37,42 @@ export function formatTimeAgo(date: string | Date): string {
 }
 
 /**
+ * Format a timestamp to a compact relative time (e.g., "2m", "5h", "3d")
+ */
+export function formatTimeCompact(date: string | Date): string {
+  const now = new Date();
+  const then = new Date(date);
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+  if (seconds < 60) {
+    return 'now';
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) {
+    return `${days}d`;
+  }
+
+  const months = Math.floor(days / 30);
+  if (months < 12) {
+    return `${months}mo`;
+  }
+
+  const years = Math.floor(months / 12);
+  return `${years}y`;
+}
+
+/**
  * Truncate an Ethereum address for display (e.g., "0x1234...abcd")
  */
 export function truncateAddress(address: string): string {
@@ -57,6 +93,68 @@ export function truncateText(text: string, maxLength: number): string {
  */
 export function getBaseScanUrl(address: string): string {
   return `https://sepolia.basescan.org/address/${address}`;
+}
+
+/**
+ * Get the BaseScan URL for a transaction hash on Base Sepolia
+ */
+export function getBaseScanTxUrl(txHash: string): string {
+  return `https://sepolia.basescan.org/tx/${txHash}`;
+}
+
+/**
+ * Get the IPFS gateway URL for a CID
+ */
+export function getIpfsUrl(cid: string): string {
+  // Use public IPFS gateway - can be replaced with Pinata gateway if env var is available
+  if (cid.startsWith('ipfs://')) {
+    cid = cid.replace('ipfs://', '');
+  }
+  return `https://gateway.pinata.cloud/ipfs/${cid}`;
+}
+
+/**
+ * Get status color class for task status badges
+ */
+export function getStatusColor(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'bg-green-500/10 text-green-500 border-green-500/20';
+    case 'in_review':
+      return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+    case 'completed':
+      return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+    case 'disputed':
+      return 'bg-red-500/10 text-red-500 border-red-500/20';
+    case 'refunded':
+      return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    case 'cancelled':
+      return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    default:
+      return 'bg-muted text-muted-foreground';
+  }
+}
+
+/**
+ * Format status for display
+ */
+export function formatStatus(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'Open';
+    case 'in_review':
+      return 'In Review';
+    case 'completed':
+      return 'Completed';
+    case 'disputed':
+      return 'Disputed';
+    case 'refunded':
+      return 'Refunded';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return status;
+  }
 }
 
 /**
