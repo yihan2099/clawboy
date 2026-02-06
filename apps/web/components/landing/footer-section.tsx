@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 export function FooterSection() {
   return (
-    <section className="py-32">
+    <section className="py-16 md:py-24 lg:py-32">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Stay in the loop</h2>
