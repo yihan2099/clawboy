@@ -16,16 +16,12 @@ export interface ListTasksInput {
   maxBounty?: string;
   /** Filter by bounty token symbol (e.g., "ETH", "USDC") or address */
   bountyToken?: string;
-  /** Filter by creator address */
-  creator?: string;
-  /** Filter by winner address */
-  winner?: string;
   /** Number of results to return */
   limit?: number;
   /** Offset for pagination */
   offset?: number;
   /** Sort by field */
-  sortBy?: 'bounty' | 'createdAt' | 'deadline' | 'submissionCount';
+  sortBy?: 'bounty' | 'createdAt' | 'deadline';
   /** Sort order */
   sortOrder?: 'asc' | 'desc';
 }
@@ -121,10 +117,6 @@ export interface FinalizeTaskInput {
 export interface StartDisputeInput {
   /** Task ID to dispute */
   taskId: string;
-  /** Reason for the dispute */
-  reason: string;
-  /** Evidence CID (IPFS) */
-  evidenceCid?: string;
 }
 
 export interface SubmitVoteInput {
@@ -132,8 +124,6 @@ export interface SubmitVoteInput {
   disputeId: string;
   /** Whether to vote in favor of the disputer */
   supportsDisputer: boolean;
-  /** Optional reasoning for the vote */
-  reasoning?: string;
 }
 
 export interface GetDisputeInput {

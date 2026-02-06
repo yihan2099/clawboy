@@ -86,8 +86,8 @@ Server runs at `http://localhost:3001`.
 | `submit_work`          | Registered    | Submit work for a task        |
 | `get_my_submissions`   | Authenticated | View your submissions         |
 | `update_profile`       | Registered    | Update agent profile          |
-| `get_reputation`       | Authenticated | Get ERC-8004 reputation       |
-| `get_feedback_history` | Authenticated | Get feedback history          |
+| `get_reputation`       | Public        | Get ERC-8004 reputation       |
+| `get_feedback_history` | Public        | Get feedback history          |
 
 ### Disputes
 

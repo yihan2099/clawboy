@@ -23,6 +23,7 @@ export const TaskManagerABI = [
       { name: 'taskId', type: 'uint256', indexed: true },
       { name: 'agent', type: 'address', indexed: true },
       { name: 'submissionCid', type: 'string', indexed: false },
+      { name: 'submissionIndex', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -31,7 +32,8 @@ export const TaskManagerABI = [
     inputs: [
       { name: 'taskId', type: 'uint256', indexed: true },
       { name: 'agent', type: 'address', indexed: true },
-      { name: 'submissionCid', type: 'string', indexed: false },
+      { name: 'newSubmissionCid', type: 'string', indexed: false },
+      { name: 'submissionIndex', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -48,6 +50,7 @@ export const TaskManagerABI = [
     name: 'AllSubmissionsRejected',
     inputs: [
       { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'creator', type: 'address', indexed: true },
       { name: 'reason', type: 'string', indexed: false },
     ],
   },
@@ -84,6 +87,7 @@ export const TaskManagerABI = [
     inputs: [
       { name: 'taskId', type: 'uint256', indexed: true },
       { name: 'disputer', type: 'address', indexed: true },
+      { name: 'disputeId', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -91,7 +95,40 @@ export const TaskManagerABI = [
     name: 'DisputeResolved',
     inputs: [
       { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'disputeId', type: 'uint256', indexed: true },
       { name: 'disputerWon', type: 'bool', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferInitiated',
+    inputs: [
+      { name: 'currentOwner', type: 'address', indexed: true },
+      { name: 'pendingOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'TaskDisputeReverted',
+    inputs: [
+      { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'newChallengeDeadline', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EmergencyBypassUsed',
+    inputs: [
+      { name: 'caller', type: 'address', indexed: true },
+      { name: 'selector', type: 'bytes4', indexed: true },
     ],
   },
 
@@ -133,30 +170,12 @@ export const TaskManagerABI = [
     name: 'getSubmission',
     inputs: [
       { name: 'taskId', type: 'uint256' },
-      { name: 'agent', type: 'address' },
+      { name: 'index', type: 'uint256' },
     ],
     outputs: [
       {
         name: '',
         type: 'tuple',
-        components: [
-          { name: 'agent', type: 'address' },
-          { name: 'submissionCid', type: 'string' },
-          { name: 'submittedAt', type: 'uint256' },
-          { name: 'updatedAt', type: 'uint256' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getSubmissions',
-    inputs: [{ name: 'taskId', type: 'uint256' }],
-    outputs: [
-      {
-        name: '',
-        type: 'tuple[]',
         components: [
           { name: 'agent', type: 'address' },
           { name: 'submissionCid', type: 'string' },
@@ -176,12 +195,85 @@ export const TaskManagerABI = [
   },
   {
     type: 'function',
+    name: 'getAgentSubmissionIndex',
+    inputs: [
+      { name: 'taskId', type: 'uint256' },
+      { name: 'agent', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'hasSubmitted',
     inputs: [
       { name: 'taskId', type: 'uint256' },
       { name: 'agent', type: 'address' },
     ],
     outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getActiveDisputeId',
+    inputs: [{ name: 'taskId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'escrowVault',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'agentAdapter',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'disputeResolver',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingOwner',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'timelock',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'CHALLENGE_WINDOW',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'SELECTION_DEADLINE',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
   },
 
@@ -201,6 +293,16 @@ export const TaskManagerABI = [
   {
     type: 'function',
     name: 'submitWork',
+    inputs: [
+      { name: 'taskId', type: 'uint256' },
+      { name: 'submissionCid', type: 'string' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'updateSubmission',
     inputs: [
       { name: 'taskId', type: 'uint256' },
       { name: 'submissionCid', type: 'string' },
@@ -242,12 +344,23 @@ export const TaskManagerABI = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'refundExpiredTask',
+    inputs: [{ name: 'taskId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
 
   // Dispute resolver functions (called by DisputeResolver)
   {
     type: 'function',
     name: 'markDisputed',
-    inputs: [{ name: 'taskId', type: 'uint256' }],
+    inputs: [
+      { name: 'taskId', type: 'uint256' },
+      { name: 'disputeId', type: 'uint256' },
+      { name: 'disputer', type: 'address' },
+    ],
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -257,8 +370,65 @@ export const TaskManagerABI = [
     inputs: [
       { name: 'taskId', type: 'uint256' },
       { name: 'disputerWon', type: 'bool' },
-      { name: 'disputer', type: 'address' },
     ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'revertDisputedTask',
+    inputs: [{ name: 'taskId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+
+  // Admin / ownership functions
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    inputs: [{ name: 'newOwner', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'acceptOwnership',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setDisputeResolver',
+    inputs: [{ name: '_resolver', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setAgentAdapter',
+    inputs: [{ name: '_adapter', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setTimelock',
+    inputs: [{ name: '_timelock', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'emergencySetDisputeResolver',
+    inputs: [{ name: '_resolver', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'emergencySetAgentAdapter',
+    inputs: [{ name: '_adapter', type: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },

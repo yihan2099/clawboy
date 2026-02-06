@@ -160,7 +160,10 @@ clawboy/
 │   ├── web3-utils/    # Viem utilities
 │   ├── ipfs-utils/    # Pinata/IPFS utilities
 │   ├── rate-limit/    # Rate limiting utilities
-│   └── ui-components/ # Shared React UI components
+│   ├── redis/         # Upstash Redis singleton client
+│   ├── cache/         # Redis-first caching with memory fallback
+│   ├── ui-components/ # Shared React UI components
+│   └── eslint-config/ # Shared ESLint configuration
 ```
 
 ## Areas for Contribution

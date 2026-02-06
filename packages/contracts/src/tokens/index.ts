@@ -76,12 +76,13 @@ export const SUPPORTED_TOKENS: Record<number, Record<string, TokenConfig>> = {
       decimals: 18,
       address: ZERO_ADDRESS,
     },
-    // Mock USDC for local testing - deterministic Anvil address (deployed after core contracts)
+    // Mock USDC for local testing - deterministic Anvil address (deployed after core contracts + timelock)
+    // NOTE: Previous address 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 collided with AgentAdapter
     USDC: {
       symbol: 'USDC',
       name: 'USD Coin (Mock)',
       decimals: 6,
-      address: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0', // Deterministic Anvil address
+      address: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6', // Deterministic Anvil address
     },
   },
 };

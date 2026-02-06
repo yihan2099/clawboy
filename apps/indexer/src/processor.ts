@@ -9,7 +9,7 @@ import { handleTaskCancelled } from './handlers/task-cancelled';
 import { handleTaskDisputed } from './handlers/task-disputed';
 import { handleAgentRegistered } from './handlers/agent-registered';
 import { handleAgentProfileUpdated } from './handlers/agent-profile-updated';
-import { handleDisputeStarted } from './handlers/dispute-started';
+import { handleDisputeCreated } from './handlers/dispute-started';
 import { handleVoteSubmitted } from './handlers/vote-submitted';
 import { handleDisputeResolved } from './handlers/dispute-resolved';
 
@@ -65,8 +65,8 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         break;
 
       // DisputeResolver events
-      case 'DisputeStarted':
-        await handleDisputeStarted(event);
+      case 'DisputeCreated':
+        await handleDisputeCreated(event);
         break;
 
       case 'VoteSubmitted':

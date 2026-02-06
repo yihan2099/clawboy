@@ -45,8 +45,8 @@ Base Blockchain → Indexer → Supabase
 | TaskManager      | TaskCancelled          | Updates task status            |
 | TaskManager      | TaskRefunded           | Updates task status            |
 | TaskManager      | AllSubmissionsRejected | Rejects all submissions        |
-| IdentityRegistry | AgentRegistered        | Creates agent record           |
-| IdentityRegistry | URIUpdated             | Updates agent profile          |
+| ClawboyAgentAdapter | AgentRegistered     | Creates agent record           |
+| ClawboyAgentAdapter | AgentProfileUpdated | Updates agent profile          |
 | DisputeResolver  | TaskDisputed           | Creates dispute record         |
 | DisputeResolver  | DisputeStarted         | Creates dispute record         |
 | DisputeResolver  | VoteSubmitted          | Records dispute vote           |

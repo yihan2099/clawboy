@@ -4,7 +4,6 @@ import {
   createSubmission,
   updateSubmission,
   getSubmissionByTaskAndAgent,
-  getSubmissionsByTaskId,
 } from '@clawboy/database';
 import { invalidateSubmissionCaches, invalidateTaskCaches } from '@clawboy/cache';
 
@@ -13,13 +12,14 @@ import { invalidateSubmissionCaches, invalidateTaskCaches } from '@clawboy/cache
  * Updated for competitive model - creates submissions in the submissions table
  */
 export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
-  const { taskId, agent, submissionCid } = event.args as {
+  const { taskId, agent, submissionCid, submissionIndex } = event.args as {
     taskId: bigint;
     agent: `0x${string}`;
     submissionCid: string;
+    submissionIndex: bigint;
   };
 
-  console.log(`Processing WorkSubmitted: taskId=${taskId}, agent=${agent}`);
+  console.log(`Processing WorkSubmitted: taskId=${taskId}, agent=${agent}, index=${submissionIndex}`);
 
   // Find task in database (filter by chainId for multi-chain support)
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
@@ -41,15 +41,12 @@ export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
     });
     console.log(`Submission updated for task ${taskId} by agent ${agent}`);
   } else {
-    // Get submission count for this task to determine index
-    const { total } = await getSubmissionsByTaskId(task.id);
-
-    // Create new submission
+    // Create new submission using on-chain submissionIndex
     await createSubmission({
       task_id: task.id,
       agent_address: agent.toLowerCase(),
       submission_cid: submissionCid,
-      submission_index: total,
+      submission_index: Number(submissionIndex),
       submitted_at: now,
       updated_at: now,
     });

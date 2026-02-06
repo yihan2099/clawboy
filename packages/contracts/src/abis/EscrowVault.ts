@@ -65,6 +65,18 @@ export const EscrowVaultABI = [
   },
   {
     type: 'function',
+    name: 'depositFrom',
+    inputs: [
+      { name: 'taskId', type: 'uint256' },
+      { name: 'token', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+      { name: 'from', type: 'address' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'release',
     inputs: [
       { name: 'taskId', type: 'uint256' },

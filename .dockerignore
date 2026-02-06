@@ -1,0 +1,10 @@
+.git
+node_modules
+.turbo
+out
+.next
+apps/contracts/out
+apps/contracts/cache
+*.md
+.github
+clawboy-internal

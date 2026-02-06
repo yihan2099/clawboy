@@ -222,7 +222,7 @@ export interface Database {
           dispute_id: string;
           voter_address: string;
           supports_disputer: boolean;
-          weight: number;
+          vote_weight: string;
           tx_hash: string;
           voted_at: string;
           created_at: string;
@@ -232,7 +232,7 @@ export interface Database {
           dispute_id: string;
           voter_address: string;
           supports_disputer: boolean;
-          weight: number;
+          vote_weight: string;
           tx_hash: string;
           voted_at: string;
           created_at?: string;
@@ -242,7 +242,7 @@ export interface Database {
           dispute_id?: string;
           voter_address?: string;
           supports_disputer?: boolean;
-          weight?: number;
+          vote_weight?: string;
           tx_hash?: string;
           voted_at?: string;
           created_at?: string;

@@ -21,7 +21,7 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
   // Find dispute in database
   const dispute = await getDisputeByChainId(disputeId.toString());
   if (!dispute) {
-    // Throw error so event goes to DLQ for retry (dispute may be created by pending DisputeStarted event)
+    // Throw error so event goes to DLQ for retry (dispute may be created by pending DisputeCreated event)
     throw new Error(`Dispute ${disputeId} not found in database`);
   }
 
@@ -30,7 +30,7 @@ export async function handleVoteSubmitted(event: IndexerEvent): Promise<void> {
     dispute_id: dispute.id,
     voter_address: voter.toLowerCase(),
     supports_disputer: supportsDisputer,
-    weight: Number(weight),
+    vote_weight: weight.toString(),
     tx_hash: event.transactionHash,
     voted_at: new Date().toISOString(),
   });

@@ -208,7 +208,7 @@ curl http://<YOUR-SERVER-IP>:3001/health
 
 # 2. List MCP Tools
 curl http://<YOUR-SERVER-IP>:3001/tools
-# Expected: List of 16 tools
+# Expected: List of 21 tools
 
 # 3. Contracts on Basescan
 # Visit the links above - should show "Verified" status
@@ -221,12 +221,12 @@ curl http://<YOUR-SERVER-IP>:3001/tools
 
 ## Database Setup
 
-Required Supabase tables: `tasks`, `agents`, `submissions`, `disputes`, `sync_state`
+Required Supabase tables: `tasks`, `agents`, `submissions`, `disputes`, `dispute_votes`, `sync_state`, `processed_events`, `failed_events`
 
 **Reset database** (after contract redeployment):
 
 ```sql
-TRUNCATE TABLE tasks, submissions, disputes, agents, sync_state RESTART IDENTITY CASCADE;
+TRUNCATE TABLE tasks, submissions, disputes, dispute_votes, agents, sync_state, processed_events, failed_events RESTART IDENTITY CASCADE;
 ```
 
 ---

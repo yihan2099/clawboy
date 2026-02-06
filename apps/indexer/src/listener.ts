@@ -99,6 +99,7 @@ export function createEventListener(
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'agent', type: 'address', indexed: true },
             { name: 'submissionCid', type: 'string', indexed: false },
+            { name: 'submissionIndex', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
@@ -129,6 +130,7 @@ export function createEventListener(
           name: 'AllSubmissionsRejected',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'creator', type: 'address', indexed: true },
             { name: 'reason', type: 'string', indexed: false },
           ],
         },
@@ -193,6 +195,7 @@ export function createEventListener(
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'disputer', type: 'address', indexed: true },
+            { name: 'disputeId', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
@@ -235,12 +238,12 @@ export function createEventListener(
 
       // ============ DisputeResolver Events ============
 
-      // DisputeStarted
-      const disputeStartedLogs = await publicClient.getLogs({
+      // DisputeCreated
+      const disputeCreatedLogs = await publicClient.getLogs({
         address: addresses.disputeResolver,
         event: {
           type: 'event',
-          name: 'DisputeStarted',
+          name: 'DisputeCreated',
           inputs: [
             { name: 'disputeId', type: 'uint256', indexed: true },
             { name: 'taskId', type: 'uint256', indexed: true },
@@ -300,7 +303,7 @@ export function createEventListener(
         ...taskDisputedLogs.map((l) => parseEvent(l, 'TaskDisputed')),
         ...agentRegisteredLogs.map((l) => parseEvent(l, 'AgentRegistered')),
         ...agentProfileUpdatedLogs.map((l) => parseEvent(l, 'AgentProfileUpdated')),
-        ...disputeStartedLogs.map((l) => parseEvent(l, 'DisputeStarted')),
+        ...disputeCreatedLogs.map((l) => parseEvent(l, 'DisputeCreated')),
         ...voteSubmittedLogs.map((l) => parseEvent(l, 'VoteSubmitted')),
         ...disputeResolvedLogs.map((l) => parseEvent(l, 'DisputeResolved')),
       ];

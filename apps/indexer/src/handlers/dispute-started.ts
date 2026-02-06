@@ -3,10 +3,10 @@ import { getTaskByChainId, createDispute } from '@clawboy/database';
 import { invalidateDisputeCaches, invalidateTaskCaches } from '@clawboy/cache';
 
 /**
- * Handle DisputeStarted event
+ * Handle DisputeCreated event
  * A new dispute has been opened against a task decision
  */
-export async function handleDisputeStarted(event: IndexerEvent): Promise<void> {
+export async function handleDisputeCreated(event: IndexerEvent): Promise<void> {
   const { disputeId, taskId, disputer, stake, votingDeadline } = event.args as {
     disputeId: bigint;
     taskId: bigint;
@@ -16,7 +16,7 @@ export async function handleDisputeStarted(event: IndexerEvent): Promise<void> {
   };
 
   console.log(
-    `Processing DisputeStarted: disputeId=${disputeId}, taskId=${taskId}, disputer=${disputer}`
+    `Processing DisputeCreated: disputeId=${disputeId}, taskId=${taskId}, disputer=${disputer}`
   );
 
   // Find task in database

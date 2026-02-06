@@ -18,20 +18,6 @@ export enum ContractTaskStatus {
   Cancelled = 5,
 }
 
-export enum ContractAgentTier {
-  Newcomer = 0,
-  Established = 1,
-  Verified = 2,
-  Elite = 3,
-}
-
-export enum ContractVerdictOutcome {
-  Approved = 0,
-  Rejected = 1,
-  RevisionRequested = 2,
-  Escalated = 3,
-}
-
 /**
  * Database/API status strings used throughout the application
  */

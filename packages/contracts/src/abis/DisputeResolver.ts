@@ -6,7 +6,7 @@ export const DisputeResolverABI = [
   // Events
   {
     type: 'event',
-    name: 'DisputeStarted',
+    name: 'DisputeCreated',
     inputs: [
       { name: 'disputeId', type: 'uint256', indexed: true },
       { name: 'taskId', type: 'uint256', indexed: true },
@@ -34,6 +34,83 @@ export const DisputeResolverABI = [
       { name: 'disputerWon', type: 'bool', indexed: false },
       { name: 'votesFor', type: 'uint256', indexed: false },
       { name: 'votesAgainst', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'DisputeStakeReturned',
+    inputs: [
+      { name: 'disputeId', type: 'uint256', indexed: true },
+      { name: 'disputer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'DisputeStakeSlashed',
+    inputs: [
+      { name: 'disputeId', type: 'uint256', indexed: true },
+      { name: 'disputer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'DisputeCancelled',
+    inputs: [
+      { name: 'disputeId', type: 'uint256', indexed: true },
+      { name: 'taskId', type: 'uint256', indexed: true },
+      { name: 'cancelledBy', type: 'address', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'StakeSlashed',
+    inputs: [
+      { name: 'disputeId', type: 'uint256', indexed: true },
+      { name: 'disputer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'StakesWithdrawn',
+    inputs: [
+      { name: 'recipient', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'VoterReputationBatchProcessed',
+    inputs: [
+      { name: 'disputeId', type: 'uint256', indexed: true },
+      { name: 'processed', type: 'uint256', indexed: false },
+      { name: 'remaining', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferInitiated',
+    inputs: [
+      { name: 'currentOwner', type: 'address', indexed: true },
+      { name: 'pendingOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'EmergencyBypassUsed',
+    inputs: [
+      { name: 'caller', type: 'address', indexed: true },
+      { name: 'selector', type: 'bytes4', indexed: true },
     ],
   },
 
@@ -101,6 +178,13 @@ export const DisputeResolverABI = [
   },
   {
     type: 'function',
+    name: 'getVoters',
+    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'disputeCount',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
@@ -108,14 +192,35 @@ export const DisputeResolverABI = [
   },
   {
     type: 'function',
-    name: 'calculateRequiredStake',
-    inputs: [{ name: 'taskId', type: 'uint256' }],
+    name: 'calculateDisputeStake',
+    inputs: [{ name: 'bountyAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'pendingVoterRepUpdates',
+    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [{ name: 'remaining', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'availableSlashedStakes',
+    inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     name: 'MIN_DISPUTE_STAKE',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'DISPUTE_STAKE_PERCENT',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
@@ -129,7 +234,70 @@ export const DisputeResolverABI = [
   },
   {
     type: 'function',
-    name: 'WIN_THRESHOLD_PERCENTAGE',
+    name: 'MAJORITY_THRESHOLD',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'MAX_VOTERS_PER_DISPUTE',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'VOTER_REP_BATCH_SIZE',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'taskManager',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'agentAdapter',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingOwner',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'timelock',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'totalSlashedStakes',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'totalWithdrawnStakes',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
@@ -157,6 +325,70 @@ export const DisputeResolverABI = [
     type: 'function',
     name: 'resolveDispute',
     inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'processVoterReputationBatch',
+    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'cancelDispute',
+    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'emergencyCancelDispute',
+    inputs: [{ name: 'disputeId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'withdrawSlashedStakes',
+    inputs: [
+      { name: 'recipient', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'emergencyWithdrawSlashedStakes',
+    inputs: [
+      { name: 'recipient', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+
+  // Admin / ownership functions
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    inputs: [{ name: 'newOwner', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'acceptOwnership',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setTimelock',
+    inputs: [{ name: '_timelock', type: 'address' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },
