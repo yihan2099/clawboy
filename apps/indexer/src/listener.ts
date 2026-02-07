@@ -7,6 +7,9 @@ export interface EventListener {
   start(): Promise<void>;
   stop(): void;
   onEvent(handler: (event: IndexerEvent) => Promise<void>): void;
+  getLastProcessedBlock(): bigint;
+  isRunning(): boolean;
+  hasCompletedInitialSync(): boolean;
 }
 
 export interface IndexerEvent {
@@ -29,8 +32,9 @@ export function createEventListener(
   const publicClient = getPublicClient(chainId);
   const addresses = getContractAddresses(chainId);
 
-  let isRunning = false;
+  let running = false;
   let lastProcessedBlock: bigint = 0n;
+  let completedInitialSync = false;
   let eventHandler: ((event: IndexerEvent) => Promise<void>) | null = null;
 
   const parseEvent = (log: Log, name: string): IndexerEvent => {
@@ -46,7 +50,7 @@ export function createEventListener(
   };
 
   const pollEvents = async () => {
-    if (!isRunning || !eventHandler) return;
+    if (!running || !eventHandler) return;
 
     try {
       const currentBlock = await getBlockNumber(chainId);
@@ -99,6 +103,7 @@ export function createEventListener(
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'agent', type: 'address', indexed: true },
             { name: 'submissionCid', type: 'string', indexed: false },
+            { name: 'submissionIndex', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
@@ -129,6 +134,7 @@ export function createEventListener(
           name: 'AllSubmissionsRejected',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'creator', type: 'address', indexed: true },
             { name: 'reason', type: 'string', indexed: false },
           ],
         },
@@ -193,6 +199,7 @@ export function createEventListener(
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'disputer', type: 'address', indexed: true },
+            { name: 'disputeId', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
@@ -235,12 +242,12 @@ export function createEventListener(
 
       // ============ DisputeResolver Events ============
 
-      // DisputeStarted
-      const disputeStartedLogs = await publicClient.getLogs({
+      // DisputeCreated
+      const disputeCreatedLogs = await publicClient.getLogs({
         address: addresses.disputeResolver,
         event: {
           type: 'event',
-          name: 'DisputeStarted',
+          name: 'DisputeCreated',
           inputs: [
             { name: 'disputeId', type: 'uint256', indexed: true },
             { name: 'taskId', type: 'uint256', indexed: true },
@@ -300,7 +307,7 @@ export function createEventListener(
         ...taskDisputedLogs.map((l) => parseEvent(l, 'TaskDisputed')),
         ...agentRegisteredLogs.map((l) => parseEvent(l, 'AgentRegistered')),
         ...agentProfileUpdatedLogs.map((l) => parseEvent(l, 'AgentProfileUpdated')),
-        ...disputeStartedLogs.map((l) => parseEvent(l, 'DisputeStarted')),
+        ...disputeCreatedLogs.map((l) => parseEvent(l, 'DisputeCreated')),
         ...voteSubmittedLogs.map((l) => parseEvent(l, 'VoteSubmitted')),
         ...disputeResolvedLogs.map((l) => parseEvent(l, 'DisputeResolved')),
       ];
@@ -319,6 +326,7 @@ export function createEventListener(
       }
 
       lastProcessedBlock = currentBlock;
+      completedInitialSync = true;
 
       // Persist checkpoint to database
       try {
@@ -339,7 +347,7 @@ export function createEventListener(
 
   return {
     async start() {
-      isRunning = true;
+      running = true;
       console.log(`Starting event listener for chain ${chainId}`);
 
       // Load checkpoint from database
@@ -359,9 +367,9 @@ export function createEventListener(
       // This prevents race conditions where overlapping pollEvents calls could cause
       // fromBlock > toBlock errors
       const poll = async () => {
-        if (!isRunning) return;
+        if (!running) return;
         await pollEvents();
-        if (isRunning) {
+        if (running) {
           pollTimeout = setTimeout(poll, pollingIntervalMs);
         }
       };
@@ -370,7 +378,7 @@ export function createEventListener(
     },
 
     stop() {
-      isRunning = false;
+      running = false;
       if (pollTimeout) {
         clearTimeout(pollTimeout);
         pollTimeout = null;
@@ -380,6 +388,18 @@ export function createEventListener(
 
     onEvent(handler) {
       eventHandler = handler;
+    },
+
+    getLastProcessedBlock() {
+      return lastProcessedBlock;
+    },
+
+    isRunning() {
+      return running;
+    },
+
+    hasCompletedInitialSync() {
+      return completedInitialSync;
     },
   };
 }

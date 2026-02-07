@@ -13,6 +13,6 @@
     "clean": "forge clean",
     "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url base_sepolia --broadcast --verify",
     "deploy:mainnet": "forge script script/Deploy.s.sol --rpc-url base_mainnet --broadcast --verify",
-    "generate:abis": "mkdir -p abis && forge build && cp out/TaskManager.sol/TaskManager.json abis/ && cp out/EscrowVault.sol/EscrowVault.json abis/ && cp out/VerificationHub.sol/VerificationHub.json abis/ && cp out/ClawboyRegistry.sol/ClawboyRegistry.json abis/"
+    "generate:abis": "mkdir -p abis && forge build && cp out/TaskManager.sol/TaskManager.json abis/ && cp out/EscrowVault.sol/EscrowVault.json abis/ && cp out/DisputeResolver.sol/DisputeResolver.json abis/ && cp out/ERC8004IdentityRegistry.sol/ERC8004IdentityRegistry.json abis/ && cp out/ERC8004ReputationRegistry.sol/ERC8004ReputationRegistry.json abis/ && cp out/ClawboyAgentAdapter.sol/ClawboyAgentAdapter.json abis/"
   }
 }

@@ -58,7 +58,7 @@ export const getDisputeTool = {
       votes: votes.map((v) => ({
         voterAddress: v.voter_address,
         supportsDisputer: v.supports_disputer,
-        weight: v.weight,
+        weight: v.vote_weight,
         votedAt: v.voted_at,
       })),
       summary: {

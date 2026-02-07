@@ -54,6 +54,17 @@ jobs:
         working-directory: apps/contracts
         run: forge fmt --check
 
+  test-typescript:
+    name: Package Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run --filter @clawboy/mcp-server test
+      - run: bun run --filter @clawboy/cache test
+      - run: bun run --filter @clawboy/rate-limit test
+
   build:
     name: Build
     runs-on: ubuntu-latest

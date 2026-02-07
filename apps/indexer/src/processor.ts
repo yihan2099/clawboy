@@ -9,9 +9,10 @@ import { handleTaskCancelled } from './handlers/task-cancelled';
 import { handleTaskDisputed } from './handlers/task-disputed';
 import { handleAgentRegistered } from './handlers/agent-registered';
 import { handleAgentProfileUpdated } from './handlers/agent-profile-updated';
-import { handleDisputeStarted } from './handlers/dispute-started';
+import { handleDisputeCreated } from './handlers/dispute-started';
 import { handleVoteSubmitted } from './handlers/vote-submitted';
 import { handleDisputeResolved } from './handlers/dispute-resolved';
+import { dispatchWebhookNotifications } from './services/webhook-dispatch';
 
 /**
  * Process an indexer event by routing to the appropriate handler
@@ -65,8 +66,8 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         break;
 
       // DisputeResolver events
-      case 'DisputeStarted':
-        await handleDisputeStarted(event);
+      case 'DisputeCreated':
+        await handleDisputeCreated(event);
         break;
 
       case 'VoteSubmitted':
@@ -80,6 +81,10 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
       default:
         console.warn(`Unknown event type: ${event.name}`);
     }
+
+    // Fire-and-forget webhook notifications after successful event processing.
+    // This never throws -- errors are logged but don't block event processing.
+    dispatchWebhookNotifications(event);
   } catch (error) {
     console.error(`Failed to process event ${event.name}:`, error);
     throw error; // Re-throw to allow retry logic

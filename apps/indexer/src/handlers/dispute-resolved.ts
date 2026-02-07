@@ -26,7 +26,7 @@ export async function handleDisputeResolved(event: IndexerEvent): Promise<void> 
   // Find dispute in database
   const dispute = await getDisputeByChainId(disputeId.toString());
   if (!dispute) {
-    // Throw error so event goes to DLQ for retry (dispute may be created by pending DisputeStarted event)
+    // Throw error so event goes to DLQ for retry (dispute may be created by pending DisputeCreated event)
     throw new Error(`Dispute ${disputeId} not found in database`);
   }
 

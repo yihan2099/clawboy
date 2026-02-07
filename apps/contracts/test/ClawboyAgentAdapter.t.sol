@@ -22,6 +22,7 @@ contract ClawboyAgentAdapterTest is Test {
     address public randomUser = address(0x888);
     address public agent1 = address(0x1);
     address public agent2 = address(0x2);
+    address public treasury = address(0x777);
 
     function setUp() public {
         deployer = address(this);
@@ -39,7 +40,7 @@ contract ClawboyAgentAdapterTest is Test {
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =
             vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        escrowVault = new EscrowVault(predictedTaskManager);
+        escrowVault = new EscrowVault(predictedTaskManager, treasury, 300);
 
         // Deploy TaskManager
         taskManager = new TaskManager(address(escrowVault), address(agentAdapter));
@@ -346,7 +347,7 @@ contract ClawboyAgentAdapterTest is Test {
         assertEq(weight, 5);
 
         // Verify reputation summary matches
-        (uint64 taskWins,,,int256 totalRep) = agentAdapter.getReputationSummary(agent1);
+        (uint64 taskWins,,, int256 totalRep) = agentAdapter.getReputationSummary(agent1);
         assertEq(taskWins, 5);
         assertEq(totalRep, 50);
     }
@@ -373,7 +374,8 @@ contract ClawboyAgentAdapterTest is Test {
         assertEq(weight, 1);
 
         // Verify reputation summary
-        (uint64 taskWins,, uint64 disputeLosses, int256 totalRep) = agentAdapter.getReputationSummary(agent1);
+        (uint64 taskWins,, uint64 disputeLosses, int256 totalRep) =
+            agentAdapter.getReputationSummary(agent1);
         assertEq(taskWins, 2);
         assertEq(disputeLosses, 2);
         assertEq(totalRep, -20); // Raw rep can be negative in summary

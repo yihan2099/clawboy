@@ -48,17 +48,16 @@ The following are known limitations:
 
 ### Smart Contracts
 
-1. **Unbounded voter loop** - `DisputeResolver.resolveDispute()` iterates all voters to update reputation. Could exceed block gas limit with many voters.
-   - Mitigation: Monitor voter counts, plan to implement batched resolution
+1. **Large voter loops** - `DisputeResolver.resolveDispute()` iterates voters to update reputation. Batched resolution exists (`VOTER_REP_BATCH_SIZE = 50`, `MAX_VOTERS_PER_DISPUTE = 500`) but very large disputes may still require multiple transactions.
+   - Mitigation: Batched resolution implemented; MAX_VOTERS_PER_DISPUTE caps participation
 
 2. **Owner privileges** - Contract owners can replace critical contract addresses
-   - Mitigation: Planned timelock or multisig for admin functions before mainnet
+   - Mitigation: Implemented — TimelockController deployed with 48-hour delays for critical admin operations
 
 3. **Hardcoded time constants** - Challenge window and voting periods cannot be adjusted without redeployment
    - Impact: Limited operational flexibility
 
-4. **No SafeERC20** - Token transfers don't use SafeERC20 library
-   - Impact: Non-standard ERC20 tokens may not work correctly
+4. ~~**No SafeERC20**~~ - **Resolved**: EscrowVault.sol uses SafeERC20 for all token transfers
 
 ### Infrastructure
 

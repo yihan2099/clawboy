@@ -8,12 +8,15 @@ import { invalidateTaskCaches } from '@clawboy/cache';
  * An agent has disputed the task decision
  */
 export async function handleTaskDisputed(event: IndexerEvent): Promise<void> {
-  const { taskId, disputer } = event.args as {
+  const { taskId, disputer, disputeId } = event.args as {
     taskId: bigint;
     disputer: `0x${string}`;
+    disputeId: bigint;
   };
 
-  console.log(`Processing TaskDisputed: taskId=${taskId}, disputer=${disputer}`);
+  console.log(
+    `Processing TaskDisputed: taskId=${taskId}, disputer=${disputer}, disputeId=${disputeId}`
+  );
 
   // Find task in database
   const task = await getTaskByChainId(taskId.toString(), event.chainId);
@@ -28,6 +31,7 @@ export async function handleTaskDisputed(event: IndexerEvent): Promise<void> {
   assertValidStatusTransition(currentStatus, newStatus, task.chain_task_id);
 
   // Update task status to disputed
+  // Note: disputeId is stored on the disputes table (chain_dispute_id), not on tasks
   await updateTask(task.id, {
     status: newStatus,
   });
@@ -35,5 +39,5 @@ export async function handleTaskDisputed(event: IndexerEvent): Promise<void> {
   // Invalidate task caches
   await invalidateTaskCaches(task.id);
 
-  console.log(`Task ${taskId} disputed by ${disputer}`);
+  console.log(`Task ${taskId} disputed by ${disputer}, disputeId=${disputeId}`);
 }
