@@ -100,9 +100,7 @@ export function DisputeList({
                     </div>
 
                     <div>
-                      <div className="text-sm font-medium">
-                        Task #{dispute.task_id.slice(0, 8)}
-                      </div>
+                      <div className="text-sm font-medium">Task #{dispute.task_id.slice(0, 8)}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         Disputer: {truncateAddress(dispute.disputer_address)}
                       </div>

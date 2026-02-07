@@ -3,11 +3,7 @@ import { Web3Provider } from '@/components/web3-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandSearch } from '@/components/command-search';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <Web3Provider>
       <div className="relative min-h-screen min-h-[100dvh]">
