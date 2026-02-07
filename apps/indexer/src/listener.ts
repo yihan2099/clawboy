@@ -328,9 +328,13 @@ export function createEventListener(
       lastProcessedBlock = currentBlock;
       completedInitialSync = true;
 
-      // Persist checkpoint to database
+      // Persist checkpoint to database for all contracts
       try {
-        await updateSyncState(chainId, addresses.taskManager, currentBlock);
+        await Promise.all([
+          updateSyncState(chainId, addresses.taskManager, currentBlock),
+          updateSyncState(chainId, addresses.disputeResolver, currentBlock),
+          updateSyncState(chainId, addresses.agentAdapter, currentBlock),
+        ]);
       } catch (error) {
         console.warn('Failed to save checkpoint:', error);
       }
@@ -350,12 +354,17 @@ export function createEventListener(
       running = true;
       console.log(`Starting event listener for chain ${chainId}`);
 
-      // Load checkpoint from database
+      // Load checkpoints from database for all contracts
       try {
-        const checkpoint = await getLastSyncedBlock(chainId, addresses.taskManager);
-        if (checkpoint) {
-          lastProcessedBlock = checkpoint;
-          console.log(`Resuming from checkpoint: block ${lastProcessedBlock}`);
+        const checkpoints = await Promise.all([
+          getLastSyncedBlock(chainId, addresses.taskManager),
+          getLastSyncedBlock(chainId, addresses.disputeResolver),
+          getLastSyncedBlock(chainId, addresses.agentAdapter),
+        ]);
+        const validCheckpoints = checkpoints.filter((c): c is bigint => c !== null);
+        if (validCheckpoints.length > 0) {
+          lastProcessedBlock = validCheckpoints.reduce((min, c) => c < min ? c : min);
+          console.log(`Resuming from minimum checkpoint: block ${lastProcessedBlock} (across ${validCheckpoints.length} contracts)`);
         } else {
           console.log('No checkpoint found, will start from current block');
         }

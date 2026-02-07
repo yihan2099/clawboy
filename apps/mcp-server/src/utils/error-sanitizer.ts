@@ -50,6 +50,13 @@ export function sanitizeErrorMessage(error: unknown): string {
   // Log the full error internally for debugging
   console.error('[ERROR_SANITIZED] Internal error suppressed from client response:', message);
 
+  // Report to Sentry if available (fire-and-forget to keep function sync)
+  import('@sentry/bun')
+    .then((Sentry) => Sentry.captureException(error))
+    .catch(() => {
+      // Sentry not available, skip
+    });
+
   return 'An internal error occurred. Please try again later.';
 }
 

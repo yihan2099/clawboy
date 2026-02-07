@@ -43,23 +43,36 @@ const app = new Hono();
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
   : process.env.NODE_ENV === 'production'
-    ? [] // SECURITY: Deny all origins in production when CORS_ORIGINS is not set
+    ? null // FAIL-CLOSED: null means startup will fail
     : ['*']; // Default to all for development only
 
-// SECURITY WARNING: Log warning if wildcard CORS is used in production
-if (allowedOrigins.includes('*') && process.env.NODE_ENV === 'production') {
+// SECURITY: Fail-closed in production if CORS_ORIGINS not configured
+if (allowedOrigins === null) {
   console.error(
-    'SECURITY WARNING: CORS_ORIGINS not set in production. Using wildcard (*) which allows any origin. ' +
-      'Set CORS_ORIGINS environment variable to restrict allowed origins.'
+    'FATAL: CORS_ORIGINS environment variable is required in production. ' +
+    'Set it to a comma-separated list of allowed origins (e.g., "https://pact.dev,https://app.pact.dev"). ' +
+    'Server will not start without proper CORS configuration in production.'
   );
+  process.exit(1);
 }
 
-if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
-  console.error(
-    'SECURITY: CORS_ORIGINS not configured in production. All cross-origin requests will be denied. ' +
-      'Set CORS_ORIGINS environment variable to allow specific origins.'
-  );
+// Validate CORS origins format
+if (process.env.NODE_ENV === 'production' && allowedOrigins) {
+  for (const origin of allowedOrigins) {
+    if (origin === '*') {
+      console.error('SECURITY WARNING: Wildcard CORS origin not allowed in production');
+      process.exit(1);
+    }
+    try {
+      new URL(origin);
+    } catch {
+      console.error(`FATAL: Invalid CORS origin format: "${origin}". Must be a valid URL.`);
+      process.exit(1);
+    }
+  }
 }
+
+console.error(`CORS origins configured: ${allowedOrigins.includes('*') ? '* (all - development only)' : allowedOrigins.join(', ')}`);
 
 app.use(
   '/*',
@@ -193,11 +206,71 @@ app.use('/a2a', createMcpRateLimitMiddleware());
 app.route('/', a2aRouter);
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', async (c) => {
+  const uptimeSeconds = process.uptime();
+  const checks: Record<string, { status: string; latencyMs?: number; error?: string; blockNumber?: string }> = {};
+
+  // Supabase check
+  try {
+    const start = Date.now();
+    const { getSupabaseClient } = await import('@clawboy/database');
+    const supabase = getSupabaseClient();
+    await supabase.from('tasks').select('id').limit(1);
+    checks.supabase = { status: 'ok', latencyMs: Date.now() - start };
+  } catch (e) {
+    checks.supabase = { status: 'error', error: e instanceof Error ? e.message : 'Unknown' };
+  }
+
+  // Redis check
+  if (process.env.UPSTASH_REDIS_REST_URL) {
+    try {
+      const start = Date.now();
+      const res = await fetch(`${process.env.UPSTASH_REDIS_REST_URL}/ping`, {
+        headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN || ''}` },
+      });
+      if (res.ok) {
+        checks.redis = { status: 'ok', latencyMs: Date.now() - start };
+      } else {
+        checks.redis = { status: 'error', error: `HTTP ${res.status}` };
+      }
+    } catch (e) {
+      checks.redis = { status: 'error', error: e instanceof Error ? e.message : 'Unknown' };
+    }
+  } else {
+    checks.redis = { status: 'unavailable', error: 'Redis not configured (using memory fallback)' };
+  }
+
+  // RPC check
+  try {
+    const start = Date.now();
+    const { getBlockNumber } = await import('@clawboy/web3-utils');
+    const chainId = parseInt(process.env.CHAIN_ID || '84532');
+    const blockNumber = await getBlockNumber(chainId);
+    checks.rpc = { status: 'ok', latencyMs: Date.now() - start, blockNumber: blockNumber.toString() };
+  } catch (e) {
+    checks.rpc = { status: 'error', error: e instanceof Error ? e.message : 'Unknown' };
+  }
+
+  const allOk = Object.values(checks).every(ch => ch.status === 'ok');
+
+  // Read version from package.json
+  let version = 'unknown';
+  try {
+    const pkgPath = new URL('../../package.json', import.meta.url);
+    const pkgText = await Bun.file(pkgPath).text();
+    const pkg = JSON.parse(pkgText);
+    version = pkg.version || 'unknown';
+  } catch {
+    // ignore
+  }
+
   return c.json({
-    status: 'ok',
+    status: allOk ? 'ok' : 'degraded',
     service: 'pact-mcp-server',
+    version,
+    uptime: Math.floor(uptimeSeconds),
     timestamp: new Date().toISOString(),
+    dependencies: checks,
   });
 });
 
