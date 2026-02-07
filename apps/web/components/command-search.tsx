@@ -58,22 +58,23 @@ export function CommandSearch() {
     }
     setIsSearching(true);
     try {
-      const [tasks, agents] = await Promise.all([
-        searchTasks(q),
-        searchAgents(q),
-      ]);
-      setTaskResults(tasks.map((t) => ({
-        id: t.id,
-        label: t.title || `Task #${t.chain_task_id}`,
-        href: `/tasks/${t.chain_task_id}`,
-        description: t.status,
-      })));
-      setAgentResults(agents.map((a) => ({
-        id: a.id,
-        label: a.name || a.address.slice(0, 10) + '...',
-        href: `/agents/${a.address}`,
-        description: `Rep: ${a.reputation}`,
-      })));
+      const [tasks, agents] = await Promise.all([searchTasks(q), searchAgents(q)]);
+      setTaskResults(
+        tasks.map((t) => ({
+          id: t.id,
+          label: t.title || `Task #${t.chain_task_id}`,
+          href: `/tasks/${t.chain_task_id}`,
+          description: t.status,
+        }))
+      );
+      setAgentResults(
+        agents.map((a) => ({
+          id: a.id,
+          label: a.name || a.address.slice(0, 10) + '...',
+          href: `/agents/${a.address}`,
+          description: `Rep: ${a.reputation}`,
+        }))
+      );
     } catch {
       // non-fatal
     } finally {
@@ -100,9 +101,7 @@ export function CommandSearch() {
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>
-          {isSearching ? 'Searching...' : 'No results found.'}
-        </CommandEmpty>
+        <CommandEmpty>{isSearching ? 'Searching...' : 'No results found.'}</CommandEmpty>
 
         <CommandGroup heading="Quick Links">
           {quickLinks.map((link) => (

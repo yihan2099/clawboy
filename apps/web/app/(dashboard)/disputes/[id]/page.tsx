@@ -46,7 +46,12 @@ export default async function DisputeDetailPage({ params }: DisputeDetailPagePro
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <PageBreadcrumb items={[{ label: 'Disputes', href: '/disputes' }, { label: 'Dispute #' + dispute.chain_dispute_id }]} />
+      <PageBreadcrumb
+        items={[
+          { label: 'Disputes', href: '/disputes' },
+          { label: 'Dispute #' + dispute.chain_dispute_id },
+        ]}
+      />
 
       {/* Dispute Header */}
       <div className="space-y-3">

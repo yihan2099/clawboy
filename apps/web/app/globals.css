@@ -61,15 +61,15 @@
   --muted-foreground: oklch(0.55 0.01 260);
   --accent: oklch(0.96 0.003 260);
   --accent-foreground: oklch(0.14 0.005 260);
-  --destructive: oklch(0.55 0.20 25);
+  --destructive: oklch(0.55 0.2 25);
   --border: oklch(0.91 0.003 260);
   --input: oklch(0.93 0.003 260);
   --ring: oklch(0.37 0.085 270);
   --chart-1: oklch(0.55 0.12 270);
-  --chart-2: oklch(0.60 0.12 180);
-  --chart-3: oklch(0.55 0.10 280);
+  --chart-2: oklch(0.6 0.12 180);
+  --chart-3: oklch(0.55 0.1 280);
   --chart-4: oklch(0.65 0.15 140);
-  --chart-5: oklch(0.60 0.12 30);
+  --chart-5: oklch(0.6 0.12 30);
   --sidebar: oklch(0.99 0.001 260);
   --sidebar-foreground: oklch(0.14 0.005 260);
   --sidebar-primary: oklch(0.37 0.085 270);
@@ -92,20 +92,20 @@
   --popover-foreground: oklch(0.93 0.005 260);
   --primary: oklch(0.68 0.12 270);
   --primary-foreground: oklch(0.12 0.01 260);
-  --secondary: oklch(0.20 0.01 260);
+  --secondary: oklch(0.2 0.01 260);
   --secondary-foreground: oklch(0.93 0.005 260);
-  --muted: oklch(0.20 0.01 260);
+  --muted: oklch(0.2 0.01 260);
   --muted-foreground: oklch(0.58 0.01 260);
   --accent: oklch(0.18 0.01 260);
   --accent-foreground: oklch(0.93 0.005 260);
-  --destructive: oklch(0.60 0.18 25);
+  --destructive: oklch(0.6 0.18 25);
   --border: oklch(0.26 0.01 260);
   --input: oklch(0.23 0.01 260);
-  --ring: oklch(0.58 0.10 270);
+  --ring: oklch(0.58 0.1 270);
   --chart-1: oklch(0.68 0.12 270);
-  --chart-2: oklch(0.65 0.10 200);
-  --chart-3: oklch(0.60 0.12 280);
-  --chart-4: oklch(0.70 0.08 140);
+  --chart-2: oklch(0.65 0.1 200);
+  --chart-3: oklch(0.6 0.12 280);
+  --chart-4: oklch(0.7 0.08 140);
   --chart-5: oklch(0.65 0.12 30);
   --sidebar: oklch(0.155 0.01 260);
   --sidebar-foreground: oklch(0.93 0.005 260);
@@ -114,7 +114,7 @@
   --sidebar-accent: oklch(0.18 0.01 260);
   --sidebar-accent-foreground: oklch(0.93 0.005 260);
   --sidebar-border: oklch(0.26 0.01 260);
-  --sidebar-ring: oklch(0.58 0.10 270);
+  --sidebar-ring: oklch(0.58 0.1 270);
   /* Gradient glow for background */
   --gradient-glow: oklch(0.18 0.025 270 / 0.35);
 }
@@ -164,8 +164,15 @@
 }
 
 @keyframes gradient-shift {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
 }
 
 .hero-glow {

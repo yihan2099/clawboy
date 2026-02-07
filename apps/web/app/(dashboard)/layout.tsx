@@ -11,9 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,var(--gradient-glow),transparent_60%)]" />
         </div>
         <DashboardNav />
-        <main className="relative z-10 container mx-auto px-4 py-6">
-          {children}
-        </main>
+        <main className="relative z-10 container mx-auto px-4 py-6">{children}</main>
         <Toaster />
         <CommandSearch />
       </div>

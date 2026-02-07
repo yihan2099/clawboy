@@ -75,11 +75,14 @@ export function CreateTaskForm() {
     reset: resetWrite,
   } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash: txHash });
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
 
   // Redirect on successful confirmation
-  useEffect(() => { if (writeError) toast.error('Failed to create task'); }, [writeError]);
+  useEffect(() => {
+    if (writeError) toast.error('Failed to create task');
+  }, [writeError]);
   useEffect(() => {
     if (isConfirmed && txHash) {
       toast.success('Task created successfully!');
@@ -202,9 +205,7 @@ export function CreateTaskForm() {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">
-            Connect your wallet to create a task.
-          </p>
+          <p className="text-muted-foreground">Connect your wallet to create a task.</p>
         </CardContent>
       </Card>
     );
@@ -228,12 +229,8 @@ export function CreateTaskForm() {
               maxLength={200}
             />
             <div className="flex justify-between">
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
-              <p className="text-xs text-muted-foreground ml-auto">
-                {title.length}/200
-              </p>
+              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+              <p className="text-xs text-muted-foreground ml-auto">{title.length}/200</p>
             </div>
           </div>
 
@@ -246,9 +243,7 @@ export function CreateTaskForm() {
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
             />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description}</p>
-            )}
+            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
           </div>
         </CardContent>
       </Card>
@@ -282,9 +277,7 @@ export function CreateTaskForm() {
                 <Input
                   placeholder="Describe the deliverable"
                   value={deliverable.description}
-                  onChange={(e) =>
-                    updateDeliverable(index, 'description', e.target.value)
-                  }
+                  onChange={(e) => updateDeliverable(index, 'description', e.target.value)}
                 />
               </div>
               {deliverables.length > 1 && (
@@ -303,9 +296,7 @@ export function CreateTaskForm() {
             <Plus className="h-4 w-4 mr-1" />
             Add Deliverable
           </Button>
-          {errors.deliverables && (
-            <p className="text-sm text-destructive">{errors.deliverables}</p>
-          )}
+          {errors.deliverables && <p className="text-sm text-destructive">{errors.deliverables}</p>}
         </CardContent>
       </Card>
 
@@ -370,9 +361,7 @@ export function CreateTaskForm() {
               onChange={(e) => setTagsInput(e.target.value)}
             />
             <div className="flex justify-between">
-              {errors.tags && (
-                <p className="text-sm text-destructive">{errors.tags}</p>
-              )}
+              {errors.tags && <p className="text-sm text-destructive">{errors.tags}</p>}
               <p className="text-xs text-muted-foreground ml-auto">
                 {parseTags(tagsInput).length}/10 tags
               </p>
@@ -396,9 +385,7 @@ export function CreateTaskForm() {
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
             />
-            {errors.deadline && (
-              <p className="text-sm text-destructive">{errors.deadline}</p>
-            )}
+            {errors.deadline && <p className="text-sm text-destructive">{errors.deadline}</p>}
           </div>
         </CardContent>
       </Card>
@@ -419,19 +406,9 @@ export function CreateTaskForm() {
 
       {/* Submit */}
       <div className="flex gap-3">
-        <Button
-          type="submit"
-          disabled={isPending || isConfirming}
-          className="min-w-[140px]"
-        >
-          {(isPending || isConfirming) && (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
-          )}
-          {isPending
-            ? 'Confirm in Wallet'
-            : isConfirming
-              ? 'Confirming...'
-              : 'Create Task'}
+        <Button type="submit" disabled={isPending || isConfirming} className="min-w-[140px]">
+          {(isPending || isConfirming) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+          {isPending ? 'Confirm in Wallet' : isConfirming ? 'Confirming...' : 'Create Task'}
         </Button>
         <Button
           type="button"

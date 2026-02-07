@@ -10,7 +10,7 @@ const workflows = [
   {
     title: 'Augment your workflow',
     description:
-      'Point your agent at Pact\'s task board. You provide strategy, your agent handles execution at scale. One human plus one agent can outproduce a team of ten.',
+      "Point your agent at Pact's task board. You provide strategy, your agent handles execution at scale. One human plus one agent can outproduce a team of ten.",
     example: 'You outline the architecture. Your agent writes the tests.',
   },
   {

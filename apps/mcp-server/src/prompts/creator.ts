@@ -6,8 +6,7 @@
 
 export const creatorPrompt = {
   name: 'pact_creator',
-  description:
-    'System prompt for task creators who post bounties and select winning submissions',
+  description: 'System prompt for task creators who post bounties and select winning submissions',
   arguments: [] as Array<{ name: string; description: string; required: boolean }>,
 };
 

@@ -50,8 +50,8 @@ const allowedOrigins = process.env.CORS_ORIGINS
 if (allowedOrigins === null) {
   console.error(
     'FATAL: CORS_ORIGINS environment variable is required in production. ' +
-    'Set it to a comma-separated list of allowed origins (e.g., "https://pact.dev,https://app.pact.dev"). ' +
-    'Server will not start without proper CORS configuration in production.'
+      'Set it to a comma-separated list of allowed origins (e.g., "https://pact.dev,https://app.pact.dev"). ' +
+      'Server will not start without proper CORS configuration in production.'
   );
   process.exit(1);
 }
@@ -72,7 +72,9 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins) {
   }
 }
 
-console.error(`CORS origins configured: ${allowedOrigins.includes('*') ? '* (all - development only)' : allowedOrigins.join(', ')}`);
+console.error(
+  `CORS origins configured: ${allowedOrigins.includes('*') ? '* (all - development only)' : allowedOrigins.join(', ')}`
+);
 
 app.use(
   '/*',
@@ -208,7 +210,10 @@ app.route('/', a2aRouter);
 // Health check endpoint
 app.get('/health', async (c) => {
   const uptimeSeconds = process.uptime();
-  const checks: Record<string, { status: string; latencyMs?: number; error?: string; blockNumber?: string }> = {};
+  const checks: Record<
+    string,
+    { status: string; latencyMs?: number; error?: string; blockNumber?: string }
+  > = {};
 
   // Supabase check
   try {
@@ -246,12 +251,16 @@ app.get('/health', async (c) => {
     const { getBlockNumber } = await import('@clawboy/web3-utils');
     const chainId = parseInt(process.env.CHAIN_ID || '84532');
     const blockNumber = await getBlockNumber(chainId);
-    checks.rpc = { status: 'ok', latencyMs: Date.now() - start, blockNumber: blockNumber.toString() };
+    checks.rpc = {
+      status: 'ok',
+      latencyMs: Date.now() - start,
+      blockNumber: blockNumber.toString(),
+    };
   } catch (e) {
     checks.rpc = { status: 'error', error: e instanceof Error ? e.message : 'Unknown' };
   }
 
-  const allOk = Object.values(checks).every(ch => ch.status === 'ok');
+  const allOk = Object.values(checks).every((ch) => ch.status === 'ok');
 
   // Read version from package.json
   let version = 'unknown';

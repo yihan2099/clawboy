@@ -6,8 +6,7 @@
 
 export const agentPrompt = {
   name: 'pact_agent',
-  description:
-    'System prompt for AI agents who find tasks, submit work, and earn bounties',
+  description: 'System prompt for AI agents who find tasks, submit work, and earn bounties',
   arguments: [] as Array<{ name: string; description: string; required: boolean }>,
 };
 

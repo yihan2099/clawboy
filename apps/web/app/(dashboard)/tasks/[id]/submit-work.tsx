@@ -32,24 +32,21 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
   const { address } = useAccount();
   const [isExpanded, setIsExpanded] = useState(false);
   const [summary, setSummary] = useState('');
-  const [deliverables, setDeliverables] = useState<DeliverableEntry[]>([
-    createEmptyDeliverable(),
-  ]);
+  const [deliverables, setDeliverables] = useState<DeliverableEntry[]>([createEmptyDeliverable()]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const {
-    writeContract,
-    data: txHash,
-    isPending,
-    error: writeError,
-  } = useWriteContract();
+  const { writeContract, data: txHash, isPending, error: writeError } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
   });
 
-  useEffect(() => { if (isSuccess) toast.success('Work submitted successfully!'); }, [isSuccess]);
-  useEffect(() => { if (writeError) toast.error('Failed to submit work'); }, [writeError]);
+  useEffect(() => {
+    if (isSuccess) toast.success('Work submitted successfully!');
+  }, [isSuccess]);
+  useEffect(() => {
+    if (writeError) toast.error('Failed to submit work');
+  }, [writeError]);
 
   // Only show when task is open and wallet is connected
   if (status !== 'open' || !address) {
@@ -70,21 +67,11 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
   }
 
   if (!isExpanded) {
-    return (
-      <Button onClick={() => setIsExpanded(true)}>
-        Submit Work
-      </Button>
-    );
+    return <Button onClick={() => setIsExpanded(true)}>Submit Work</Button>;
   }
 
-  const updateDeliverable = (
-    index: number,
-    field: keyof DeliverableEntry,
-    value: string
-  ) => {
-    setDeliverables((prev) =>
-      prev.map((d, i) => (i === index ? { ...d, [field]: value } : d))
-    );
+  const updateDeliverable = (index: number, field: keyof DeliverableEntry, value: string) => {
+    setDeliverables((prev) => prev.map((d, i) => (i === index ? { ...d, [field]: value } : d)));
   };
 
   const addDeliverable = () => {
@@ -112,9 +99,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
         return;
       }
       if (!d.cid.trim() && !d.url.trim()) {
-        setValidationError(
-          `Deliverable ${i + 1}: at least a CID or URL is required.`
-        );
+        setValidationError(`Deliverable ${i + 1}: at least a CID or URL is required.`);
         return;
       }
     }
@@ -156,9 +141,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       <CardContent className="space-y-4">
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {typeof error === 'string'
-              ? error
-              : error.message.slice(0, 200)}
+            {typeof error === 'string' ? error : error.message.slice(0, 200)}
           </div>
         )}
 
@@ -180,14 +163,9 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
         <div className="space-y-3">
           <label className="text-sm font-medium">Deliverables</label>
           {deliverables.map((d, index) => (
-            <div
-              key={index}
-              className="space-y-2 rounded-lg border p-3"
-            >
+            <div key={index} className="space-y-2 rounded-lg border p-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Deliverable {index + 1}
-                </span>
+                <span className="text-xs text-muted-foreground">Deliverable {index + 1}</span>
                 {deliverables.length > 1 && (
                   <Button
                     type="button"
@@ -203,9 +181,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
               <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
                 <select
                   value={d.type}
-                  onChange={(e) =>
-                    updateDeliverable(index, 'type', e.target.value)
-                  }
+                  onChange={(e) => updateDeliverable(index, 'type', e.target.value)}
                   disabled={isLoading}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -218,9 +194,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
                 <Input
                   placeholder="Description"
                   value={d.description}
-                  onChange={(e) =>
-                    updateDeliverable(index, 'description', e.target.value)
-                  }
+                  onChange={(e) => updateDeliverable(index, 'description', e.target.value)}
                   disabled={isLoading}
                 />
               </div>
@@ -228,17 +202,13 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
                 <Input
                   placeholder="CID (e.g. Qm...)"
                   value={d.cid}
-                  onChange={(e) =>
-                    updateDeliverable(index, 'cid', e.target.value)
-                  }
+                  onChange={(e) => updateDeliverable(index, 'cid', e.target.value)}
                   disabled={isLoading}
                 />
                 <Input
                   placeholder="URL (e.g. https://...)"
                   value={d.url}
-                  onChange={(e) =>
-                    updateDeliverable(index, 'url', e.target.value)
-                  }
+                  onChange={(e) => updateDeliverable(index, 'url', e.target.value)}
                   disabled={isLoading}
                 />
               </div>
@@ -260,17 +230,9 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
         <div className="flex gap-2">
           <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-            {isPending
-              ? 'Submitting...'
-              : isConfirming
-                ? 'Confirming...'
-                : 'Submit'}
+            {isPending ? 'Submitting...' : isConfirming ? 'Confirming...' : 'Submit'}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsExpanded(false)}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={() => setIsExpanded(false)} disabled={isLoading}>
             Cancel
           </Button>
         </div>

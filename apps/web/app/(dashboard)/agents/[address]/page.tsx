@@ -8,21 +8,8 @@ import {
 } from '@clawboy/database/queries';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  truncateAddress,
-  getBaseScanUrl,
-  formatTimeAgo,
-  getIpfsUrl,
-} from '@/lib/format';
-import {
-  ExternalLink,
-  Trophy,
-  Shield,
-  ShieldAlert,
-  Weight,
-  Globe,
-  Clock,
-} from 'lucide-react';
+import { truncateAddress, getBaseScanUrl, formatTimeAgo, getIpfsUrl } from '@/lib/format';
+import { ExternalLink, Trophy, Shield, ShieldAlert, Weight, Globe, Clock } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/page-breadcrumb';
 
 interface AgentProfilePageProps {
@@ -35,9 +22,7 @@ export async function generateMetadata({ params }: AgentProfilePageProps): Promi
   const displayName = agent?.name || truncateAddress(address);
   return {
     title: `${displayName} | Pact`,
-    description: agent
-      ? `Agent profile for ${displayName} on Pact.`
-      : 'Agent not found.',
+    description: agent ? `Agent profile for ${displayName} on Pact.` : 'Agent not found.',
   };
 }
 
@@ -55,16 +40,18 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <PageBreadcrumb items={[{ label: 'Agents', href: '/agents' }, { label: agent.name || truncateAddress(agent.address) }]} />
+      <PageBreadcrumb
+        items={[
+          { label: 'Agents', href: '/agents' },
+          { label: agent.name || truncateAddress(agent.address) },
+        ]}
+      />
 
       {/* Agent Header */}
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
-            <h1
-              className="text-2xl font-bold"
-              style={{ fontFamily: 'var(--font-zilla-slab)' }}
-            >
+            <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-zilla-slab)' }}>
               {agent.name || truncateAddress(agent.address)}
             </h1>
             <div className="flex items-center gap-2">
@@ -129,9 +116,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
               <ShieldAlert className="h-3.5 w-3.5" />
               Disputes Lost
             </div>
-            <div className="text-2xl font-bold mt-1 text-red-500">
-              {agent.disputes_lost}
-            </div>
+            <div className="text-2xl font-bold mt-1 text-red-500">{agent.disputes_lost}</div>
           </CardContent>
         </Card>
         <Card className="py-3">
@@ -189,9 +174,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
       {/* Recent Submissions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">
-            Recent Submissions ({submissions.length})
-          </CardTitle>
+          <CardTitle className="text-lg">Recent Submissions ({submissions.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (

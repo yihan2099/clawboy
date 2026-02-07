@@ -363,8 +363,10 @@ export function createEventListener(
         ]);
         const validCheckpoints = checkpoints.filter((c): c is bigint => c !== null);
         if (validCheckpoints.length > 0) {
-          lastProcessedBlock = validCheckpoints.reduce((min, c) => c < min ? c : min);
-          console.log(`Resuming from minimum checkpoint: block ${lastProcessedBlock} (across ${validCheckpoints.length} contracts)`);
+          lastProcessedBlock = validCheckpoints.reduce((min, c) => (c < min ? c : min));
+          console.log(
+            `Resuming from minimum checkpoint: block ${lastProcessedBlock} (across ${validCheckpoints.length} contracts)`
+          );
         } else {
           console.log('No checkpoint found, will start from current block');
         }

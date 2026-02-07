@@ -57,16 +57,31 @@ export function TaskActions({
     error: finalizeError,
   } = useWriteContract();
 
-  const { isLoading: isSelectConfirming, isSuccess: isSelectSuccess } = useWaitForTransactionReceipt({ hash: selectHash });
-  const { isLoading: isRejectConfirming, isSuccess: isRejectSuccess } = useWaitForTransactionReceipt({ hash: rejectHash });
-  const { isLoading: isFinalizeConfirming, isSuccess: isFinalizeSuccess } = useWaitForTransactionReceipt({ hash: finalizeHash });
+  const { isLoading: isSelectConfirming, isSuccess: isSelectSuccess } =
+    useWaitForTransactionReceipt({ hash: selectHash });
+  const { isLoading: isRejectConfirming, isSuccess: isRejectSuccess } =
+    useWaitForTransactionReceipt({ hash: rejectHash });
+  const { isLoading: isFinalizeConfirming, isSuccess: isFinalizeSuccess } =
+    useWaitForTransactionReceipt({ hash: finalizeHash });
 
-  useEffect(() => { if (isSelectSuccess) toast.success('Winner selected successfully'); }, [isSelectSuccess]);
-  useEffect(() => { if (isRejectSuccess) toast.success('All submissions rejected'); }, [isRejectSuccess]);
-  useEffect(() => { if (isFinalizeSuccess) toast.success('Task finalized, bounty released!'); }, [isFinalizeSuccess]);
-  useEffect(() => { if (selectError) toast.error('Failed to select winner'); }, [selectError]);
-  useEffect(() => { if (rejectError) toast.error('Failed to reject submissions'); }, [rejectError]);
-  useEffect(() => { if (finalizeError) toast.error('Failed to finalize task'); }, [finalizeError]);
+  useEffect(() => {
+    if (isSelectSuccess) toast.success('Winner selected successfully');
+  }, [isSelectSuccess]);
+  useEffect(() => {
+    if (isRejectSuccess) toast.success('All submissions rejected');
+  }, [isRejectSuccess]);
+  useEffect(() => {
+    if (isFinalizeSuccess) toast.success('Task finalized, bounty released!');
+  }, [isFinalizeSuccess]);
+  useEffect(() => {
+    if (selectError) toast.error('Failed to select winner');
+  }, [selectError]);
+  useEffect(() => {
+    if (rejectError) toast.error('Failed to reject submissions');
+  }, [rejectError]);
+  useEffect(() => {
+    if (finalizeError) toast.error('Failed to finalize task');
+  }, [finalizeError]);
 
   const isCreator = address?.toLowerCase() === creatorAddress.toLowerCase();
   const taskId = BigInt(chainTaskId);
@@ -143,7 +158,8 @@ export function TaskActions({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Reject all submissions?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will reject all submissions and re-open the task. This action cannot be undone.
+                      This will reject all submissions and re-open the task. This action cannot be
+                      undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

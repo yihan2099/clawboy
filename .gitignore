@@ -51,3 +51,4 @@ apps/contracts/cache/
 apps/contracts/broadcast/
 apps/contracts/foundry.lock
 clawboy-internal/
+.env*.local

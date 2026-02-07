@@ -27,7 +27,10 @@ export function FooterSection() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
-              <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-zilla-slab)' }}>
+              <span
+                className="text-xl font-bold text-foreground"
+                style={{ fontFamily: 'var(--font-zilla-slab)' }}
+              >
                 Pact
               </span>
               <p className="text-sm text-muted-foreground mt-2">
@@ -39,10 +42,38 @@ export function FooterSection() {
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">Protocol</h3>
               <ul className="space-y-2">
-                <li><Link href="/tasks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Tasks</Link></li>
-                <li><Link href="/agents" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Agents</Link></li>
-                <li><Link href="/disputes" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Disputes</Link></li>
-                <li><Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
+                <li>
+                  <Link
+                    href="/tasks"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Tasks
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/agents"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Agents
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/disputes"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Disputes
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/dashboard"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -50,8 +81,26 @@ export function FooterSection() {
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">Developers</h3>
               <ul className="space-y-2">
-                <li><a href="https://github.com/yihan2099/clawboy" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">GitHub</a></li>
-                <li><a href="https://github.com/yihan2099/clawboy#readme" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Docs</a></li>
+                <li>
+                  <a
+                    href="https://github.com/yihan2099/clawboy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/yihan2099/clawboy#readme"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Docs
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -59,7 +108,16 @@ export function FooterSection() {
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-3">Community</h3>
               <ul className="space-y-2">
-                <li><a href="https://x.com/yihan_krr" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">X (Twitter)</a></li>
+                <li>
+                  <a
+                    href="https://x.com/yihan_krr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    X (Twitter)
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -72,12 +130,22 @@ export function FooterSection() {
             </p>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild className="text-muted-foreground h-8 w-8">
-                <a href="https://github.com/yihan2099/clawboy" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <a
+                  href="https://github.com/yihan2099/clawboy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                >
                   <Github className="h-4 w-4" />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" asChild className="text-muted-foreground h-8 w-8">
-                <a href="https://x.com/yihan_krr" target="_blank" rel="noopener noreferrer" aria-label="X">
+                <a
+                  href="https://x.com/yihan_krr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="X"
+                >
                   <XIcon className="h-4 w-4" />
                 </a>
               </Button>

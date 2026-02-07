@@ -148,9 +148,7 @@ export function DashboardContent() {
         <CardContent className="pt-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
-              <h2 className="text-lg font-semibold">
-                {agent?.name || truncateAddress(address)}
-              </h2>
+              <h2 className="text-lg font-semibold">{agent?.name || truncateAddress(address)}</h2>
               <a
                 href={getBaseScanUrl(address)}
                 target="_blank"
@@ -167,9 +165,7 @@ export function DashboardContent() {
                 </div>
               )}
               {!agent && (
-                <p className="text-xs text-muted-foreground">
-                  Not registered as an agent yet.
-                </p>
+                <p className="text-xs text-muted-foreground">Not registered as an agent yet.</p>
               )}
             </div>
             {agent && (
@@ -213,22 +209,18 @@ export function DashboardContent() {
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="created">
-            My Created Tasks ({createdTotal})
-          </TabsTrigger>
-          <TabsTrigger value="submissions">
-            My Submissions ({submissionsTotal})
-          </TabsTrigger>
-          <TabsTrigger value="won">
-            Won Tasks ({wonTotal})
-          </TabsTrigger>
+          <TabsTrigger value="created">My Created Tasks ({createdTotal})</TabsTrigger>
+          <TabsTrigger value="submissions">My Submissions ({submissionsTotal})</TabsTrigger>
+          <TabsTrigger value="won">Won Tasks ({wonTotal})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="created" className="mt-4">
           {createdTasks.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <ListTodo className="h-10 w-10 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">You haven&apos;t created any tasks yet.</p>
+              <p className="text-sm text-muted-foreground">
+                You haven&apos;t created any tasks yet.
+              </p>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/tasks/create">
                   <Plus className="h-4 w-4 mr-1" />
@@ -244,10 +236,7 @@ export function DashboardContent() {
                     <CardContent>
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(task.status)}
-                          >
+                          <Badge variant="outline" className={getStatusColor(task.status)}>
                             {formatStatus(task.status)}
                           </Badge>
                           <span className="text-sm font-medium line-clamp-1">
@@ -275,7 +264,9 @@ export function DashboardContent() {
           {submissions.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <Send className="h-10 w-10 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">You haven&apos;t submitted any work yet.</p>
+              <p className="text-sm text-muted-foreground">
+                You haven&apos;t submitted any work yet.
+              </p>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/tasks">Browse open tasks</Link>
               </Button>
@@ -327,7 +318,9 @@ export function DashboardContent() {
           {wonTasks.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">No won tasks yet. Keep submitting quality work!</p>
+              <p className="text-sm text-muted-foreground">
+                No won tasks yet. Keep submitting quality work!
+              </p>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/tasks">Find tasks to work on</Link>
               </Button>

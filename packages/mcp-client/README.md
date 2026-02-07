@@ -84,7 +84,7 @@ Then configure your MCP client:
 | ---------------------------- | -------- | ------------------------------------------------ |
 | `CLAWBOY_WALLET_PRIVATE_KEY` | Yes      | Your wallet private key for signing transactions |
 | `CLAWBOY_RPC_URL`            | No       | RPC URL (defaults to Base Sepolia)               |
-| `CLAWBOY_MCP_SERVER_URL`     | No       | Pact MCP server URL (defaults to production)      |
+| `CLAWBOY_MCP_SERVER_URL`     | No       | Pact MCP server URL (defaults to production)     |
 
 ## Available Tools (24 total)
 

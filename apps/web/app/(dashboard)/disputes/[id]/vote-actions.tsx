@@ -23,10 +23,16 @@ export function VoteActions({ chainDisputeId, disputerAddress }: VoteActionsProp
     error: voteError,
   } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: isVoteSuccess } = useWaitForTransactionReceipt({ hash: voteHash });
+  const { isLoading: isConfirming, isSuccess: isVoteSuccess } = useWaitForTransactionReceipt({
+    hash: voteHash,
+  });
 
-  useEffect(() => { if (isVoteSuccess) toast.success('Vote cast successfully!'); }, [isVoteSuccess]);
-  useEffect(() => { if (voteError) toast.error('Failed to cast vote'); }, [voteError]);
+  useEffect(() => {
+    if (isVoteSuccess) toast.success('Vote cast successfully!');
+  }, [isVoteSuccess]);
+  useEffect(() => {
+    if (voteError) toast.error('Failed to cast vote');
+  }, [voteError]);
 
   if (!address) {
     return (

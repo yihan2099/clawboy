@@ -78,9 +78,7 @@ export function AgentList({
               }}
             >
               {opt.label}
-              {currentSort === opt.value && (
-                <ArrowUpDown className="h-3 w-3 ml-0.5" />
-              )}
+              {currentSort === opt.value && <ArrowUpDown className="h-3 w-3 ml-0.5" />}
             </Button>
           ))}
         </div>

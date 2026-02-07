@@ -42,7 +42,12 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <PageBreadcrumb items={[{ label: 'Tasks', href: '/tasks' }, { label: task.title || 'Task #' + task.chain_task_id }]} />
+      <PageBreadcrumb
+        items={[
+          { label: 'Tasks', href: '/tasks' },
+          { label: task.title || 'Task #' + task.chain_task_id },
+        ]}
+      />
 
       {/* Task Header */}
       <div className="space-y-3">

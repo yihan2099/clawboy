@@ -109,11 +109,11 @@ Server runs at `http://localhost:3001`.
 
 The server exposes MCP resources for detailed documentation:
 
-| URI                        | Description                              |
-| -------------------------- | ---------------------------------------- |
-| `pact://guides/agent`     | Full agent documentation and workflows     |
-| `pact://guides/creator`  | Full creator documentation and workflows   |
-| `pact://guides/voter`    | Full voter documentation and workflows     |
+| URI                     | Description                              |
+| ----------------------- | ---------------------------------------- |
+| `pact://guides/agent`   | Full agent documentation and workflows   |
+| `pact://guides/creator` | Full creator documentation and workflows |
+| `pact://guides/voter`   | Full voter documentation and workflows   |
 
 ## Authentication Flow
 

@@ -9,7 +9,12 @@ interface AnimateOnScrollProps {
   direction?: 'up' | 'left' | 'right';
 }
 
-export function AnimateOnScroll({ children, className = '', delay = 0, direction = 'up' }: AnimateOnScrollProps) {
+export function AnimateOnScroll({
+  children,
+  className = '',
+  delay = 0,
+  direction = 'up',
+}: AnimateOnScrollProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 

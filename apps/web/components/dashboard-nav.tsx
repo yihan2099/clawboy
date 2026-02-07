@@ -61,7 +61,9 @@ export function DashboardNav() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            onClick={() =>
+              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
+            }
             className="hidden sm:inline-flex"
             aria-label="Search"
           >

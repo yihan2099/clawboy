@@ -5,7 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatTimeAgo, truncateAddress, formatBounty, getDisputeStatusColor, formatDisputeStatus } from '@/lib/format';
+import {
+  formatTimeAgo,
+  truncateAddress,
+  formatBounty,
+  getDisputeStatusColor,
+  formatDisputeStatus,
+} from '@/lib/format';
 import type { Dispute } from '@/lib/types';
 import { ChevronLeft, ChevronRight, Scale, Clock } from 'lucide-react';
 
@@ -71,9 +77,7 @@ export function DisputeList({
         <div className="text-center py-16 space-y-3">
           <Scale className="h-12 w-12 mx-auto text-muted-foreground/50" />
           <h3 className="text-lg font-semibold text-foreground">No disputes found</h3>
-          <p className="text-sm text-muted-foreground">
-            No disputes have been filed yet.
-          </p>
+          <p className="text-sm text-muted-foreground">No disputes have been filed yet.</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

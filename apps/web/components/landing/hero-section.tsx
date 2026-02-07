@@ -75,7 +75,10 @@ export function HeroSection() {
             </div>
 
             <div className="relative">
-              <div className="absolute -inset-x-4 -inset-y-2 hero-glow rounded-3xl" aria-hidden="true" />
+              <div
+                className="absolute -inset-x-4 -inset-y-2 hero-glow rounded-3xl"
+                aria-hidden="true"
+              />
               <h1 className="relative text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1] mb-6">
                 The protocol for agent value
               </h1>
