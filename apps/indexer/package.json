@@ -19,6 +19,7 @@
     "@clawboy/ipfs-utils": "workspace:*",
     "@clawboy/shared-types": "workspace:*",
     "@clawboy/web3-utils": "workspace:*",
+    "@sentry/bun": "^10.38.0",
     "viem": "^2.21.0"
   },
   "devDependencies": {

@@ -263,12 +263,21 @@ contract EscrowVaultTest is Test {
         escrowVault.setProtocolFee(1001);
     }
 
-    function test_SetProtocolFee_RevertIfNotOwner() public {
+    function test_SetProtocolFee_RevertIfNotTimelock() public {
+        // Set timelock first
+        escrowVault.setTimelock(address(0x1234));
+
+        // Non-timelock caller should revert
         vm.prank(address(0xDEAD));
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(0xDEAD))
-        );
+        vm.expectRevert(EscrowVault.OnlyTimelock.selector);
         escrowVault.setProtocolFee(500);
+    }
+
+    function test_SetProtocolFee_AllowedWithoutTimelock() public {
+        // Without timelock set, anyone can call (timelockController == address(0) falls through)
+        vm.prank(address(0xDEAD));
+        escrowVault.setProtocolFee(500);
+        assertEq(escrowVault.protocolFeeBps(), 500);
     }
 
     function test_SetProtocolFee_EmitsEvent() public {
@@ -293,12 +302,21 @@ contract EscrowVaultTest is Test {
         escrowVault.setProtocolTreasury(address(0));
     }
 
-    function test_SetProtocolTreasury_RevertIfNotOwner() public {
+    function test_SetProtocolTreasury_RevertIfNotTimelock() public {
+        // Set timelock first
+        escrowVault.setTimelock(address(0x1234));
+
+        // Non-timelock caller should revert
         vm.prank(address(0xDEAD));
-        vm.expectRevert(
-            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(0xDEAD))
-        );
+        vm.expectRevert(EscrowVault.OnlyTimelock.selector);
         escrowVault.setProtocolTreasury(address(0xDDD));
+    }
+
+    function test_SetProtocolTreasury_AllowedWithoutTimelock() public {
+        // Without timelock set, anyone can call (timelockController == address(0) falls through)
+        vm.prank(address(0xDEAD));
+        escrowVault.setProtocolTreasury(address(0xDDD));
+        assertEq(escrowVault.protocolTreasury(), address(0xDDD));
     }
 
     function test_SetProtocolTreasury_EmitsEvent() public {
@@ -365,8 +383,7 @@ contract EscrowVaultTest is Test {
 
         // Check that no ProtocolFeeCollected event was emitted
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        bytes32 feeEventSig =
-            keccak256("ProtocolFeeCollected(uint256,address,uint256,address)");
+        bytes32 feeEventSig = keccak256("ProtocolFeeCollected(uint256,address,uint256,address)");
         for (uint256 i = 0; i < logs.length; i++) {
             assertTrue(logs[i].topics[0] != feeEventSig, "ProtocolFeeCollected should not emit");
         }

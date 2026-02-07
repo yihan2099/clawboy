@@ -9,7 +9,9 @@ import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IDisputeResolver } from "../src/interfaces/IDisputeResolver.sol";
+import { IEscrowVault } from "../src/interfaces/IEscrowVault.sol";
 
 contract TimelockTest is Test {
     TaskManager public taskManager;
@@ -62,6 +64,7 @@ contract TimelockTest is Test {
         taskManager.setTimelock(address(timelock));
         agentAdapter.setTimelock(address(timelock));
         disputeResolver.setTimelock(address(timelock));
+        escrowVault.setTimelock(address(timelock));
 
         // Configure initial access control via emergency functions
         taskManager.emergencySetDisputeResolver(address(disputeResolver));
@@ -322,6 +325,112 @@ contract TimelockTest is Test {
 
         vm.expectRevert(DisputeResolver.ZeroAddress.selector);
         disputeResolver.setTimelock(address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      ESCROWVAULT TIMELOCK TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_EscrowVault_SetProtocolFee_RequiresTimelock() public {
+        // Direct call should revert (deployer is not timelock)
+        vm.expectRevert(EscrowVault.OnlyTimelock.selector);
+        escrowVault.setProtocolFee(500);
+    }
+
+    function test_EscrowVault_SetProtocolTreasury_RequiresTimelock() public {
+        address newTreasury = address(0x999);
+
+        // Direct call should revert
+        vm.expectRevert(EscrowVault.OnlyTimelock.selector);
+        escrowVault.setProtocolTreasury(newTreasury);
+    }
+
+    function test_EscrowVault_SetProtocolFee_ViaTimelock() public {
+        uint256 newFeeBps = 500; // 5%
+
+        // Schedule the operation
+        bytes memory data = abi.encodeWithSelector(EscrowVault.setProtocolFee.selector, newFeeBps);
+
+        timelock.schedule(address(escrowVault), 0, data, bytes32(0), bytes32(0), TIMELOCK_DELAY);
+
+        // Try to execute before delay - should fail
+        vm.expectRevert();
+        timelock.execute(address(escrowVault), 0, data, bytes32(0), bytes32(0));
+
+        // Warp time past delay
+        vm.warp(block.timestamp + TIMELOCK_DELAY + 1);
+
+        // Execute should succeed now
+        timelock.execute(address(escrowVault), 0, data, bytes32(0), bytes32(0));
+
+        // Verify the change
+        assertEq(escrowVault.protocolFeeBps(), newFeeBps);
+    }
+
+    function test_EscrowVault_SetProtocolTreasury_ViaTimelock() public {
+        address newTreasury = address(0x999);
+
+        // Schedule the operation
+        bytes memory data =
+            abi.encodeWithSelector(EscrowVault.setProtocolTreasury.selector, newTreasury);
+
+        timelock.schedule(address(escrowVault), 0, data, bytes32(0), bytes32(0), TIMELOCK_DELAY);
+
+        // Try to execute before delay - should fail
+        vm.expectRevert();
+        timelock.execute(address(escrowVault), 0, data, bytes32(0), bytes32(0));
+
+        // Warp time past delay
+        vm.warp(block.timestamp + TIMELOCK_DELAY + 1);
+
+        // Execute should succeed now
+        timelock.execute(address(escrowVault), 0, data, bytes32(0), bytes32(0));
+
+        // Verify the change
+        assertEq(escrowVault.protocolTreasury(), newTreasury);
+    }
+
+    function test_EscrowVault_EmergencySetProtocolFee_OnlyOwner() public {
+        // Random user cannot call emergency function
+        vm.prank(randomUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, randomUser)
+        );
+        escrowVault.emergencySetProtocolFee(500);
+
+        // Owner can call
+        escrowVault.emergencySetProtocolFee(500);
+        assertEq(escrowVault.protocolFeeBps(), 500);
+    }
+
+    function test_EscrowVault_EmergencySetProtocolTreasury_OnlyOwner() public {
+        address newTreasury = address(0x999);
+
+        // Random user cannot call emergency function
+        vm.prank(randomUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, randomUser)
+        );
+        escrowVault.emergencySetProtocolTreasury(newTreasury);
+
+        // Owner can call
+        escrowVault.emergencySetProtocolTreasury(newTreasury);
+        assertEq(escrowVault.protocolTreasury(), newTreasury);
+    }
+
+    function test_EscrowVault_EmergencyBypassEmitsEvent() public {
+        vm.expectEmit(true, true, false, false);
+        emit IEscrowVault.EmergencyBypassUsed(deployer, EscrowVault.setProtocolFee.selector);
+        escrowVault.emergencySetProtocolFee(500);
+    }
+
+    function test_EscrowVault_SetTimelock_RevertOnZeroAddress() public {
+        // Deploy a fresh EscrowVault without timelock set
+        address predictedTm = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
+        EscrowVault freshVault = new EscrowVault(predictedTm, treasury, 300);
+
+        vm.expectRevert(EscrowVault.ZeroAddress.selector);
+        freshVault.setTimelock(address(0));
     }
 
     /*//////////////////////////////////////////////////////////////

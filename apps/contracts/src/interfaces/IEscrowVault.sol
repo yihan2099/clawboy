@@ -22,6 +22,8 @@ interface IEscrowVault {
 
     event ProtocolTreasuryUpdated(address oldTreasury, address newTreasury);
 
+    event EmergencyBypassUsed(address indexed caller, bytes4 indexed functionSelector);
+
     function deposit(uint256 taskId, address token, uint256 amount) external payable;
 
     function depositFrom(uint256 taskId, address token, uint256 amount, address from) external;
@@ -40,7 +42,15 @@ interface IEscrowVault {
 
     function accumulatedFees(address token) external view returns (uint256);
 
+    function timelockController() external view returns (address);
+
+    function setTimelock(address _timelock) external;
+
     function setProtocolFee(uint256 newFeeBps) external;
 
     function setProtocolTreasury(address newTreasury) external;
+
+    function emergencySetProtocolFee(uint256 newFeeBps) external;
+
+    function emergencySetProtocolTreasury(address newTreasury) external;
 }

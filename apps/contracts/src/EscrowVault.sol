@@ -32,6 +32,9 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     address public protocolTreasury;
     mapping(address => uint256) public accumulatedFees; // token => total fees collected
 
+    // Access control
+    address public timelockController;
+
     // Errors
     error OnlyTaskManager();
     error EscrowNotFound();
@@ -40,9 +43,18 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     error TransferFailed();
     error FeeTooHigh();
     error InvalidTreasury();
+    error OnlyTimelock();
+    error ZeroAddress();
 
     modifier onlyTaskManager() {
         if (msg.sender != taskManager) revert OnlyTaskManager();
+        _;
+    }
+
+    modifier onlyTimelock() {
+        if (timelockController != address(0) && msg.sender != timelockController) {
+            revert OnlyTimelock();
+        }
         _;
     }
 
@@ -124,7 +136,15 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      * @param recipient The address to receive the bounty
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
      */
-    function release(uint256 taskId, address recipient) external onlyTaskManager nonReentrant whenNotPaused {
+    function release(
+        uint256 taskId,
+        address recipient
+    )
+        external
+        onlyTaskManager
+        nonReentrant
+        whenNotPaused
+    {
         Escrow storage escrow = _escrows[taskId];
         if (escrow.amount == 0) revert EscrowNotFound();
         if (escrow.released) revert EscrowAlreadyReleased();
@@ -166,7 +186,15 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
      * @dev No fee is charged on refunds
      */
-    function refund(uint256 taskId, address creator) external onlyTaskManager nonReentrant whenNotPaused {
+    function refund(
+        uint256 taskId,
+        address creator
+    )
+        external
+        onlyTaskManager
+        nonReentrant
+        whenNotPaused
+    {
         Escrow storage escrow = _escrows[taskId];
         if (escrow.amount == 0) revert EscrowNotFound();
         if (escrow.released) revert EscrowAlreadyReleased();
@@ -186,10 +214,19 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Set the protocol fee in basis points
+     * @notice Set the timelock address (callable by owner, one-time setup)
+     * @param _timelock The TimelockController address
+     */
+    function setTimelock(address _timelock) external onlyOwner {
+        if (_timelock == address(0)) revert ZeroAddress();
+        timelockController = _timelock;
+    }
+
+    /**
+     * @notice Set the protocol fee in basis points (requires timelock)
      * @param newFeeBps The new fee in basis points (max 1000 = 10%)
      */
-    function setProtocolFee(uint256 newFeeBps) external onlyOwner {
+    function setProtocolFee(uint256 newFeeBps) external onlyTimelock {
         if (newFeeBps > MAX_FEE_BPS) revert FeeTooHigh();
         uint256 oldFeeBps = protocolFeeBps;
         protocolFeeBps = newFeeBps;
@@ -197,11 +234,35 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Set the protocol treasury address
+     * @notice Set the protocol treasury address (requires timelock)
      * @param newTreasury The new treasury address
      */
-    function setProtocolTreasury(address newTreasury) external onlyOwner {
+    function setProtocolTreasury(address newTreasury) external onlyTimelock {
         if (newTreasury == address(0)) revert InvalidTreasury();
+        address oldTreasury = protocolTreasury;
+        protocolTreasury = newTreasury;
+        emit ProtocolTreasuryUpdated(oldTreasury, newTreasury);
+    }
+
+    /**
+     * @notice Emergency bypass for setProtocolFee (owner only, emits event for monitoring)
+     * @param newFeeBps The new fee in basis points (max 1000 = 10%)
+     */
+    function emergencySetProtocolFee(uint256 newFeeBps) external onlyOwner {
+        if (newFeeBps > MAX_FEE_BPS) revert FeeTooHigh();
+        emit EmergencyBypassUsed(msg.sender, this.setProtocolFee.selector);
+        uint256 oldFeeBps = protocolFeeBps;
+        protocolFeeBps = newFeeBps;
+        emit ProtocolFeeUpdated(oldFeeBps, newFeeBps);
+    }
+
+    /**
+     * @notice Emergency bypass for setProtocolTreasury (owner only, emits event for monitoring)
+     * @param newTreasury The new treasury address
+     */
+    function emergencySetProtocolTreasury(address newTreasury) external onlyOwner {
+        if (newTreasury == address(0)) revert InvalidTreasury();
+        emit EmergencyBypassUsed(msg.sender, this.setProtocolTreasury.selector);
         address oldTreasury = protocolTreasury;
         protocolTreasury = newTreasury;
         emit ProtocolTreasuryUpdated(oldTreasury, newTreasury);

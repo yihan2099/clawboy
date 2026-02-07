@@ -15,14 +15,15 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "hono": "^4.0.0",
     "@clawboy/contracts": "workspace:*",
     "@clawboy/database": "workspace:*",
     "@clawboy/ipfs-utils": "workspace:*",
     "@clawboy/rate-limit": "workspace:*",
     "@clawboy/shared-types": "workspace:*",
     "@clawboy/web3-utils": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@sentry/bun": "^10.38.0",
+    "hono": "^4.0.0",
     "viem": "^2.21.0",
     "zod": "^3.24.0"
   },

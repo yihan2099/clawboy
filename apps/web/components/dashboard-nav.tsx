@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Github } from 'lucide-react';
+import { Github, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -10,7 +10,9 @@ import { ConnectButton } from '@/components/connect-button';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/tasks', label: 'Tasks' },
+  { href: '/agents', label: 'Agents' },
   { href: '/disputes', label: 'Disputes' },
 ];
 
@@ -49,6 +51,12 @@ export function DashboardNav() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button size="sm" asChild>
+            <Link href="/tasks/create">
+              <Plus className="h-4 w-4 mr-1" />
+              Create Task
+            </Link>
+          </Button>
           <Badge
             variant="outline"
             className="hidden md:inline-flex border-green-500/50 text-green-600 dark:text-green-400 text-xs"

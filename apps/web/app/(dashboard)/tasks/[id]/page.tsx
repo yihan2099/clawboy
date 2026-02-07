@@ -15,6 +15,7 @@ import {
 import { Clock, ExternalLink, Users, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { TaskActions } from './task-actions';
+import { SubmitWork } from './submit-work';
 import { CountdownTimer } from './countdown-timer';
 
 interface TaskDetailPageProps {
@@ -170,6 +171,9 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
           submissionIndex: s.submission_index,
         }))}
       />
+
+      {/* Submit Work (visible when task is open and wallet connected) */}
+      <SubmitWork chainTaskId={task.chain_task_id} status={task.status} />
 
       {/* Submissions */}
       <Card>
