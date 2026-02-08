@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Loader2, Plus, X } from 'lucide-react';
 
@@ -19,9 +19,34 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { taskManagerConfig } from '@/lib/contracts';
+import { taskManagerConfig, BASE_SEPOLIA_ADDRESSES } from '@/lib/contracts';
 import { getSupportedTokens, isNativeToken } from '@clawboy/contracts';
 import { toast } from 'sonner';
+import { uploadTaskSpec } from '@/app/actions/ipfs';
+import type { TaskSpecification } from '@clawboy/shared-types';
+
+const erc20Abi = [
+  {
+    type: 'function',
+    name: 'allowance',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'approve',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const;
 
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
 
@@ -51,7 +76,7 @@ interface FormErrors {
 
 export function CreateTaskForm() {
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -63,9 +88,14 @@ export function CreateTaskForm() {
   const [deadline, setDeadline] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   const supportedTokens = getSupportedTokens(CHAIN_ID);
   const selectedToken = supportedTokens.find((t) => t.symbol === tokenSymbol);
+
+  const bountyAmountParsed =
+    bountyAmount && selectedToken ? parseUnits(bountyAmount, selectedToken.decimals) : BigInt(0);
+  const isErc20 = selectedToken && !isNativeToken(selectedToken.address);
 
   const {
     writeContract,
@@ -75,9 +105,46 @@ export function CreateTaskForm() {
     reset: resetWrite,
   } = useWriteContract();
 
+  const {
+    writeContract: approveToken,
+    data: approveHash,
+    isPending: isApprovePending,
+    error: approveError,
+  } = useWriteContract();
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash: txHash,
   });
+
+  const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: approveHash,
+    });
+
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: isErc20 ? (selectedToken.address as `0x${string}`) : undefined,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address ? [address, BASE_SEPOLIA_ADDRESSES.escrowVault] : undefined,
+    query: { enabled: !!isErc20 && !!address && bountyAmountParsed > BigInt(0) },
+  });
+
+  const needsApproval =
+    isErc20 &&
+    bountyAmountParsed > BigInt(0) &&
+    (allowance === undefined || (allowance as bigint) < bountyAmountParsed);
+
+  // Refetch allowance after approval confirmation
+  useEffect(() => {
+    if (isApproveConfirmed) {
+      toast.success('Token approved!');
+      refetchAllowance();
+    }
+  }, [isApproveConfirmed, refetchAllowance]);
+
+  useEffect(() => {
+    if (approveError) toast.error('Failed to approve token');
+  }, [approveError]);
 
   // Redirect on successful confirmation
   useEffect(() => {
@@ -154,6 +221,16 @@ export function CreateTaskForm() {
     setDeliverables(updated);
   }
 
+  function handleApprove() {
+    if (!selectedToken || !address) return;
+    approveToken({
+      address: selectedToken.address as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [BASE_SEPOLIA_ADDRESSES.escrowVault, bountyAmountParsed],
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     resetWrite();
@@ -176,22 +253,22 @@ export function CreateTaskForm() {
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     };
 
-    // TODO: Upload spec to IPFS via uploadTaskSpecification() from @clawboy/ipfs-utils.
-    // Requires server-side Pinata credentials (PINATA_JWT env var).
-    // Example: const { cid } = await uploadTaskSpecification(spec);
-    const specCid = 'placeholder-spec-cid';
+    let specCid: string;
+    setIsUploading(true);
+    try {
+      const result = await uploadTaskSpec(spec as TaskSpecification);
+      specCid = result.cid;
+    } catch (err) {
+      toast.error('Failed to upload task specification to IPFS');
+      setIsUploading(false);
+      return;
+    }
+    setIsUploading(false);
 
-    const bountyAmountParsed = parseUnits(bountyAmount, selectedToken.decimals);
     const tokenAddress = selectedToken.address as `0x${string}`;
     const deadlineTimestamp = deadline
       ? BigInt(Math.floor(new Date(deadline).getTime() / 1000))
       : BigInt(0);
-
-    // TODO: If token is ERC20 (not ETH), need to check allowance and prompt approval
-    // before calling createTask. Use useReadContract to check allowance, then
-    // useWriteContract to call token.approve(taskManagerAddress, amount).
-
-    void spec; // suppress unused warning — spec is built but upload is stubbed
 
     writeContract({
       ...taskManagerConfig,
@@ -391,9 +468,9 @@ export function CreateTaskForm() {
       </Card>
 
       {/* Error display */}
-      {writeError && (
+      {(writeError || approveError) && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {writeError.message.slice(0, 300)}
+          {(writeError || approveError)!.message.slice(0, 300)}
         </div>
       )}
 
@@ -403,18 +480,53 @@ export function CreateTaskForm() {
           Transaction submitted. Waiting for confirmation...
         </p>
       )}
+      {approveHash && !isApproveConfirmed && (
+        <p className="text-xs text-muted-foreground">
+          Approval submitted. Waiting for confirmation...
+        </p>
+      )}
 
       {/* Submit */}
       <div className="flex gap-3">
-        <Button type="submit" disabled={isPending || isConfirming} className="min-w-[140px]">
-          {(isPending || isConfirming) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-          {isPending ? 'Confirm in Wallet' : isConfirming ? 'Confirming...' : 'Create Task'}
-        </Button>
+        {needsApproval ? (
+          <Button
+            type="button"
+            onClick={handleApprove}
+            disabled={isApprovePending || isApproveConfirming}
+            className="min-w-[140px]"
+          >
+            {(isApprovePending || isApproveConfirming) && (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            )}
+            {isApprovePending
+              ? 'Confirm in Wallet'
+              : isApproveConfirming
+                ? 'Approving...'
+                : `Approve ${selectedToken?.symbol}`}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={isPending || isConfirming || isUploading}
+            className="min-w-[140px]"
+          >
+            {(isPending || isConfirming || isUploading) && (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            )}
+            {isUploading
+              ? 'Uploading...'
+              : isPending
+                ? 'Confirm in Wallet'
+                : isConfirming
+                  ? 'Confirming...'
+                  : 'Create Task'}
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push('/tasks')}
-          disabled={isPending || isConfirming}
+          disabled={isPending || isConfirming || isApprovePending || isApproveConfirming}
         >
           Cancel
         </Button>

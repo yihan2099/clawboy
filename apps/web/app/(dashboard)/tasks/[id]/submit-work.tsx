@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { taskManagerConfig } from '@/lib/contracts';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadSubmission } from '@/app/actions/ipfs';
+import type { WorkSubmission } from '@clawboy/shared-types';
 
 interface SubmitWorkProps {
   chainTaskId: string;
@@ -82,7 +84,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
     setDeliverables((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setValidationError(null);
 
     // Validate summary
@@ -105,8 +107,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
     }
 
     // Build WorkSubmission object
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _submission = {
+    const submission = {
       version: '1.0' as const,
       taskId: chainTaskId,
       summary: summary.trim(),
@@ -119,9 +120,14 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       submittedAt: new Date().toISOString(),
     };
 
-    // TODO: Upload _submission to IPFS via Pinata (needs server-side credentials).
-    // For now, use a placeholder CID.
-    const submissionCid = 'ipfs://placeholder-submission-cid';
+    let submissionCid: string;
+    try {
+      const result = await uploadSubmission(submission as unknown as WorkSubmission);
+      submissionCid = `ipfs://${result.cid}`;
+    } catch (err) {
+      setValidationError('Failed to upload submission to IPFS. Please try again.');
+      return;
+    }
 
     writeContract({
       ...taskManagerConfig,

@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { truncateAddress, getBaseScanUrl, formatTimeAgo, getIpfsUrl } from '@/lib/format';
 import { ExternalLink, Trophy, Shield, ShieldAlert, Weight, Globe, Clock } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/page-breadcrumb';
+import { EditProfile } from './edit-profile';
+import { FeedbackHistory } from './feedback-history';
 
 interface AgentProfilePageProps {
   params: Promise<{ address: string }>;
@@ -87,6 +89,12 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
           Joined {formatTimeAgo(agent.registered_at)}
         </div>
       </div>
+
+      <EditProfile
+        agentAddress={agent.address}
+        currentName={agent.name || ''}
+        currentSkills={agent.skills}
+      />
 
       {/* Stats Grid */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,6 +178,8 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
           </CardContent>
         </Card>
       )}
+
+      <FeedbackHistory agentAddress={agent.address} />
 
       {/* Recent Submissions */}
       <Card>

@@ -15,6 +15,7 @@ import { ExternalLink, Scale } from 'lucide-react';
 import Link from 'next/link';
 import { PageBreadcrumb } from '@/components/page-breadcrumb';
 import { VoteActions } from './vote-actions';
+import { ResolveDispute } from './resolve-dispute';
 import { CountdownTimer } from '../../tasks/[id]/countdown-timer';
 
 interface DisputeDetailPageProps {
@@ -169,6 +170,15 @@ export default async function DisputeDetailPage({ params }: DisputeDetailPagePro
         <VoteActions
           chainDisputeId={dispute.chain_dispute_id}
           disputerAddress={dispute.disputer_address}
+        />
+      )}
+
+      {/* Resolve Dispute (when voting deadline passed) */}
+      {dispute.status === 'active' && new Date(dispute.voting_deadline) < new Date() && (
+        <ResolveDispute
+          chainDisputeId={dispute.chain_dispute_id}
+          votesFor={votesFor}
+          votesAgainst={votesAgainst}
         />
       )}
 
