@@ -30,7 +30,7 @@
   "devDependencies": {
     "@clawboy/eslint-config": "workspace:*",
     "@types/bun": "latest",
-    "eslint": "^9",
+    "eslint": "^10",
     "typescript": "^5.7.3"
   }
 }
