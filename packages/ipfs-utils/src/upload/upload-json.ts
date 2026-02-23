@@ -78,13 +78,19 @@ export async function uploadJson(
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
-        const upload = await pinata.upload.json(data, {
-          metadata: {
-            name: pinataOptions.name || 'clawboy-data.json',
-            keyvalues: pinataOptions.keyvalues,
-          },
-          groupId,
-        });
+        let builder = isPublic
+          ? pinata.upload.public.json(data)
+          : pinata.upload.private.json(data);
+
+        builder = builder.name(pinataOptions.name || 'clawboy-data.json');
+        if (pinataOptions.keyvalues) {
+          builder = builder.keyvalues(pinataOptions.keyvalues);
+        }
+        if (groupId) {
+          builder = builder.group(groupId);
+        }
+
+        const upload = await builder;
 
         clearTimeout(timeoutId);
 

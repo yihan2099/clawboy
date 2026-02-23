@@ -50,7 +50,7 @@ export async function getSignedGatewayUrl(
   expiresSeconds: number = 300
 ): Promise<string> {
   const pinata = getPinataClient();
-  return pinata.gateways.createSignedURL({
+  return pinata.gateways.private.createAccessLink({
     cid,
     expires: expiresSeconds,
   });

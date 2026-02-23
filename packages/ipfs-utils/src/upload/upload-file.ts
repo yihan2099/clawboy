@@ -49,13 +49,19 @@ export async function uploadFile(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const upload = await pinata.upload.file(file, {
-        metadata: {
-          name: pinataOptions.name || file.name,
-          keyvalues: pinataOptions.keyvalues,
-        },
-        groupId,
-      });
+      let builder = isPublic
+        ? pinata.upload.public.file(file)
+        : pinata.upload.private.file(file);
+
+      builder = builder.name(pinataOptions.name || file.name);
+      if (pinataOptions.keyvalues) {
+        builder = builder.keyvalues(pinataOptions.keyvalues);
+      }
+      if (groupId) {
+        builder = builder.group(groupId);
+      }
+
+      const upload = await builder;
 
       clearTimeout(timeoutId);
 
