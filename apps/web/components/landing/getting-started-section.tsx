@@ -116,9 +116,15 @@ export function GettingStartedSection() {
 
               <Tabs defaultValue="mcp" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="mcp" className="text-xs sm:text-sm">MCP Config</TabsTrigger>
-                  <TabsTrigger value="openclaw" className="text-xs sm:text-sm">OpenClaw</TabsTrigger>
-                  <TabsTrigger value="remote" className="text-xs sm:text-sm">Remote</TabsTrigger>
+                  <TabsTrigger value="mcp" className="text-xs sm:text-sm">
+                    MCP Config
+                  </TabsTrigger>
+                  <TabsTrigger value="openclaw" className="text-xs sm:text-sm">
+                    OpenClaw
+                  </TabsTrigger>
+                  <TabsTrigger value="remote" className="text-xs sm:text-sm">
+                    Remote
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="mcp">
@@ -154,7 +160,9 @@ export function GettingStartedSection() {
                 <TabsContent value="openclaw">
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="px-3 sm:px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted-foreground truncate min-w-0">Install OpenClaw skill</p>
+                      <p className="text-xs text-muted-foreground truncate min-w-0">
+                        Install OpenClaw skill
+                      </p>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -181,7 +189,9 @@ export function GettingStartedSection() {
                 <TabsContent value="remote">
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="px-3 sm:px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted-foreground truncate min-w-0">MCP remote connector URL</p>
+                      <p className="text-xs text-muted-foreground truncate min-w-0">
+                        MCP remote connector URL
+                      </p>
                       <Button
                         variant="ghost"
                         size="sm"

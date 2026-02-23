@@ -264,39 +264,38 @@ export function TaskActions({
                 Select Winner
               </Button>
 
-            {status === 'open' && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isAnyPending}>
-                    Cancel Task
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel this task?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will cancel the task and refund the bounty to your wallet. This cannot be
-                      undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep Task</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        cancelTask({
-                          ...taskManagerConfig,
-                          functionName: 'cancelTask',
-                          args: [taskId],
-                        });
-                      }}
-                    >
+              {status === 'open' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isAnyPending}>
                       Cancel Task
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel this task?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will cancel the task and refund the bounty to your wallet. This cannot
+                        be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Task</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          cancelTask({
+                            ...taskManagerConfig,
+                            functionName: 'cancelTask',
+                            args: [taskId],
+                          });
+                        }}
+                      >
+                        Cancel Task
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
             {status === 'open' && submissions.length === 0 && (
               <p className="text-sm text-muted-foreground">

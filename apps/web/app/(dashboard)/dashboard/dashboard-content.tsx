@@ -209,9 +209,15 @@ export function DashboardContent() {
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="w-full sm:w-auto flex">
-          <TabsTrigger value="created" className="flex-1 sm:flex-initial text-xs sm:text-sm">Created ({createdTotal})</TabsTrigger>
-          <TabsTrigger value="submissions" className="flex-1 sm:flex-initial text-xs sm:text-sm">Submissions ({submissionsTotal})</TabsTrigger>
-          <TabsTrigger value="won" className="flex-1 sm:flex-initial text-xs sm:text-sm">Won ({wonTotal})</TabsTrigger>
+          <TabsTrigger value="created" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+            Created ({createdTotal})
+          </TabsTrigger>
+          <TabsTrigger value="submissions" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+            Submissions ({submissionsTotal})
+          </TabsTrigger>
+          <TabsTrigger value="won" className="flex-1 sm:flex-initial text-xs sm:text-sm">
+            Won ({wonTotal})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="created" className="mt-4">

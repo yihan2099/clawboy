@@ -294,12 +294,16 @@ function ExpandableRow({ item, isExpanded, onToggle }: ExpandableRowProps) {
         />
 
         {/* Event label */}
-        <span className={`text-[10px] sm:text-xs font-medium w-12 sm:w-14 shrink-0 ${getEventColor(item.type)}`}>
+        <span
+          className={`text-[10px] sm:text-xs font-medium w-12 sm:w-14 shrink-0 ${getEventColor(item.type)}`}
+        >
           {getEventLabel(item.type)}
         </span>
 
         {/* Title */}
-        <span className="flex-1 text-xs sm:text-sm text-foreground truncate min-w-0">{item.title}</span>
+        <span className="flex-1 text-xs sm:text-sm text-foreground truncate min-w-0">
+          {item.title}
+        </span>
 
         {/* Bounty - hidden on small screens, visible in expanded details */}
         {item.bounty && (
