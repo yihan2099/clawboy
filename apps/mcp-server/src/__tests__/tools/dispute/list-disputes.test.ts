@@ -40,7 +40,7 @@ dbMock.getSupabaseClient.mockReturnValue({
   from: () => mockSupabaseQuery,
 });
 
-mock.module('@clawboy/database', () => dbMock);
+mock.module('@pactprotocol/database', () => dbMock);
 
 mock.module('../../../utils/error-sanitizer', () => ({
   sanitizeErrorMessage: (e: any) => e?.message || String(e),

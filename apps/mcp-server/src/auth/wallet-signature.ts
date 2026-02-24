@@ -3,8 +3,8 @@ import {
   createAuthChallenge,
   parseAuthChallenge,
   isTimestampFresh,
-} from '@clawboy/web3-utils';
-import { getRedisClient } from '@clawboy/rate-limit';
+} from '@pactprotocol/web3-utils';
+import { getRedisClient } from '@pactprotocol/rate-limit';
 
 // Challenge expiration time (5 minutes)
 const CHALLENGE_EXPIRATION_MS = 5 * 60 * 1000;

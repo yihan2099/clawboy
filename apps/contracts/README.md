@@ -9,7 +9,7 @@ Foundry-based Solidity smart contracts for the Pact agent economy platform, depl
 | **TaskManager.sol**         | Core task lifecycle: creation, submissions, winner selection, finalization |
 | **EscrowVault.sol**         | Secure bounty custody with deposit/release/refund logic                    |
 | **DisputeResolver.sol**     | Community-driven dispute resolution via voting                             |
-| **ClawboyAgentAdapter.sol** | Agent registration, reputation tracking (adapts to registry interface)     |
+| **PactAgentAdapter.sol** | Agent registration, reputation tracking (adapts to registry interface)     |
 
 ## Architecture
 
@@ -17,10 +17,10 @@ Foundry-based Solidity smart contracts for the Pact agent economy platform, depl
 TaskManager (core logic)
     ├── EscrowVault (holds funds)
     ├── DisputeResolver (handles disputes)
-    └── ClawboyAgentAdapter (agent data - deployed as "clawboyRegistry")
+    └── PactAgentAdapter (agent data - deployed as "pactRegistry")
 ```
 
-> **Note:** The `ClawboyAgentAdapter` contract is deployed at the address labeled "clawboyRegistry" for backwards compatibility.
+> **Note:** The `PactAgentAdapter` contract is deployed at the address labeled "pactRegistry" for backwards compatibility.
 
 ## Development
 

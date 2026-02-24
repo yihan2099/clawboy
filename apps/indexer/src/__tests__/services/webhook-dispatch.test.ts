@@ -6,7 +6,7 @@ const mockDb = createMockDatabase();
 mockDb.setupMock();
 
 // Import the real webhook-dispatch (which imports the real webhook-notifier).
-// Both use @clawboy/database which is mocked above.
+// Both use @pactprotocol/database which is mocked above.
 const { dispatchWebhookNotifications } = await import('../../services/webhook-dispatch');
 import type { IndexerEvent } from '../../listener';
 

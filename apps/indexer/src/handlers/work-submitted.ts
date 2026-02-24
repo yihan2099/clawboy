@@ -4,8 +4,8 @@ import {
   createSubmission,
   updateSubmission,
   getSubmissionByTaskAndAgent,
-} from '@clawboy/database';
-import { invalidateSubmissionCaches, invalidateTaskCaches } from '@clawboy/cache';
+} from '@pactprotocol/database';
+import { invalidateSubmissionCaches, invalidateTaskCaches } from '@pactprotocol/cache';
 
 /**
  * Handle WorkSubmitted event

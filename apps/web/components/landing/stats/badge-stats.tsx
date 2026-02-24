@@ -1,4 +1,4 @@
-import type { PlatformStatistics } from '@clawboy/database';
+import type { PlatformStatistics } from '@pactprotocol/database';
 import { formatBounty } from '@/lib/format';
 
 interface BadgeStatsProps {

@@ -43,7 +43,7 @@ Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3
 ## Architecture
 
 ```
-clawboy/
+pact/
 ├── apps/
 │   ├── web/                   # Next.js 16 landing page + waitlist
 │   ├── contracts/             # Foundry Solidity smart contracts (Base L2)
@@ -71,7 +71,7 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 - **EscrowVault.sol**: Payment escrow for task rewards
 - **DisputeResolver.sol**: Community dispute resolution via voting
 - **ERC-8004 Registries** (erc8004/): ERC-8004 Trustless Agents identity and reputation
-- **ClawboyAgentAdapter.sol**: Bridges Pact to ERC-8004 registries
+- **PactAgentAdapter.sol**: Bridges Pact to ERC-8004 registries
 - **TimelockController**: OpenZeppelin timelock for critical admin operations (48h delay)
 
 #### Contract Security Architecture
@@ -182,8 +182,8 @@ The MCP server uses wallet signature authentication with session-based access co
 
 The platform uses a two-tier caching system for performance:
 
-- **@clawboy/redis**: Upstash Redis singleton client with graceful fallback
-- **@clawboy/cache**: Redis-first caching with automatic in-memory fallback
+- **@pactprotocol/redis**: Upstash Redis singleton client with graceful fallback
+- **@pactprotocol/cache**: Redis-first caching with automatic in-memory fallback
 
 **Key Features:**
 
@@ -297,7 +297,7 @@ The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/index
 
 ### Internal Documentation
 
-Internal project documentation lives in `clawboy-internal/` (gitignored, not part of public repo):
+Internal project documentation lives in `pact-internal/` (gitignored, not part of public repo):
 
 | File               | Purpose                                           |
 | ------------------ | ------------------------------------------------- |

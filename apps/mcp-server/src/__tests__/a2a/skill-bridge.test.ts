@@ -79,10 +79,10 @@ mock.module('../../services/task-service', () => ({
   createTaskHandler: mock(() => Promise.resolve({ specificationCid: 'QmTest', specification: {} })),
 }));
 
-mock.module('@clawboy/contracts', () => contractsMock);
-mock.module('@clawboy/web3-utils', () => web3Mock);
-mock.module('@clawboy/database', () => dbMock);
-mock.module('@clawboy/ipfs-utils', () => ipfsMock);
+mock.module('@pactprotocol/contracts', () => contractsMock);
+mock.module('@pactprotocol/web3-utils', () => web3Mock);
+mock.module('@pactprotocol/database', () => dbMock);
+mock.module('@pactprotocol/ipfs-utils', () => ipfsMock);
 
 mock.module('../../config/chain', () => ({
   getChainId: () => 84532,

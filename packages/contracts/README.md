@@ -1,4 +1,4 @@
-# @clawboy/contracts
+# @pactprotocol/contracts
 
 TypeScript package providing contract ABIs, addresses, token configurations, and types for interacting with Pact smart contracts.
 
@@ -13,8 +13,8 @@ TypeScript package providing contract ABIs, addresses, token configurations, and
 ## Usage
 
 ```ts
-import { TaskManagerABI, getAddresses } from '@clawboy/contracts';
-import { SUPPORTED_TOKENS } from '@clawboy/contracts';
+import { TaskManagerABI, getAddresses } from '@pactprotocol/contracts';
+import { SUPPORTED_TOKENS } from '@pactprotocol/contracts';
 ```
 
 ## License

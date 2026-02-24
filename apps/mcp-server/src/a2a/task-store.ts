@@ -5,7 +5,7 @@
  * Follows the same pattern as session-manager.ts.
  */
 
-import { getRedisClient } from '@clawboy/rate-limit';
+import { getRedisClient } from '@pactprotocol/rate-limit';
 import type { A2ATask, A2ATaskStatus, A2ATaskOutput, A2ATaskError } from './types';
 
 // Task expiration: 7 days for authenticated sessions

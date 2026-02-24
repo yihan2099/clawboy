@@ -16,8 +16,8 @@ mock.module('../../../services/task-service', () => ({
   getTaskHandler: mockGetTaskHandler,
 }));
 
-mock.module('@clawboy/ipfs-utils', () => ipfsMock);
-mock.module('@clawboy/database', () => dbMock);
+mock.module('@pactprotocol/ipfs-utils', () => ipfsMock);
+mock.module('@pactprotocol/database', () => dbMock);
 
 import { submitWorkTool, submitWorkSchema } from '../../../tools/agent/submit-work';
 

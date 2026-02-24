@@ -80,7 +80,7 @@ sudo apt update && sudo apt upgrade -y && sudo apt install -y git
 curl -fsSL https://bun.sh/install | bash && source ~/.bashrc
 
 # Clone and build
-git clone https://github.com/yihan2099/clawboy.git && cd clawboy
+git clone https://github.com/yihan2099/pact.git && cd pact
 bun install
 cd apps/mcp-server && bun run build
 cd ../indexer && bun run build
@@ -93,7 +93,7 @@ Create `.env` files for both services (see [Environment Variables](#environment-
 <details>
 <summary>Systemd service files</summary>
 
-**MCP Server** (`/etc/systemd/system/clawboy-mcp.service`):
+**MCP Server** (`/etc/systemd/system/pact-mcp.service`):
 
 ```ini
 [Unit]
@@ -103,7 +103,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/clawboy/apps/mcp-server
+WorkingDirectory=/home/ubuntu/pact/apps/mcp-server
 ExecStart=/home/ubuntu/.bun/bin/bun run start
 Restart=always
 RestartSec=10
@@ -113,7 +113,7 @@ Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
 WantedBy=multi-user.target
 ```
 
-**Indexer** (`/etc/systemd/system/clawboy-indexer.service`):
+**Indexer** (`/etc/systemd/system/pact-indexer.service`):
 
 ```ini
 [Unit]
@@ -123,7 +123,7 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/clawboy/apps/indexer
+WorkingDirectory=/home/ubuntu/pact/apps/indexer
 ExecStart=/home/ubuntu/.bun/bin/bun run start
 Restart=always
 RestartSec=10
@@ -138,20 +138,20 @@ WantedBy=multi-user.target
 ```bash
 # Enable and start
 sudo systemctl daemon-reload
-sudo systemctl enable clawboy-mcp clawboy-indexer
-sudo systemctl start clawboy-mcp clawboy-indexer
+sudo systemctl enable pact-mcp pact-indexer
+sudo systemctl start pact-mcp pact-indexer
 
 # Verify
-sudo systemctl status clawboy-mcp clawboy-indexer
+sudo systemctl status pact-mcp pact-indexer
 curl http://localhost:3001/health
 ```
 
 ### 5. Updating
 
 ```bash
-cd ~/clawboy && git pull origin main && bun install
+cd ~/pact && git pull origin main && bun install
 cd apps/mcp-server && bun run build && cd ../indexer && bun run build
-sudo systemctl restart clawboy-mcp clawboy-indexer
+sudo systemctl restart pact-mcp pact-indexer
 ```
 
 ### Troubleshooting
@@ -159,7 +159,7 @@ sudo systemctl restart clawboy-mcp clawboy-indexer
 | Issue                 | Solution                                               |
 | --------------------- | ------------------------------------------------------ |
 | Out of Host Capacity  | Try different availability domain or region            |
-| Services not starting | Check logs: `sudo journalctl -u clawboy-mcp -n 100`    |
+| Services not starting | Check logs: `sudo journalctl -u pact-mcp -n 100`    |
 | Port not accessible   | Verify OCI security rules and check `sudo iptables -L` |
 
 ---

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronRight, ArrowUpRight } from 'lucide-react';
-import type { DetailedTask, DetailedDispute, SubmissionWithTask } from '@clawboy/database';
+import type { DetailedTask, DetailedDispute, SubmissionWithTask } from '@pactprotocol/database';
 import {
   formatTimeAgo,
   formatTimeCompact,

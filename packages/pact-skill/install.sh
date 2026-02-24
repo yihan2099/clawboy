@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Clawboy Skill Installer for OpenClaw
+# Pact Skill Installer for OpenClaw
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/clawboy/clawboy/main/packages/openclaw-skill/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/pact/pact/main/packages/pact-skill/install.sh | bash
 #
 # Or manually:
 #   ./install.sh
@@ -30,7 +30,7 @@ echo "                                       __/ |"
 echo "                                      |___/ "
 echo -e "${NC}"
 echo ""
-echo "Clawboy Skill Installer for OpenClaw"
+echo "Pact Skill Installer for OpenClaw"
 echo "============================================"
 echo ""
 
@@ -98,62 +98,62 @@ fi
 echo -e "${GREEN}✓ Skills directory: ${SKILLS_DIR}${NC}"
 
 echo ""
-echo -e "${YELLOW}Installing Clawboy skill...${NC}"
+echo -e "${YELLOW}Installing Pact skill...${NC}"
 
 # Create skill directory
-CLAWBOY_SKILL_DIR="$SKILLS_DIR/clawboy"
-mkdir -p "$CLAWBOY_SKILL_DIR"
+PACT_SKILL_DIR="$SKILLS_DIR/pact"
+mkdir -p "$PACT_SKILL_DIR"
 
 # Install the package
-cd "$CLAWBOY_SKILL_DIR"
+cd "$PACT_SKILL_DIR"
 
 # Initialize package.json if needed
 if [ ! -f "package.json" ]; then
-    echo '{"name": "clawboy-skill", "type": "module"}' > package.json
+    echo '{"name": "pact-skill", "type": "module"}' > package.json
 fi
 
-# Install Clawboy packages
-echo "Installing @clawboy/openclaw-skill..."
+# Install Pact packages
+echo "Installing @pactprotocol/pact-skill..."
 case $PKG_MANAGER in
     bun)
-        bun add @clawboy/openclaw-skill
+        bun add @pactprotocol/pact-skill
         ;;
     pnpm)
-        pnpm add @clawboy/openclaw-skill
+        pnpm add @pactprotocol/pact-skill
         ;;
     yarn)
-        yarn add @clawboy/openclaw-skill
+        yarn add @pactprotocol/pact-skill
         ;;
     npm)
-        npm install @clawboy/openclaw-skill
+        npm install @pactprotocol/pact-skill
         ;;
 esac
 
 # Copy SKILL.md to skill directory
-if [ -f "node_modules/@clawboy/openclaw-skill/SKILL.md" ]; then
-    cp node_modules/@clawboy/openclaw-skill/SKILL.md ./SKILL.md
+if [ -f "node_modules/@pactprotocol/pact-skill/SKILL.md" ]; then
+    cp node_modules/@pactprotocol/pact-skill/SKILL.md ./SKILL.md
 fi
 
 echo ""
-echo -e "${GREEN}✓ Clawboy skill installed successfully!${NC}"
+echo -e "${GREEN}✓ Pact skill installed successfully!${NC}"
 echo ""
 
 # Configuration prompt
 echo -e "${YELLOW}Configuration${NC}"
 echo "============="
 echo ""
-echo "To use Clawboy, you need to configure your wallet."
+echo "To use Pact, you need to configure your wallet."
 echo ""
 echo "Option 1: Add to ~/.openclaw/openclaw.json:"
 echo ""
 echo -e "${BLUE}{"
 echo '  "skills": {'
 echo '    "entries": {'
-echo '      "clawboy": {'
+echo '      "pact": {'
 echo '        "enabled": true,'
 echo '        "env": {'
-echo '          "CLAWBOY_WALLET_PRIVATE_KEY": "0x...",'
-echo '          "CLAWBOY_SERVER_URL": "https://mcp.clawboy.io"'
+echo '          "PACT_WALLET_PRIVATE_KEY": "0x...",'
+echo '          "PACT_SERVER_URL": "https://mcp.pact.io"'
 echo '        }'
 echo '      }'
 echo '    }'
@@ -162,8 +162,8 @@ echo -e "}${NC}"
 echo ""
 echo "Option 2: Set environment variables:"
 echo ""
-echo -e "${BLUE}export CLAWBOY_WALLET_PRIVATE_KEY=\"0x...\"${NC}"
-echo -e "${BLUE}export CLAWBOY_SERVER_URL=\"https://mcp.clawboy.io\"${NC}"
+echo -e "${BLUE}export PACT_WALLET_PRIVATE_KEY=\"0x...\"${NC}"
+echo -e "${BLUE}export PACT_SERVER_URL=\"https://mcp.pact.io\"${NC}"
 echo ""
 echo -e "${YELLOW}Security Note:${NC}"
 echo "- Use a dedicated agent wallet, not your main wallet"
@@ -173,8 +173,8 @@ echo ""
 echo -e "${GREEN}Setup complete! Restart OpenClaw to load the skill.${NC}"
 echo ""
 echo "Quick start:"
-echo "  1. Tell your agent: \"List open tasks on Clawboy\""
-echo "  2. Or use CLI: clawboy list-tasks --status open"
+echo "  1. Tell your agent: \"List open tasks on Pact\""
+echo "  2. Or use CLI: pact list-tasks --status open"
 echo ""
-echo "Documentation: https://docs.clawboy.io"
-echo "Support: https://github.com/clawboy/clawboy/issues"
+echo "Documentation: https://docs.pact.io"
+echo "Support: https://github.com/pact/pact/issues"

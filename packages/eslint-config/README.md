@@ -1,4 +1,4 @@
-# @clawboy/eslint-config
+# @pactprotocol/eslint-config
 
 Shared ESLint configuration for the Pact monorepo. Uses ESLint 9 flat config with TypeScript support.
 
@@ -14,7 +14,7 @@ Shared ESLint configuration for the Pact monorepo. Uses ESLint 9 flat config wit
 In your `eslint.config.mjs`:
 
 ```js
-import baseConfig from '@clawboy/eslint-config';
+import baseConfig from '@pactprotocol/eslint-config';
 
 export default [...baseConfig];
 ```

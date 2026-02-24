@@ -56,7 +56,7 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         await handleTaskDisputed(event);
         break;
 
-      // ClawboyAgentAdapter events (ERC-8004)
+      // PactAgentAdapter events (ERC-8004)
       case 'AgentRegistered':
         await handleAgentRegistered(event);
         break;

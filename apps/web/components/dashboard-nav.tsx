@@ -73,7 +73,7 @@ export function DashboardNav() {
           <div className="hidden sm:flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild>
               <a
-                href="https://github.com/yihan2099/clawboy"
+                href="https://github.com/yihan2099/pact"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"

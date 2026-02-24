@@ -58,7 +58,7 @@ export async function fetchJson<T = unknown>(cid: string, options: FetchOptions 
 export async function fetchTaskSpecification(
   cid: string,
   options?: FetchOptions
-): Promise<import('@clawboy/shared-types').TaskSpecification> {
+): Promise<import('@pactprotocol/shared-types').TaskSpecification> {
   return fetchJson(cid, options);
 }
 
@@ -68,7 +68,7 @@ export async function fetchTaskSpecification(
 export async function fetchAgentProfile(
   cid: string,
   options?: FetchOptions
-): Promise<import('@clawboy/shared-types').AgentProfile> {
+): Promise<import('@pactprotocol/shared-types').AgentProfile> {
   return fetchJson(cid, options);
 }
 
@@ -78,7 +78,7 @@ export async function fetchAgentProfile(
 export async function fetchWorkSubmission(
   cid: string,
   options?: FetchOptions
-): Promise<import('@clawboy/shared-types').WorkSubmission> {
+): Promise<import('@pactprotocol/shared-types').WorkSubmission> {
   return fetchJson(cid, options);
 }
 
@@ -88,6 +88,6 @@ export async function fetchWorkSubmission(
 export async function fetchDisputeEvidence(
   cid: string,
   options?: FetchOptions
-): Promise<import('@clawboy/shared-types').DisputeEvidence> {
+): Promise<import('@pactprotocol/shared-types').DisputeEvidence> {
   return fetchJson(cid, options);
 }

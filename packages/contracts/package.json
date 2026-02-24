@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/contracts",
+  "name": "@pactprotocol/contracts",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -18,7 +18,7 @@
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
     "eslint": "^9",
     "typescript": "^5.7.3"
   }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { getDisputesReadyForResolution } from '@clawboy/database';
-import { getSupabaseClient } from '@clawboy/database';
-import type { DisputeStatus } from '@clawboy/shared-types';
+import { getDisputesReadyForResolution } from '@pactprotocol/database';
+import { getSupabaseClient } from '@pactprotocol/database';
+import type { DisputeStatus } from '@pactprotocol/shared-types';
 import { sanitizeErrorMessage } from '../../utils/error-sanitizer';
 
 export const listDisputesSchema = z.object({

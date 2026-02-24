@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
 import { ITaskManager } from "./interfaces/ITaskManager.sol";
-import { IClawboyAgentAdapter } from "./IClawboyAgentAdapter.sol";
+import { IPactAgentAdapter } from "./IPactAgentAdapter.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
@@ -21,10 +21,10 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     uint256 public constant MAX_VOTERS_PER_DISPUTE = 500; // Prevent gas exhaustion in resolution
     uint256 public constant VOTER_REP_BATCH_SIZE = 50; // Max voters processed per batch call
     /// @dev VOTE_CORRECT_DELTA and VOTE_INCORRECT_DELTA are passed to
-    ///      ClawboyAgentAdapter.updateVoterReputation(), which only uses the *sign*
+    ///      PactAgentAdapter.updateVoterReputation(), which only uses the *sign*
     ///      of the delta (positive → reward, negative → penalty). The actual reputation
     ///      values written on-chain are VOTE_CORRECT_VALUE / VOTE_INCORRECT_VALUE
-    ///      defined in ClawboyAgentAdapter. Keep both pairs in sync if you change them.
+    ///      defined in PactAgentAdapter. Keep both pairs in sync if you change them.
     int256 constant VOTE_CORRECT_DELTA = 3; // Reputation reward for voting with majority
     int256 constant VOTE_INCORRECT_DELTA = -2; // Reputation penalty for voting against majority
 
@@ -43,7 +43,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
 
     // External contracts
     ITaskManager public immutable taskManager;
-    IClawboyAgentAdapter public immutable agentAdapter;
+    IPactAgentAdapter public immutable agentAdapter;
 
     // Access control
     address public owner;
@@ -114,7 +114,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
 
     constructor(address _taskManager, address _agentAdapter) {
         taskManager = ITaskManager(_taskManager);
-        agentAdapter = IClawboyAgentAdapter(_agentAdapter);
+        agentAdapter = IPactAgentAdapter(_agentAdapter);
         owner = msg.sender;
     }
 

@@ -1,4 +1,4 @@
-import { getAgentByAddress } from '@clawboy/database';
+import { getAgentByAddress } from '@pactprotocol/database';
 
 export interface WebhookPayload {
   event: string;

@@ -1,6 +1,6 @@
 import type { IndexerEvent } from '../listener';
-import { getDisputeByChainId, createDisputeVote } from '@clawboy/database';
-import { invalidateDisputeCaches } from '@clawboy/cache';
+import { getDisputeByChainId, createDisputeVote } from '@pactprotocol/database';
+import { invalidateDisputeCaches } from '@pactprotocol/cache';
 
 /**
  * Handle VoteSubmitted event

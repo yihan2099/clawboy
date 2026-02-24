@@ -5,7 +5,7 @@ import {
   getSubmissionsByAgent,
   listTasks,
   calculateVoteWeight,
-} from '@clawboy/database/queries';
+} from '@pactprotocol/database/queries';
 
 export async function fetchAgentProfile(address: string) {
   const agent = await getAgentByAddress(address);

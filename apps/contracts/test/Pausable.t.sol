@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import { Test } from "forge-std/Test.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
-import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { PactAgentAdapter } from "../src/PactAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
@@ -16,7 +16,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 contract PausableTest is Test {
     TaskManager public taskManager;
     EscrowVault public escrowVault;
-    ClawboyAgentAdapter public agentAdapter;
+    PactAgentAdapter public agentAdapter;
     ERC8004IdentityRegistry public identityRegistry;
     ERC8004ReputationRegistry public reputationRegistry;
     DisputeResolver public disputeResolver;
@@ -35,7 +35,7 @@ contract PausableTest is Test {
         identityRegistry = new ERC8004IdentityRegistry();
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
         agentAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         address predictedTaskManager =
             vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);

@@ -1,6 +1,6 @@
-import { getPublicClient, getBlockNumber } from '@clawboy/web3-utils';
-import { getContractAddresses } from '@clawboy/contracts';
-import { getLastSyncedBlock, updateSyncState } from '@clawboy/database';
+import { getPublicClient, getBlockNumber } from '@pactprotocol/web3-utils';
+import { getContractAddresses } from '@pactprotocol/contracts';
+import { getLastSyncedBlock, updateSyncState } from '@pactprotocol/database';
 import type { Log } from 'viem';
 
 export interface EventListener {
@@ -206,7 +206,7 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      // ============ ClawboyAgentAdapter Events (ERC-8004) ============
+      // ============ PactAgentAdapter Events (ERC-8004) ============
 
       // AgentRegistered (from ERC-8004 adapter)
       const agentRegisteredLogs = await publicClient.getLogs({

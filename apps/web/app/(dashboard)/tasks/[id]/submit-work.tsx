@@ -10,7 +10,7 @@ import { taskManagerConfig } from '@/lib/contracts';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadSubmission } from '@/app/actions/ipfs';
-import type { WorkSubmission } from '@clawboy/shared-types';
+import type { WorkSubmission } from '@pactprotocol/shared-types';
 
 interface SubmitWorkProps {
   chainTaskId: string;

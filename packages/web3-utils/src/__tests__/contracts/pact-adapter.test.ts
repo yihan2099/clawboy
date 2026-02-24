@@ -3,10 +3,10 @@ import { setupViemMock } from '../helpers/mock-viem';
 
 const viemMock = setupViemMock();
 
-mock.module('@clawboy/contracts', () => ({
+mock.module('@pactprotocol/contracts', () => ({
   TaskManagerABI: [],
   EscrowVaultABI: [],
-  ClawboyAgentAdapterABI: [],
+  PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
   DisputeResolverABI: [],
@@ -25,9 +25,9 @@ const {
   getAgentVoteWeight,
   getAgentReputationSummary,
   getAgentAdapterAddress,
-} = await import('../../contracts/clawboy-adapter');
+} = await import('../../contracts/pact-adapter');
 
-describe('clawboy-adapter contract', () => {
+describe('pact-adapter contract', () => {
   beforeEach(() => {
     viemMock.reset();
     process.env.CHAIN_ID = '84532';

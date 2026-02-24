@@ -1,5 +1,5 @@
 /**
- * @clawboy/rate-limit
+ * @pactprotocol/rate-limit
  *
  * Shared rate limiting package using Upstash Redis
  */

@@ -4,7 +4,7 @@ import { createIpfsUtilsMock } from '../../helpers/mock-deps';
 
 const ipfsMock = createIpfsUtilsMock();
 
-mock.module('@clawboy/ipfs-utils', () => ipfsMock);
+mock.module('@pactprotocol/ipfs-utils', () => ipfsMock);
 
 mock.module('../../../utils/webhook-validation', () => ({
   webhookUrlSchema: z.string().url(),

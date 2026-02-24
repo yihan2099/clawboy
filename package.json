@@ -1,5 +1,5 @@
 {
-  "name": "clawboy",
+  "name": "pact",
   "version": "0.1.0",
   "private": true,
   "packageManager": "bun@1.3.5",
@@ -9,9 +9,9 @@
   ],
   "scripts": {
     "dev": "turbo dev",
-    "dev:web": "turbo dev --filter=@clawboy/web",
-    "dev:mcp": "turbo dev:mcp --filter=@clawboy/mcp-server",
-    "dev:indexer": "turbo dev:indexer --filter=@clawboy/indexer",
+    "dev:web": "turbo dev --filter=@pactprotocol/web",
+    "dev:mcp": "turbo dev:mcp --filter=@pactprotocol/mcp-server",
+    "dev:indexer": "turbo dev:indexer --filter=@pactprotocol/indexer",
     "build": "turbo build",
     "build:contracts": "turbo build:contracts",
     "test": "turbo test",

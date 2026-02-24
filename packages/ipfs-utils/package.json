@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/ipfs-utils",
+  "name": "@pactprotocol/ipfs-utils",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -19,8 +19,8 @@
     "pinata": "^2.5.4"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "^25.2.0",
     "eslint": "^9",

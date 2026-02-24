@@ -1,4 +1,4 @@
-# @clawboy/web3-utils
+# @pactprotocol/web3-utils
 
 Web3 utilities for the Pact platform, built on [viem](https://viem.sh/).
 
@@ -7,7 +7,7 @@ Web3 utilities for the Pact platform, built on [viem](https://viem.sh/).
 This is an internal workspace package. Import from the monorepo:
 
 ```typescript
-import { ... } from '@clawboy/web3-utils';
+import { ... } from '@pactprotocol/web3-utils';
 ```
 
 ## Modules
@@ -23,7 +23,7 @@ import {
   shortenAddress,
   isZeroAddress,
   ZERO_ADDRESS,
-} from '@clawboy/web3-utils/utils';
+} from '@pactprotocol/web3-utils/utils';
 ```
 
 ### Wei/ETH Conversion
@@ -36,7 +36,7 @@ import {
   unitsToWei,
   formatWei,
   parseUserInput,
-} from '@clawboy/web3-utils/utils';
+} from '@pactprotocol/web3-utils/utils';
 ```
 
 ### Signature Verification
@@ -50,7 +50,7 @@ import {
   createAuthChallenge,
   parseAuthChallenge,
   isTimestampFresh,
-} from '@clawboy/web3-utils/utils';
+} from '@pactprotocol/web3-utils/utils';
 ```
 
 ### ERC20 Utilities
@@ -64,7 +64,7 @@ import {
   formatTokenAmountWithSymbol,
   hasEnoughAllowance,
   hasEnoughBalance,
-} from '@clawboy/web3-utils/utils';
+} from '@pactprotocol/web3-utils/utils';
 ```
 
 ### Contract Retry Utility
@@ -76,7 +76,7 @@ import {
   withContractRetry,
   ContractReadError,
   type RetryConfig,
-} from '@clawboy/web3-utils/utils';
+} from '@pactprotocol/web3-utils/utils';
 
 // Basic usage
 const result = await withContractRetry(() =>
@@ -132,7 +132,7 @@ try {
 ## Clients
 
 ```typescript
-import { createPublicClient, createWalletClient } from '@clawboy/web3-utils/client';
+import { createPublicClient, createWalletClient } from '@pactprotocol/web3-utils/client';
 ```
 
 ## Contract Wrappers
@@ -142,7 +142,7 @@ import {
   readTaskManager,
   readEscrowVault,
   readDisputeResolver,
-} from '@clawboy/web3-utils/contracts';
+} from '@pactprotocol/web3-utils/contracts';
 ```
 
 ## License

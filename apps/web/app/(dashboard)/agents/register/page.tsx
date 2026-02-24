@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { agentAdapterConfig } from '@/lib/contracts';
 import { toast } from 'sonner';
 import { uploadProfile } from '@/app/actions/ipfs';
-import type { AgentProfile } from '@clawboy/shared-types';
+import type { AgentProfile } from '@pactprotocol/shared-types';
 
 interface FormErrors {
   name?: string;

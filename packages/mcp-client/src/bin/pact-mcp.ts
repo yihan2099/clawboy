@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Clawboy MCP CLI entry point
+ * Pact MCP CLI entry point
  *
- * This script starts an MCP server that connects to Clawboy,
+ * This script starts an MCP server that connects to Pact,
  * allowing MCP clients (like Claude Desktop) to interact with the
  * agent economy platform.
  *
  * Authentication flow:
- * 1. On startup, requests a challenge from the Clawboy MCP server
+ * 1. On startup, requests a challenge from the Pact MCP server
  * 2. Signs the challenge with the wallet
  * 3. Verifies signature to obtain a sessionId
  * 4. Includes sessionId in all subsequent tool calls
@@ -20,8 +20,8 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import { createWalletClient, createPublicClient, http, formatEther } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
-import { ClawboyApiClient } from '../api-client.js';
-import { ClawboyAgentAdapterABI, getContractAddresses } from '@clawboy/contracts';
+import { PactApiClient } from '../api-client.js';
+import { PactAgentAdapterABI, getContractAddresses } from '@pactprotocol/contracts';
 
 // Session state for authentication
 interface AuthState {
@@ -462,15 +462,15 @@ const TOOLS = [
 ];
 
 /**
- * Authenticate with the Clawboy MCP server
+ * Authenticate with the Pact MCP server
  * Signs a challenge message with the wallet to obtain a session
  */
 async function authenticate(
   account: PrivateKeyAccount,
-  apiClient: ClawboyApiClient
+  apiClient: PactApiClient
 ): Promise<AuthState | null> {
   try {
-    console.error('Authenticating with Clawboy...');
+    console.error('Authenticating with Pact...');
 
     // Step 1: Get challenge from server
     const challengeResponse = await apiClient.callTool<{
@@ -521,29 +521,29 @@ async function authenticate(
 
 async function main() {
   // Validate environment
-  const privateKey = process.env.CLAWBOY_WALLET_PRIVATE_KEY;
+  const privateKey = process.env.PACT_WALLET_PRIVATE_KEY;
   if (!privateKey) {
-    console.error('Error: CLAWBOY_WALLET_PRIVATE_KEY environment variable is required');
+    console.error('Error: PACT_WALLET_PRIVATE_KEY environment variable is required');
     process.exit(1);
   }
 
   // Get server URL from environment
-  const serverUrl = process.env.CLAWBOY_MCP_SERVER_URL || 'http://localhost:3001';
-  console.error(`Connecting to Clawboy MCP Server at ${serverUrl}...`);
+  const serverUrl = process.env.PACT_MCP_SERVER_URL || 'http://localhost:3001';
+  console.error(`Connecting to Pact MCP Server at ${serverUrl}...`);
 
   // Initialize API client
-  const apiClient = new ClawboyApiClient({ baseUrl: serverUrl });
+  const apiClient = new PactApiClient({ baseUrl: serverUrl });
 
   // Check server health
   const isHealthy = await apiClient.healthCheck();
   if (!isHealthy) {
-    console.error(`Warning: Clawboy MCP Server at ${serverUrl} is not responding`);
+    console.error(`Warning: Pact MCP Server at ${serverUrl} is not responding`);
     console.error('Some tools may not work until the server is available');
   }
 
   // Create wallet client
   const account = privateKeyToAccount(privateKey as `0x${string}`);
-  const rpcUrl = process.env.CLAWBOY_RPC_URL || 'https://sepolia.base.org';
+  const rpcUrl = process.env.PACT_RPC_URL || 'https://sepolia.base.org';
 
   // Wallet client for future transaction signing (currently unused)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -559,7 +559,7 @@ async function main() {
   // Create MCP server
   const server = new Server(
     {
-      name: 'clawboy',
+      name: 'pact',
       version: '0.1.0',
     },
     {
@@ -636,7 +636,7 @@ async function main() {
         // Check if registered using ERC-8004 adapter
         const isRegistered = (await publicClient.readContract({
           address: addresses.agentAdapter,
-          abi: ClawboyAgentAdapterABI,
+          abi: PactAgentAdapterABI,
           functionName: 'isRegistered',
           args: [targetAddress],
         })) as boolean;
@@ -659,7 +659,7 @@ async function main() {
         // Get agent ID from ERC-8004 adapter
         const agentId = (await publicClient.readContract({
           address: addresses.agentAdapter,
-          abi: ClawboyAgentAdapterABI,
+          abi: PactAgentAdapterABI,
           functionName: 'getAgentId',
           args: [targetAddress],
         })) as bigint;
@@ -667,7 +667,7 @@ async function main() {
         // Get reputation summary from ERC-8004 adapter
         const reputationSummary = (await publicClient.readContract({
           address: addresses.agentAdapter,
-          abi: ClawboyAgentAdapterABI,
+          abi: PactAgentAdapterABI,
           functionName: 'getReputationSummary',
           args: [targetAddress],
         })) as readonly [bigint, bigint, bigint, bigint];
@@ -693,7 +693,7 @@ async function main() {
         };
       }
 
-      // All other tools are forwarded to the Clawboy MCP Server
+      // All other tools are forwarded to the Pact MCP Server
       const result = await apiClient.callTool(name, typedArgs);
 
       // Special handling for auth_verify - update local auth state
@@ -744,7 +744,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error('Clawboy MCP client started');
+  console.error('Pact MCP client started');
   console.error(`Server: ${serverUrl}`);
   console.error(`Wallet: ${account.address}`);
   console.error(`RPC: ${rpcUrl}`);

@@ -4,18 +4,18 @@ pragma solidity ^0.8.24;
 import { Test, console } from "forge-std/Test.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
-import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { PactAgentAdapter } from "../src/PactAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
 import { ITaskManager } from "../src/interfaces/ITaskManager.sol";
 import { IDisputeResolver } from "../src/interfaces/IDisputeResolver.sol";
-import { IClawboyAgentAdapter } from "../src/IClawboyAgentAdapter.sol";
+import { IPactAgentAdapter } from "../src/IPactAgentAdapter.sol";
 
 contract DisputeResolverTest is Test {
     TaskManager public taskManager;
     EscrowVault public escrowVault;
-    ClawboyAgentAdapter public agentAdapter;
+    PactAgentAdapter public agentAdapter;
     ERC8004IdentityRegistry public identityRegistry;
     ERC8004ReputationRegistry public reputationRegistry;
     DisputeResolver public disputeResolver;
@@ -37,9 +37,9 @@ contract DisputeResolverTest is Test {
         // Deploy ERC-8004 ReputationRegistry (initialized with IdentityRegistry in constructor)
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
-        // Deploy ClawboyAgentAdapter
+        // Deploy PactAgentAdapter
         agentAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =

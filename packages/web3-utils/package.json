@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/web3-utils",
+  "name": "@pactprotocol/web3-utils",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -19,9 +19,9 @@
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@clawboy/contracts": "workspace:*",
-    "@clawboy/eslint-config": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
+    "@pactprotocol/contracts": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "^25.2.0",
     "eslint": "^9",

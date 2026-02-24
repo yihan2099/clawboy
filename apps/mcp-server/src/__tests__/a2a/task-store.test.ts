@@ -4,7 +4,7 @@ import { createRateLimitMock } from '../helpers/mock-deps';
 const rateLimitMock = createRateLimitMock();
 
 // Mock Redis to force in-memory fallback for deterministic tests
-mock.module('@clawboy/rate-limit', () => rateLimitMock);
+mock.module('@pactprotocol/rate-limit', () => rateLimitMock);
 
 import {
   createA2ATask,

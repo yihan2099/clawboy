@@ -3,7 +3,7 @@ import { createDatabaseMock } from '../../helpers/mock-deps';
 
 const dbMock = createDatabaseMock();
 
-mock.module('@clawboy/database', () => dbMock);
+mock.module('@pactprotocol/database', () => dbMock);
 
 import { getMySubmissionsTool } from '../../../tools/agent/get-my-submissions';
 

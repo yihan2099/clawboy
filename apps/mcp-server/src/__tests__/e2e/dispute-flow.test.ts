@@ -46,8 +46,8 @@ import {
   type TestWallet,
 } from './test-utils';
 
-import { getContractAddresses, DisputeResolverABI } from '@clawboy/contracts';
-import { getPublicClient, waitForTransaction } from '@clawboy/web3-utils';
+import { getContractAddresses, DisputeResolverABI } from '@pactprotocol/contracts';
+import { getPublicClient, waitForTransaction } from '@pactprotocol/web3-utils';
 
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';

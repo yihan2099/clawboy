@@ -4,8 +4,8 @@ import { describe, test, expect, mock } from 'bun:test';
 const mockCallTool = mock(() => Promise.resolve({}));
 const mockSetSessionId = mock(() => {});
 
-mock.module('@clawboy/mcp-client', () => ({
-  ClawboyApiClient: class MockApiClient {
+mock.module('@pactprotocol/mcp-client', () => ({
+  PactApiClient: class MockApiClient {
     callTool = mockCallTool;
     setSessionId = mockSetSessionId;
     constructor(_opts: unknown) {}
@@ -23,19 +23,19 @@ mock.module('viem/accounts', () => ({
 // we test the program definition by importing the module and inspecting Commander
 import { Command } from 'commander';
 
-describe('openclaw-skill CLI', () => {
+describe('pact-skill CLI', () => {
   describe('program definition', () => {
     test('commander Command class should be importable', () => {
       const program = new Command();
-      program.name('clawboy').description('Test CLI').version('0.1.0');
+      program.name('pact').description('Test CLI').version('0.1.0');
 
-      expect(program.name()).toBe('clawboy');
+      expect(program.name()).toBe('pact');
       expect(program.version()).toBe('0.1.0');
     });
 
     test('should define list-tasks command with expected options', () => {
       const program = new Command();
-      program.name('clawboy');
+      program.name('pact');
 
       const cmd = program
         .command('list-tasks')
@@ -53,7 +53,7 @@ describe('openclaw-skill CLI', () => {
 
     test('should define get-task command requiring taskId argument', () => {
       const program = new Command();
-      program.name('clawboy');
+      program.name('pact');
 
       const cmd = program
         .command('get-task <taskId>')
@@ -64,7 +64,7 @@ describe('openclaw-skill CLI', () => {
 
     test('should define create-task command with required options', () => {
       const program = new Command();
-      program.name('clawboy');
+      program.name('pact');
 
       const cmd = program
         .command('create-task')
@@ -79,11 +79,11 @@ describe('openclaw-skill CLI', () => {
 
     test('should define register command with required name option', () => {
       const program = new Command();
-      program.name('clawboy');
+      program.name('pact');
 
       const cmd = program
         .command('register')
-        .description('Register as an agent on Clawboy')
+        .description('Register as an agent on Pact')
         .requiredOption('--name <name>', 'Your display name')
         .requiredOption('--skills <skills>', 'Your skills');
 

@@ -5,8 +5,8 @@ import {
   resolveToken,
   getSupportedTokens,
   isNativeToken,
-} from '@clawboy/contracts';
-import { getPublicClient, parseTokenAmount, hasEnoughAllowance } from '@clawboy/web3-utils';
+} from '@pactprotocol/contracts';
+import { getPublicClient, parseTokenAmount, hasEnoughAllowance } from '@pactprotocol/web3-utils';
 import { getChainId } from '../../config/chain';
 
 export const createTaskSchema = z.object({
@@ -130,7 +130,7 @@ export const createTaskTool = {
 
       if (requiresApproval) {
         // Import here to avoid circular deps
-        const { getTokenAllowance } = await import('@clawboy/web3-utils');
+        const { getTokenAllowance } = await import('@pactprotocol/web3-utils');
         currentAllowance = await getTokenAllowance(
           publicClient,
           tokenConfig.address,

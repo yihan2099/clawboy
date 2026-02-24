@@ -1,7 +1,7 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, updateTask } from '@clawboy/database';
-import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
-import { invalidateTaskCaches } from '@clawboy/cache';
+import { getTaskByChainId, updateTask } from '@pactprotocol/database';
+import { assertValidStatusTransition, type TaskStatusString } from '@pactprotocol/shared-types';
+import { invalidateTaskCaches } from '@pactprotocol/cache';
 
 /**
  * Handle TaskCancelled event

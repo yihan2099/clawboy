@@ -1,10 +1,10 @@
-import { listTasks, getTaskById } from '@clawboy/database';
-import { fetchTaskSpecification, uploadTaskSpecification } from '@clawboy/ipfs-utils';
-import { formatTokenAmount, parseTokenAmount } from '@clawboy/web3-utils';
-import { getTokenByAddress, resolveToken } from '@clawboy/contracts';
-import type { ListTasksInput, CreateTaskInput, GetTaskInput } from '@clawboy/shared-types';
-import type { TaskListItem, GetTaskResponse } from '@clawboy/shared-types';
-import { type TaskStatus } from '@clawboy/shared-types';
+import { listTasks, getTaskById } from '@pactprotocol/database';
+import { fetchTaskSpecification, uploadTaskSpecification } from '@pactprotocol/ipfs-utils';
+import { formatTokenAmount, parseTokenAmount } from '@pactprotocol/web3-utils';
+import { getTokenByAddress, resolveToken } from '@pactprotocol/contracts';
+import type { ListTasksInput, CreateTaskInput, GetTaskInput } from '@pactprotocol/shared-types';
+import type { TaskListItem, GetTaskResponse } from '@pactprotocol/shared-types';
+import { type TaskStatus } from '@pactprotocol/shared-types';
 import { getChainId } from '../config/chain';
 
 /** Extended task list item with formatted bounty */

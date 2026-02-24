@@ -11,7 +11,7 @@ import { describe, test, expect, mock, beforeEach } from 'bun:test';
 // ============================================================================
 
 // Mock contract addresses
-mock.module('@clawboy/contracts', () => ({
+mock.module('@pactprotocol/contracts', () => ({
   getContractAddresses: () => ({
     taskManager: '0x1111111111111111111111111111111111111111',
     escrowVault: '0x2222222222222222222222222222222222222222',
@@ -22,7 +22,7 @@ mock.module('@clawboy/contracts', () => ({
     timelockController: '0x7777777777777777777777777777777777777777',
   }),
   TaskManagerABI: [],
-  ClawboyAgentAdapterABI: [],
+  PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
 }));
 
@@ -31,7 +31,7 @@ mock.module('../../config/chain', () => ({
 }));
 
 // Mock rate-limit (redis client)
-mock.module('@clawboy/rate-limit', () => ({
+mock.module('@pactprotocol/rate-limit', () => ({
   getRedisClient: () => null,
 }));
 

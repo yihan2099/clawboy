@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title IClawboyAgentAdapter
- * @notice Interface for the Clawboy to ERC-8004 adapter
- * @dev Bridges Clawboy's TaskManager and DisputeResolver to ERC-8004 registries
+ * @title IPactAgentAdapter
+ * @notice Interface for the Pact to ERC-8004 adapter
+ * @dev Bridges Pact's TaskManager and DisputeResolver to ERC-8004 registries
  */
-interface IClawboyAgentAdapter {
+interface IPactAgentAdapter {
     /// @notice Emitted when an agent is registered
     event AgentRegistered(address indexed wallet, uint256 indexed agentId, string agentURI);
 

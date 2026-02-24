@@ -1,5 +1,5 @@
-export { ClawboyClient, createClawboyClient } from './client.js';
-export type { ClawboyClientConfig } from './client.js';
+export { PactClient, createPactClient } from './client.js';
+export type { PactClientConfig } from './client.js';
 
-export { ClawboyApiClient } from './api-client.js';
+export { PactApiClient } from './api-client.js';
 export type { ApiClientOptions, ApiError } from './api-client.js';

@@ -1,3 +1,3 @@
-import nodeConfig from '@clawboy/eslint-config/node';
+import nodeConfig from '@pactprotocol/eslint-config/node';
 
 export default nodeConfig;

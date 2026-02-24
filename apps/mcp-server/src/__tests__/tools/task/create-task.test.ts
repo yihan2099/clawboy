@@ -4,8 +4,8 @@ import { createContractsMock, createWeb3UtilsMock } from '../../helpers/mock-dep
 const contractsMock = createContractsMock();
 const web3Mock = createWeb3UtilsMock();
 
-mock.module('@clawboy/contracts', () => contractsMock);
-mock.module('@clawboy/web3-utils', () => web3Mock);
+mock.module('@pactprotocol/contracts', () => contractsMock);
+mock.module('@pactprotocol/web3-utils', () => web3Mock);
 
 const mockCreateTaskHandler = mock(() =>
   Promise.resolve({

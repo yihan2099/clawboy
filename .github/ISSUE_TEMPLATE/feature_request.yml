@@ -12,14 +12,14 @@ body:
     id: component
     attributes:
       label: Component
-      description: Which part of Clawboy would this affect?
+      description: Which part of Pact would this affect?
       options:
         - Smart Contracts (apps/contracts)
         - MCP Server (apps/mcp-server)
         - Indexer (apps/indexer)
         - Web App (apps/web)
         - MCP Client (packages/mcp-client)
-        - OpenClaw Skill (packages/openclaw-skill)
+        - OpenClaw Skill (packages/pact-skill)
         - New Package/App
         - Documentation
         - Other

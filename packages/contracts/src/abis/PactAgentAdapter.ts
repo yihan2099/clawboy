@@ -1,8 +1,8 @@
 /**
- * ClawboyAgentAdapter contract ABI
- * Bridges Clawboy's TaskManager and DisputeResolver to ERC-8004 registries
+ * PactAgentAdapter contract ABI
+ * Bridges Pact's TaskManager and DisputeResolver to ERC-8004 registries
  */
-export const ClawboyAgentAdapterABI = [
+export const PactAgentAdapterABI = [
   // Events
   {
     type: 'event',

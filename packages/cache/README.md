@@ -1,18 +1,18 @@
-# @clawboy/cache
+# @pactprotocol/cache
 
 Caching layer for the Pact platform. Provides Redis-first caching with automatic in-memory fallback when Redis is unavailable.
 
 ## Installation
 
 ```bash
-bun add @clawboy/cache
+bun add @pactprotocol/cache
 ```
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   @clawboy/cache                     │
+│                   @pactprotocol/cache                     │
 ├─────────────────────────────────────────────────────┤
 │                                                      │
 │   Application Code                                   │
@@ -33,7 +33,7 @@ bun add @clawboy/cache
 └─────────────────────────────────────────────────────┘
 ```
 
-- **Redis (Primary)**: Uses Upstash Redis via `@clawboy/redis`
+- **Redis (Primary)**: Uses Upstash Redis via `@pactprotocol/redis`
 - **Memory (Fallback)**: In-memory Map with TTL support and periodic cleanup
 
 ## Core API
@@ -43,7 +43,7 @@ bun add @clawboy/cache
 Returns the cache client singleton.
 
 ```typescript
-import { getCache } from '@clawboy/cache';
+import { getCache } from '@pactprotocol/cache';
 
 const cache = getCache();
 await cache.set('key', { data: 'value' }, { ttl: 300 });
@@ -55,7 +55,7 @@ const data = await cache.get('key');
 Cache-through pattern: check cache first, fetch and cache on miss.
 
 ```typescript
-import { cacheThrough } from '@clawboy/cache';
+import { cacheThrough } from '@pactprotocol/cache';
 
 const { data, hit } = await cacheThrough('task:123', async () => fetchTaskFromDatabase('123'), {
   ttl: 300,
@@ -90,7 +90,7 @@ Pre-configured TTL values for different data types:
 | `DEFAULT`          | 5min  | Fallback TTL                             |
 
 ```typescript
-import { TTL_CONFIG, getTTL } from '@clawboy/cache';
+import { TTL_CONFIG, getTTL } from '@pactprotocol/cache';
 
 // Direct access
 const ttl = TTL_CONFIG.TASK_DETAIL; // 300
@@ -104,7 +104,7 @@ const ttl = getTTL('AGENT_BY_ADDRESS'); // 3600
 Generate consistent cache keys for all data types:
 
 ```typescript
-import { taskKey, taskListKey, agentByAddressKey } from '@clawboy/cache';
+import { taskKey, taskListKey, agentByAddressKey } from '@pactprotocol/cache';
 
 taskKey('123'); // 'task:123'
 taskListKey({ status: 'open' }); // 'tasks:s:open'
@@ -139,7 +139,7 @@ import {
   invalidateDisputeCaches,
   invalidateStatsCaches,
   invalidateAllCaches,
-} from '@clawboy/cache';
+} from '@pactprotocol/cache';
 
 // Invalidate specific task and related lists
 await invalidateTaskCaches('task-123');
@@ -161,7 +161,7 @@ High-level helpers for common caching patterns:
 ### Task Caching
 
 ```typescript
-import { getCachedTaskList, getCachedTask, preloadTasks } from '@clawboy/cache/helpers';
+import { getCachedTaskList, getCachedTask, preloadTasks } from '@pactprotocol/cache/helpers';
 
 // Get cached task list
 const { data, hit } = await getCachedTaskList({ status: 'open', limit: 10 }, () =>
@@ -178,7 +178,7 @@ await preloadTasks(['task-1', 'task-2', 'task-3'], fetchTaskBatch);
 ### Agent Caching
 
 ```typescript
-import { getCachedAgentByAddress, getCachedAgentList } from '@clawboy/cache/helpers';
+import { getCachedAgentByAddress, getCachedAgentList } from '@pactprotocol/cache/helpers';
 
 // Get agent by wallet address
 const { data: agent } = await getCachedAgentByAddress('0x...', () => fetchAgentByAddress('0x...'));
@@ -190,7 +190,7 @@ const { data: agents } = await getCachedAgentList({ limit: 10 }, () => fetchAgen
 ### Statistics Caching
 
 ```typescript
-import { getCachedPlatformStats, getCachedTopAgents } from '@clawboy/cache/helpers';
+import { getCachedPlatformStats, getCachedTopAgents } from '@pactprotocol/cache/helpers';
 
 const { data: stats } = await getCachedPlatformStats(() => computePlatformStats());
 const { data: topAgents } = await getCachedTopAgents(10, () => fetchTopAgents(10));
@@ -199,7 +199,7 @@ const { data: topAgents } = await getCachedTopAgents(10, () => fetchTopAgents(10
 ### Batch Operations
 
 ```typescript
-import { batchFetchWithCache, preloadBatch, getCachedOnly } from '@clawboy/cache/helpers';
+import { batchFetchWithCache, preloadBatch, getCachedOnly } from '@pactprotocol/cache/helpers';
 
 // Fetch multiple items, using cache where available
 const results = await batchFetchWithCache(
@@ -226,4 +226,4 @@ interface CacheOptions {
 
 ## Dependencies
 
-- `@clawboy/redis` - Upstash Redis singleton client
+- `@pactprotocol/redis` - Upstash Redis singleton client

@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient } from '@clawboy/database';
+import { getSupabaseAdminClient } from '@pactprotocol/database';
 
 const supabase = getSupabaseAdminClient();
 

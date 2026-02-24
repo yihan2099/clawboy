@@ -4,8 +4,8 @@ import {
   uploadTaskSpecification,
   uploadWorkSubmission,
   uploadAgentProfile,
-} from '@clawboy/ipfs-utils';
-import type { TaskSpecification, WorkSubmission, AgentProfile } from '@clawboy/shared-types';
+} from '@pactprotocol/ipfs-utils';
+import type { TaskSpecification, WorkSubmission, AgentProfile } from '@pactprotocol/shared-types';
 
 export async function uploadTaskSpec(spec: TaskSpecification): Promise<{ cid: string }> {
   const result = await uploadTaskSpecification(spec);

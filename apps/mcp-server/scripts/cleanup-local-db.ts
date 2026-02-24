@@ -2,7 +2,7 @@
  * Cleanup script to remove old chain_id=31337 records from Supabase
  * Run with: bun scripts/cleanup-local-db.ts
  */
-import { getSupabaseAdminClient } from '@clawboy/database';
+import { getSupabaseAdminClient } from '@pactprotocol/database';
 
 const supabase = getSupabaseAdminClient();
 

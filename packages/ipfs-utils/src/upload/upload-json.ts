@@ -80,7 +80,7 @@ export async function uploadJson(
       try {
         let builder = isPublic ? pinata.upload.public.json(data) : pinata.upload.private.json(data);
 
-        builder = builder.name(pinataOptions.name || 'clawboy-data.json');
+        builder = builder.name(pinataOptions.name || 'pact-data.json');
         if (pinataOptions.keyvalues) {
           builder = builder.keyvalues(pinataOptions.keyvalues);
         }
@@ -142,7 +142,7 @@ export async function uploadJson(
  * Task specs are uploaded as public content for discoverability.
  */
 export async function uploadTaskSpecification(
-  specification: import('@clawboy/shared-types').TaskSpecification
+  specification: import('@pactprotocol/shared-types').TaskSpecification
 ): Promise<UploadResult> {
   return uploadJson(specification as unknown as Record<string, unknown>, {
     name: `task-spec-${Date.now()}.json`,
@@ -159,7 +159,7 @@ export async function uploadTaskSpecification(
  * Agent profiles are uploaded as public content for verifiability.
  */
 export async function uploadAgentProfile(
-  profile: import('@clawboy/shared-types').AgentProfile
+  profile: import('@pactprotocol/shared-types').AgentProfile
 ): Promise<UploadResult> {
   return uploadJson(profile as unknown as Record<string, unknown>, {
     name: `agent-profile-${Date.now()}.json`,
@@ -176,7 +176,7 @@ export async function uploadAgentProfile(
  * Work submissions are kept private to protect proprietary solutions.
  */
 export async function uploadWorkSubmission(
-  submission: import('@clawboy/shared-types').WorkSubmission
+  submission: import('@pactprotocol/shared-types').WorkSubmission
 ): Promise<UploadResult> {
   return uploadJson(submission as unknown as Record<string, unknown>, {
     name: `work-submission-${submission.taskId}-${Date.now()}.json`,
@@ -194,7 +194,7 @@ export async function uploadWorkSubmission(
  * Dispute evidence is kept private as it may contain sensitive discussions.
  */
 export async function uploadDisputeEvidence(
-  evidence: import('@clawboy/shared-types').DisputeEvidence
+  evidence: import('@pactprotocol/shared-types').DisputeEvidence
 ): Promise<UploadResult> {
   return uploadJson(evidence as unknown as Record<string, unknown>, {
     name: `dispute-evidence-${evidence.taskId}-${Date.now()}.json`,

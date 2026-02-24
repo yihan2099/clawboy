@@ -1,6 +1,6 @@
 import { verifyChallengeSignature } from '../../auth/wallet-signature';
 import { createSession } from '../../auth/session-manager';
-import { isAgentRegistered, getAgentId, isValidAddress } from '@clawboy/web3-utils';
+import { isAgentRegistered, getAgentId, isValidAddress } from '@pactprotocol/web3-utils';
 
 /**
  * Input for auth_verify tool

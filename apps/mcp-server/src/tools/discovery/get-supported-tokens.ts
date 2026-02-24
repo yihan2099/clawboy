@@ -5,7 +5,7 @@
  * Helps agents discover what tokens they can use when creating tasks.
  */
 
-import { getSupportedTokens, type TokenConfig } from '@clawboy/contracts';
+import { getSupportedTokens, type TokenConfig } from '@pactprotocol/contracts';
 import { getChainId } from '../../config/chain';
 
 export interface GetSupportedTokensInput {

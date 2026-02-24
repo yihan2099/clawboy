@@ -1,6 +1,6 @@
-import { TaskManagerABI, getContractAddresses } from '@clawboy/contracts';
+import { TaskManagerABI, getContractAddresses } from '@pactprotocol/contracts';
 import { getPublicClient } from '../client/public-client';
-import type { TaskStatus } from '@clawboy/shared-types';
+import type { TaskStatus } from '@pactprotocol/shared-types';
 import { withContractRetry, type RetryConfig } from '../utils/retry';
 
 /**

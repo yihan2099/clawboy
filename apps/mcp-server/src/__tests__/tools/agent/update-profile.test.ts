@@ -5,8 +5,8 @@ import { createIpfsUtilsMock, createWeb3UtilsMock } from '../../helpers/mock-dep
 const ipfsMock = createIpfsUtilsMock();
 const web3Mock = createWeb3UtilsMock();
 
-mock.module('@clawboy/ipfs-utils', () => ipfsMock);
-mock.module('@clawboy/web3-utils', () => web3Mock);
+mock.module('@pactprotocol/ipfs-utils', () => ipfsMock);
+mock.module('@pactprotocol/web3-utils', () => web3Mock);
 
 mock.module('../../../config/chain', () => ({
   getChainId: () => 84532,

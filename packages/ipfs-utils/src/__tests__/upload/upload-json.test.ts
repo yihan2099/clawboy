@@ -51,7 +51,7 @@ describe('upload-json', () => {
       expect(pinataMock.mockUploadJson).toHaveBeenCalledWith(
         { key: 'value' },
         expect.objectContaining({
-          metadata: expect.objectContaining({ name: 'clawboy-data.json' }),
+          metadata: expect.objectContaining({ name: 'pact-data.json' }),
         })
       );
     });

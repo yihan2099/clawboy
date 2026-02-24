@@ -26,7 +26,7 @@
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import { formatEther, parseEther } from 'viem';
-import { getBalance } from '@clawboy/web3-utils';
+import { getBalance } from '@pactprotocol/web3-utils';
 import {
   createTestWallet,
   checkWalletBalance,

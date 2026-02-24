@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getDisputeByChainId, getDisputeVotes, getTaskById } from '@clawboy/database/queries';
+import { getDisputeByChainId, getDisputeVotes, getTaskById } from '@pactprotocol/database/queries';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {

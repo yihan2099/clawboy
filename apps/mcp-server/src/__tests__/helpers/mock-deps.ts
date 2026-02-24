@@ -1,5 +1,5 @@
 /**
- * Shared mock factories for all @clawboy/* dependencies.
+ * Shared mock factories for all @pactprotocol/* dependencies.
  *
  * Each factory returns a complete module mock object with ALL exports stubbed,
  * preventing mock contamination between test files that run in the same
@@ -9,7 +9,7 @@
  *   import { mock } from 'bun:test';
  *   import { createContractsMock, createWeb3UtilsMock, ... } from '../helpers/mock-deps';
  *
- *   mock.module('@clawboy/contracts', createContractsMock);
+ *   mock.module('@pactprotocol/contracts', createContractsMock);
  *
  * Each factory is a function that returns the mock object, compatible with
  * bun's `mock.module(specifier, factory)` API.
@@ -17,7 +17,7 @@
 import { mock } from 'bun:test';
 
 // ---------------------------------------------------------------------------
-// @clawboy/contracts
+// @pactprotocol/contracts
 // ---------------------------------------------------------------------------
 export function createContractsMock() {
   return {
@@ -25,7 +25,7 @@ export function createContractsMock() {
     TaskManagerABI: [],
     EscrowVaultABI: [],
     DisputeResolverABI: [],
-    ClawboyAgentAdapterABI: [],
+    PactAgentAdapterABI: [],
     ERC8004IdentityRegistryABI: [],
     ERC8004ReputationRegistryABI: [],
 
@@ -66,7 +66,7 @@ export function createContractsMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/web3-utils
+// @pactprotocol/web3-utils
 // ---------------------------------------------------------------------------
 export function createWeb3UtilsMock() {
   return {
@@ -155,7 +155,7 @@ export function createWeb3UtilsMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/database
+// @pactprotocol/database
 // ---------------------------------------------------------------------------
 export function createDatabaseMock() {
   return {
@@ -255,7 +255,7 @@ export function createDatabaseMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/ipfs-utils
+// @pactprotocol/ipfs-utils
 // ---------------------------------------------------------------------------
 export function createIpfsUtilsMock() {
   return {
@@ -297,7 +297,7 @@ export function createIpfsUtilsMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/cache
+// @pactprotocol/cache
 // ---------------------------------------------------------------------------
 export function createCacheMock() {
   return {
@@ -366,7 +366,7 @@ export function createCacheMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/redis
+// @pactprotocol/redis
 // ---------------------------------------------------------------------------
 export function createRedisMock() {
   return {
@@ -377,7 +377,7 @@ export function createRedisMock() {
 }
 
 // ---------------------------------------------------------------------------
-// @clawboy/rate-limit
+// @pactprotocol/rate-limit
 // ---------------------------------------------------------------------------
 export function createRateLimitMock() {
   return {

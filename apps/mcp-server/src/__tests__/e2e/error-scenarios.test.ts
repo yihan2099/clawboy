@@ -34,7 +34,7 @@ import {
   type TestWallet,
 } from './test-utils';
 import { generatePrivateKey } from 'viem/accounts';
-import { getBalance } from '@clawboy/web3-utils';
+import { getBalance } from '@pactprotocol/web3-utils';
 
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';

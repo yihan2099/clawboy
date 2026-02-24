@@ -3,7 +3,7 @@ import { createContractsMock } from '../helpers/mock-deps';
 
 const contractsMock = createContractsMock();
 
-mock.module('@clawboy/contracts', () => contractsMock);
+mock.module('@pactprotocol/contracts', () => contractsMock);
 
 mock.module('../../config/chain', () => ({
   getChainId: () => 84532,

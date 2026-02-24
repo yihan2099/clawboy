@@ -1,6 +1,6 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, updateTask } from '@clawboy/database';
-import { invalidateTaskCaches, invalidateSubmissionCaches } from '@clawboy/cache';
+import { getTaskByChainId, updateTask } from '@pactprotocol/database';
+import { invalidateTaskCaches, invalidateSubmissionCaches } from '@pactprotocol/cache';
 
 /**
  * Handle AllSubmissionsRejected event

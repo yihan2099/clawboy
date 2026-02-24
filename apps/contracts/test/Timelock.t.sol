@@ -5,7 +5,7 @@ import { Test, console } from "forge-std/Test.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
-import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { PactAgentAdapter } from "../src/PactAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -17,7 +17,7 @@ contract TimelockTest is Test {
     TaskManager public taskManager;
     EscrowVault public escrowVault;
     DisputeResolver public disputeResolver;
-    ClawboyAgentAdapter public agentAdapter;
+    PactAgentAdapter public agentAdapter;
     ERC8004IdentityRegistry public identityRegistry;
     ERC8004ReputationRegistry public reputationRegistry;
     TimelockController public timelock;
@@ -37,9 +37,9 @@ contract TimelockTest is Test {
         identityRegistry = new ERC8004IdentityRegistry();
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
-        // Deploy ClawboyAgentAdapter
+        // Deploy PactAgentAdapter
         agentAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =
@@ -214,14 +214,14 @@ contract TimelockTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                      CLAWBOYAGENTADAPTER TIMELOCK TESTS
+                      PACTAGENTADAPTER TIMELOCK TESTS
     //////////////////////////////////////////////////////////////*/
 
     function test_AgentAdapter_SetTaskManager_RequiresTimelock() public {
         address newTaskManager = address(0x666);
 
         // Direct call should revert
-        vm.expectRevert(ClawboyAgentAdapter.OnlyTimelock.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyTimelock.selector);
         agentAdapter.setTaskManager(newTaskManager);
     }
 
@@ -229,7 +229,7 @@ contract TimelockTest is Test {
         address newResolver = address(0x777);
 
         // Direct call should revert
-        vm.expectRevert(ClawboyAgentAdapter.OnlyTimelock.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyTimelock.selector);
         agentAdapter.setDisputeResolver(newResolver);
     }
 
@@ -238,7 +238,7 @@ contract TimelockTest is Test {
 
         // Schedule the operation
         bytes memory data =
-            abi.encodeWithSelector(ClawboyAgentAdapter.setTaskManager.selector, newTaskManager);
+            abi.encodeWithSelector(PactAgentAdapter.setTaskManager.selector, newTaskManager);
 
         timelock.schedule(address(agentAdapter), 0, data, bytes32(0), bytes32(0), TIMELOCK_DELAY);
 
@@ -257,10 +257,10 @@ contract TimelockTest is Test {
 
         // Random user cannot call emergency functions
         vm.startPrank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.emergencySetTaskManager(newAddr);
 
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.emergencySetDisputeResolver(newAddr);
         vm.stopPrank();
     }
@@ -308,7 +308,7 @@ contract TimelockTest is Test {
         taskManager.setTimelock(newTimelock);
 
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.setTimelock(newTimelock);
 
         vm.prank(randomUser);
@@ -320,7 +320,7 @@ contract TimelockTest is Test {
         vm.expectRevert(TaskManager.ZeroAddress.selector);
         taskManager.setTimelock(address(0));
 
-        vm.expectRevert(ClawboyAgentAdapter.ZeroAddress.selector);
+        vm.expectRevert(PactAgentAdapter.ZeroAddress.selector);
         agentAdapter.setTimelock(address(0));
 
         vm.expectRevert(DisputeResolver.ZeroAddress.selector);

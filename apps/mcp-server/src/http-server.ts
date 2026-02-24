@@ -12,7 +12,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { createMcpRateLimitMiddleware } from '@clawboy/rate-limit/middleware/hono';
+import { createMcpRateLimitMiddleware } from '@pactprotocol/rate-limit/middleware/hono';
 import { createMcpServer, type ServerContext } from './server';
 import { getSession } from './auth/session-manager';
 import { checkAccessWithRegistrationRefresh } from './auth/access-control';
@@ -266,7 +266,7 @@ app.get('/health', async (c) => {
   // Supabase check
   try {
     const start = Date.now();
-    const { getSupabaseClient } = await import('@clawboy/database');
+    const { getSupabaseClient } = await import('@pactprotocol/database');
     const supabase = getSupabaseClient();
     await supabase.from('tasks').select('id').limit(1);
     checks.supabase = { status: 'ok', latencyMs: Date.now() - start };
@@ -296,7 +296,7 @@ app.get('/health', async (c) => {
   // RPC check
   try {
     const start = Date.now();
-    const { getBlockNumber } = await import('@clawboy/web3-utils');
+    const { getBlockNumber } = await import('@pactprotocol/web3-utils');
     const chainId = getChainId();
     const blockNumber = await getBlockNumber(chainId);
     checks.rpc = {

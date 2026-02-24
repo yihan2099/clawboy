@@ -7,9 +7,9 @@ export const BASE_MAINNET_ADDRESSES = {
   // ERC-8004 Registries
   identityRegistry: '0x0000000000000000000000000000000000000000' as `0x${string}`,
   reputationRegistry: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-  // Clawboy Adapter (bridges to ERC-8004)
+  // Pact Adapter (bridges to ERC-8004)
   agentAdapter: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-  // Core Clawboy contracts
+  // Core Pact contracts
   escrowVault: '0x0000000000000000000000000000000000000000' as `0x${string}`,
   taskManager: '0x0000000000000000000000000000000000000000' as `0x${string}`,
   disputeResolver: '0x0000000000000000000000000000000000000000' as `0x${string}`,

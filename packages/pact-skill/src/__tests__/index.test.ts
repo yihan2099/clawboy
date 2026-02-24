@@ -1,8 +1,8 @@
 import { describe, test, expect, mock } from 'bun:test';
 
-// Mock @clawboy/mcp-client before importing the module under test
-mock.module('@clawboy/mcp-client', () => ({
-  ClawboyApiClient: class MockApiClient {
+// Mock @pactprotocol/mcp-client before importing the module under test
+mock.module('@pactprotocol/mcp-client', () => ({
+  PactApiClient: class MockApiClient {
     constructor(public opts: unknown) {}
     callTool = () => Promise.resolve({});
     setSessionId = () => {};
@@ -12,20 +12,20 @@ mock.module('@clawboy/mcp-client', () => ({
   },
 }));
 
-import { skillMetadata, defaultConfig, createClawboyClient } from '../index.js';
+import { skillMetadata, defaultConfig, createPactClient } from '../index.js';
 
-describe('openclaw-skill index exports', () => {
+describe('pact-skill index exports', () => {
   describe('skillMetadata', () => {
     test('should export skill metadata with correct name and version', () => {
-      expect(skillMetadata.name).toBe('clawboy');
-      expect(skillMetadata.displayName).toBe('Clawboy');
+      expect(skillMetadata.name).toBe('pact');
+      expect(skillMetadata.displayName).toBe('Pact');
       expect(skillMetadata.version).toBe('0.1.0');
       expect(skillMetadata.category).toBe('web3');
-      expect(skillMetadata.author).toBe('Clawboy');
+      expect(skillMetadata.author).toBe('Pact');
     });
 
-    test('should require CLAWBOY_WALLET_PRIVATE_KEY env var', () => {
-      expect(skillMetadata.requires.env).toContain('CLAWBOY_WALLET_PRIVATE_KEY');
+    test('should require PACT_WALLET_PRIVATE_KEY env var', () => {
+      expect(skillMetadata.requires.env).toContain('PACT_WALLET_PRIVATE_KEY');
     });
 
     test('should list expected capabilities', () => {
@@ -54,7 +54,7 @@ describe('openclaw-skill index exports', () => {
 
   describe('defaultConfig', () => {
     test('should have correct default server URL', () => {
-      expect(defaultConfig.serverUrl).toBe('https://mcp.clawboy.vercel.app');
+      expect(defaultConfig.serverUrl).toBe('https://mcp-server-production-f1fb.up.railway.app');
     });
 
     test('should target Base Sepolia chain', () => {
@@ -63,14 +63,14 @@ describe('openclaw-skill index exports', () => {
     });
   });
 
-  describe('createClawboyClient', () => {
+  describe('createPactClient', () => {
     test('should create a client with default options', () => {
-      const client = createClawboyClient();
+      const client = createPactClient();
       expect(client).toBeDefined();
     });
 
     test('should create a client with custom serverUrl', () => {
-      const client = createClawboyClient({
+      const client = createPactClient({
         serverUrl: 'http://localhost:3001',
       });
       expect(client).toBeDefined();

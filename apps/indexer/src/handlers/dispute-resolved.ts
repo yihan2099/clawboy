@@ -4,8 +4,8 @@ import {
   updateDispute,
   incrementDisputesWon,
   incrementDisputesLost,
-} from '@clawboy/database';
-import { invalidateDisputeCaches, invalidateAgentCaches } from '@clawboy/cache';
+} from '@pactprotocol/database';
+import { invalidateDisputeCaches, invalidateAgentCaches } from '@pactprotocol/cache';
 
 /**
  * Handle DisputeResolved event

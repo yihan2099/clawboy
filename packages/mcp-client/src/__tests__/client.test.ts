@@ -23,9 +23,9 @@ mock.module('@modelcontextprotocol/sdk/client/stdio.js', () => ({
   },
 }));
 
-import { ClawboyClient, createClawboyClient } from '../client.js';
+import { PactClient, createPactClient } from '../client.js';
 
-describe('ClawboyClient', () => {
+describe('PactClient', () => {
   beforeEach(() => {
     mockConnect.mockClear();
     mockClose.mockClear();
@@ -35,7 +35,7 @@ describe('ClawboyClient', () => {
 
   describe('constructor', () => {
     test('should use provided config values', () => {
-      const client = new ClawboyClient({
+      const client = new PactClient({
         privateKey: '0xabc123',
         serverUrl: 'https://custom-server.com',
         rpcUrl: 'https://custom-rpc.com',
@@ -46,7 +46,7 @@ describe('ClawboyClient', () => {
     });
 
     test('should apply default serverUrl and rpcUrl when not provided', () => {
-      const client = new ClawboyClient({
+      const client = new PactClient({
         privateKey: '0xabc123',
       });
 
@@ -57,7 +57,7 @@ describe('ClawboyClient', () => {
 
   describe('connect', () => {
     test('should create a transport and connect the underlying client', async () => {
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
 
       await client.connect();
 
@@ -67,7 +67,7 @@ describe('ClawboyClient', () => {
     test('should propagate connection errors', async () => {
       mockConnect.mockImplementationOnce(() => Promise.reject(new Error('Connection failed')));
 
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
 
       await expect(client.connect()).rejects.toThrow('Connection failed');
     });
@@ -75,7 +75,7 @@ describe('ClawboyClient', () => {
 
   describe('disconnect', () => {
     test('should call close on the underlying client', async () => {
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
 
       await client.disconnect();
 
@@ -88,7 +88,7 @@ describe('ClawboyClient', () => {
       const expectedResult = { content: [{ type: 'text', text: 'hello' }] };
       mockCallTool.mockImplementationOnce(() => Promise.resolve(expectedResult));
 
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
       const result = await client.callTool('list_tasks', { status: 'open' });
 
       expect(mockCallTool).toHaveBeenCalledWith({
@@ -101,7 +101,7 @@ describe('ClawboyClient', () => {
     test('should propagate tool call errors', async () => {
       mockCallTool.mockImplementationOnce(() => Promise.reject(new Error('Tool not found')));
 
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
 
       await expect(client.callTool('nonexistent_tool', {})).rejects.toThrow('Tool not found');
     });
@@ -114,7 +114,7 @@ describe('ClawboyClient', () => {
       };
       mockListTools.mockImplementationOnce(() => Promise.resolve(expectedTools));
 
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
       const result = await client.listTools();
 
       expect(mockListTools).toHaveBeenCalledTimes(1);
@@ -125,7 +125,7 @@ describe('ClawboyClient', () => {
 
   describe('getClient', () => {
     test('should return the underlying MCP Client instance', () => {
-      const client = new ClawboyClient({ privateKey: '0xabc123' });
+      const client = new PactClient({ privateKey: '0xabc123' });
       const underlying = client.getClient();
 
       expect(underlying).toBeDefined();
@@ -135,34 +135,34 @@ describe('ClawboyClient', () => {
   });
 });
 
-describe('createClawboyClient', () => {
-  test('should throw if CLAWBOY_WALLET_PRIVATE_KEY is not set', () => {
-    const original = process.env.CLAWBOY_WALLET_PRIVATE_KEY;
-    delete process.env.CLAWBOY_WALLET_PRIVATE_KEY;
+describe('createPactClient', () => {
+  test('should throw if PACT_WALLET_PRIVATE_KEY is not set', () => {
+    const original = process.env.PACT_WALLET_PRIVATE_KEY;
+    delete process.env.PACT_WALLET_PRIVATE_KEY;
 
     try {
-      expect(() => createClawboyClient()).toThrow(
-        'CLAWBOY_WALLET_PRIVATE_KEY environment variable is required'
+      expect(() => createPactClient()).toThrow(
+        'PACT_WALLET_PRIVATE_KEY environment variable is required'
       );
     } finally {
       if (original !== undefined) {
-        process.env.CLAWBOY_WALLET_PRIVATE_KEY = original;
+        process.env.PACT_WALLET_PRIVATE_KEY = original;
       }
     }
   });
 
   test('should create a client when env var is set', () => {
-    const original = process.env.CLAWBOY_WALLET_PRIVATE_KEY;
-    process.env.CLAWBOY_WALLET_PRIVATE_KEY = '0xdeadbeef';
+    const original = process.env.PACT_WALLET_PRIVATE_KEY;
+    process.env.PACT_WALLET_PRIVATE_KEY = '0xdeadbeef';
 
     try {
-      const client = createClawboyClient();
-      expect(client).toBeInstanceOf(ClawboyClient);
+      const client = createPactClient();
+      expect(client).toBeInstanceOf(PactClient);
     } finally {
       if (original !== undefined) {
-        process.env.CLAWBOY_WALLET_PRIVATE_KEY = original;
+        process.env.PACT_WALLET_PRIVATE_KEY = original;
       } else {
-        delete process.env.CLAWBOY_WALLET_PRIVATE_KEY;
+        delete process.env.PACT_WALLET_PRIVATE_KEY;
       }
     }
   });

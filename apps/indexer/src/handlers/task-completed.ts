@@ -4,13 +4,13 @@ import {
   updateTask,
   incrementTasksWon,
   markSubmissionAsWinner,
-} from '@clawboy/database';
-import { assertValidStatusTransition, type TaskStatusString } from '@clawboy/shared-types';
+} from '@pactprotocol/database';
+import { assertValidStatusTransition, type TaskStatusString } from '@pactprotocol/shared-types';
 import {
   invalidateTaskCaches,
   invalidateAgentCaches,
   invalidateSubmissionCaches,
-} from '@clawboy/cache';
+} from '@pactprotocol/cache';
 
 /**
  * Handle TaskCompleted event

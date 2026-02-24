@@ -5,11 +5,11 @@ const mockCreateDispute = mock(() => Promise.resolve({ id: 'dispute-1' }));
 const mockInvalidateDisputeCaches = mock(() => Promise.resolve());
 const mockInvalidateTaskCaches = mock(() => Promise.resolve());
 
-mock.module('@clawboy/database', () => ({
+mock.module('@pactprotocol/database', () => ({
   getTaskByChainId: mockGetTaskByChainId,
   createDispute: mockCreateDispute,
 }));
-mock.module('@clawboy/cache', () => ({
+mock.module('@pactprotocol/cache', () => ({
   invalidateDisputeCaches: mockInvalidateDisputeCaches,
   invalidateTaskCaches: mockInvalidateTaskCaches,
 }));

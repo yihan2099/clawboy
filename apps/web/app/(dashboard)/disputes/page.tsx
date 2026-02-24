@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { listActiveDisputes } from '@clawboy/database/queries';
-import { getSupabaseClient } from '@clawboy/database/client';
+import { listActiveDisputes } from '@pactprotocol/database/queries';
+import { getSupabaseClient } from '@pactprotocol/database/client';
 import { DisputeList } from './dispute-list';
 
 export const metadata: Metadata = {

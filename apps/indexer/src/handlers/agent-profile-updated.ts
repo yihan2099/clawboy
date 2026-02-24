@@ -1,8 +1,8 @@
 import type { IndexerEvent } from '../listener';
-import { updateAgent, getAgentByAddress } from '@clawboy/database';
-import { fetchJson } from '@clawboy/ipfs-utils';
+import { updateAgent, getAgentByAddress } from '@pactprotocol/database';
+import { fetchJson } from '@pactprotocol/ipfs-utils';
 import { withRetryResult } from '../utils/retry';
-import { invalidateAgentCaches } from '@clawboy/cache';
+import { invalidateAgentCaches } from '@pactprotocol/cache';
 
 /**
  * ERC-8004 agent URI structure
@@ -18,7 +18,7 @@ interface ERC8004AgentURI {
   }>;
   active?: boolean;
   registrations?: string[];
-  // Clawboy-specific extensions
+  // Pact-specific extensions
   skills?: string[];
   preferredTaskTypes?: string[];
   links?: {
@@ -44,7 +44,7 @@ function extractCidFromURI(uri: string): string | null {
 }
 
 /**
- * Handle AgentProfileUpdated event from ERC-8004 ClawboyAgentAdapter
+ * Handle AgentProfileUpdated event from ERC-8004 PactAgentAdapter
  * Event: AgentProfileUpdated(address indexed wallet, uint256 indexed agentId, string newURI)
  */
 export async function handleAgentProfileUpdated(event: IndexerEvent): Promise<void> {

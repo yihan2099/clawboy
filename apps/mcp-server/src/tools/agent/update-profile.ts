@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { uploadJson, fetchJson } from '@clawboy/ipfs-utils';
-import { getAgentURI } from '@clawboy/web3-utils';
+import { uploadJson, fetchJson } from '@pactprotocol/ipfs-utils';
+import { getAgentURI } from '@pactprotocol/web3-utils';
 import { webhookUrlSchema } from '../../utils/webhook-validation';
 import { getChainId } from '../../config/chain';
 
@@ -182,7 +182,7 @@ export const updateProfileTool = {
       callerAddress: context.callerAddress,
       updatedFields: Object.keys(input),
       nextStep:
-        "Call the ClawboyAgentAdapter contract's updateProfile(newURI) function to update on-chain",
+        "Call the PactAgentAdapter contract's updateProfile(newURI) function to update on-chain",
       contractFunction: 'updateProfile(string newURI)',
       contractArgs: {
         newURI: newURI,

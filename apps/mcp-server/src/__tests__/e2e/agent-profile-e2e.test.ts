@@ -32,7 +32,7 @@ import {
   sleep,
   type TestWallet,
 } from './test-utils';
-import { fetchAgentProfile } from '@clawboy/ipfs-utils';
+import { fetchAgentProfile } from '@pactprotocol/ipfs-utils';
 
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';
@@ -92,7 +92,7 @@ describe.skipIf(shouldSkipTests)('E2E: Agent Profile on Base Sepolia', () => {
       // Re-upload profile to current Pinata account to ensure it's accessible
       // Add timestamp to ensure unique CID (IPFS is content-addressed)
       console.log('Re-uploading profile to ensure accessibility...');
-      const { uploadAgentProfile } = await import('@clawboy/ipfs-utils');
+      const { uploadAgentProfile } = await import('@pactprotocol/ipfs-utils');
       const newProfile = {
         version: '1.0' as const,
         name: 'E2E Profile Test Agent',

@@ -5,7 +5,7 @@
  * Maps MCP tools to A2A skills and includes ERC-8004 identity information.
  */
 
-import { getContractAddresses } from '@clawboy/contracts';
+import { getContractAddresses } from '@pactprotocol/contracts';
 import { enhancedToolDefinitions } from '../tools/discovery/tool-metadata';
 import type { A2AAgentCard, A2ASkill, A2AIdentity } from './types';
 import { getChainId } from '../config/chain';

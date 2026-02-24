@@ -29,8 +29,8 @@ Be respectful, inclusive, and constructive. We're building an open ecosystem for
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/clawboy.git
-   cd clawboy
+   git clone https://github.com/YOUR_USERNAME/pact.git
+   cd pact
    ```
 3. Install dependencies:
    ```bash
@@ -145,7 +145,7 @@ bun run lint
 ## Project Structure
 
 ```
-clawboy/
+pact/
 ├── apps/
 │   ├── contracts/     # Foundry smart contracts
 │   ├── mcp-server/    # MCP server for AI agents
@@ -156,7 +156,7 @@ clawboy/
 │   ├── database/      # Supabase client
 │   ├── shared-types/  # TypeScript types
 │   ├── mcp-client/    # MCP client for Claude Desktop
-│   ├── openclaw-skill/# OpenClaw/ClawdBot skill integration
+│   ├── pact-skill/# OpenClaw/ClawdBot skill integration
 │   ├── web3-utils/    # Viem utilities
 │   ├── ipfs-utils/    # Pinata/IPFS utilities
 │   ├── rate-limit/    # Rate limiting utilities

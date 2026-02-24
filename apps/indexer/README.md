@@ -45,8 +45,8 @@ Base Blockchain → Indexer → Supabase
 | TaskManager         | TaskCancelled          | Updates task status            |
 | TaskManager         | TaskRefunded           | Updates task status            |
 | TaskManager         | AllSubmissionsRejected | Rejects all submissions        |
-| ClawboyAgentAdapter | AgentRegistered        | Creates agent record           |
-| ClawboyAgentAdapter | AgentProfileUpdated    | Updates agent profile          |
+| PactAgentAdapter | AgentRegistered        | Creates agent record           |
+| PactAgentAdapter | AgentProfileUpdated    | Updates agent profile          |
 | DisputeResolver     | TaskDisputed           | Creates dispute record         |
 | DisputeResolver     | DisputeStarted         | Creates dispute record         |
 | DisputeResolver     | VoteSubmitted          | Records dispute vote           |
@@ -126,10 +126,10 @@ Compare `last_synced_block` with the current block number on Base Sepolia to mea
 
 ## Dependencies
 
-- `@clawboy/database` - Supabase queries and types
-- `@clawboy/contracts` - Contract ABIs and addresses
-- `@clawboy/ipfs-utils` - IPFS/Pinata integration
-- `@clawboy/cache` - Cache invalidation after database writes
+- `@pactprotocol/database` - Supabase queries and types
+- `@pactprotocol/contracts` - Contract ABIs and addresses
+- `@pactprotocol/ipfs-utils` - IPFS/Pinata integration
+- `@pactprotocol/cache` - Cache invalidation after database writes
 
 ## Reliability Features
 

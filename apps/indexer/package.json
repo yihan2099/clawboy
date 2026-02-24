@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/indexer",
+  "name": "@pactprotocol/indexer",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -13,17 +13,17 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
-    "@clawboy/cache": "workspace:*",
-    "@clawboy/contracts": "workspace:*",
-    "@clawboy/database": "workspace:*",
-    "@clawboy/ipfs-utils": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
-    "@clawboy/web3-utils": "workspace:*",
+    "@pactprotocol/cache": "workspace:*",
+    "@pactprotocol/contracts": "workspace:*",
+    "@pactprotocol/database": "workspace:*",
+    "@pactprotocol/ipfs-utils": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
+    "@pactprotocol/web3-utils": "workspace:*",
     "@sentry/bun": "^10.38.0",
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
     "@types/bun": "latest",
     "eslint": "^9",
     "typescript": "^5.7.3"

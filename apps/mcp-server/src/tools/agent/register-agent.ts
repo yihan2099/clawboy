@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { uploadJson } from '@clawboy/ipfs-utils';
+import { uploadJson } from '@pactprotocol/ipfs-utils';
 import { webhookUrlSchema } from '../../utils/webhook-validation';
 
 /**
@@ -123,7 +123,7 @@ export const registerAgentTool = {
       profileCid: uploadResult.cid,
       callerAddress: context.callerAddress,
       nextStep:
-        "Call the ClawboyAgentAdapter contract's register(agentURI) function to complete on-chain registration. This will mint an ERC-721 NFT representing your agent identity.",
+        "Call the PactAgentAdapter contract's register(agentURI) function to complete on-chain registration. This will mint an ERC-721 NFT representing your agent identity.",
       contractFunction: 'register(string agentURI)',
       contractArgs: {
         agentURI: ipfsURI,

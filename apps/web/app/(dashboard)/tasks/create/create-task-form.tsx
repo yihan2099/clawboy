@@ -20,10 +20,10 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { taskManagerConfig, BASE_SEPOLIA_ADDRESSES } from '@/lib/contracts';
-import { getSupportedTokens, isNativeToken } from '@clawboy/contracts';
+import { getSupportedTokens, isNativeToken } from '@pactprotocol/contracts';
 import { toast } from 'sonner';
 import { uploadTaskSpec } from '@/app/actions/ipfs';
-import type { TaskSpecification } from '@clawboy/shared-types';
+import type { TaskSpecification } from '@pactprotocol/shared-types';
 
 const erc20Abi = [
   {
@@ -243,7 +243,7 @@ export function CreateTaskForm() {
       .filter((d) => d.description.trim())
       .map((d) => ({ type: d.type, description: d.description.trim() }));
 
-    // Build the task specification (matches TaskSpecification from @clawboy/shared-types)
+    // Build the task specification (matches TaskSpecification from @pactprotocol/shared-types)
     const spec = {
       version: '1.0' as const,
       title: title.trim(),

@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'packages/mcp-client/**'
-      - 'packages/openclaw-skill/**'
+      - 'packages/pact-skill/**'
 
 jobs:
   publish:
@@ -29,17 +29,17 @@ jobs:
       - name: Build all packages
         run: bun run build
 
-      # Publish mcp-client first (openclaw-skill depends on it)
+      # Publish mcp-client first (pact-skill depends on it)
       - name: Publish mcp-client
         working-directory: packages/mcp-client
         run: |
           # Check if this version already exists on npm
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @clawboy/mcp-client version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @pactprotocol/mcp-client version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
             echo "Publishing mcp-client@$CURRENT_VERSION (npm has $NPM_VERSION)"
             # Safety net: remove any remaining workspace:* references from package.json
-            # (tsup bundles @clawboy/contracts, so it should already be in devDependencies only)
+            # (tsup bundles @pactprotocol/contracts, so it should already be in devDependencies only)
             sed -i 's/"workspace:\*"/"*"/g' package.json
             npm publish --access public
             # Restore original package.json
@@ -50,22 +50,22 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Then publish openclaw-skill
-      - name: Publish openclaw-skill
-        working-directory: packages/openclaw-skill
+      # Then publish pact-skill
+      - name: Publish pact-skill
+        working-directory: packages/pact-skill
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @clawboy/openclaw-skill version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @pactprotocol/pact-skill version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
-            echo "Publishing openclaw-skill@$CURRENT_VERSION (npm has $NPM_VERSION)"
+            echo "Publishing pact-skill@$CURRENT_VERSION (npm has $NPM_VERSION)"
             # Replace workspace:* with actual mcp-client version
             MCP_VERSION=$(node -p "require('../mcp-client/package.json').version")
-            sed -i "s|\"@clawboy/mcp-client\": \"workspace:\*\"|\"@clawboy/mcp-client\": \"^$MCP_VERSION\"|" package.json
+            sed -i "s|\"@pactprotocol/mcp-client\": \"workspace:\*\"|\"@pactprotocol/mcp-client\": \"^$MCP_VERSION\"|" package.json
             npm publish --access public
             # Restore original package.json
             git checkout package.json
           else
-            echo "openclaw-skill@$CURRENT_VERSION already published, skipping"
+            echo "pact-skill@$CURRENT_VERSION already published, skipping"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

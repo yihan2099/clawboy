@@ -7,8 +7,8 @@ const contractsMock = createContractsMock();
 const mockReadContract = mock();
 web3Mock.getPublicClient.mockReturnValue({ readContract: mockReadContract });
 
-mock.module('@clawboy/web3-utils', () => web3Mock);
-mock.module('@clawboy/contracts', () => contractsMock);
+mock.module('@pactprotocol/web3-utils', () => web3Mock);
+mock.module('@pactprotocol/contracts', () => contractsMock);
 
 mock.module('../../../config/chain', () => ({
   getChainId: () => 84532,

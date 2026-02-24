@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import { ITaskManager } from "./interfaces/ITaskManager.sol";
 import { IEscrowVault } from "./interfaces/IEscrowVault.sol";
-import { IClawboyAgentAdapter } from "./IClawboyAgentAdapter.sol";
+import { IPactAgentAdapter } from "./IPactAgentAdapter.sol";
 import { IDisputeResolver } from "./interfaces/IDisputeResolver.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
@@ -22,7 +22,7 @@ contract TaskManager is ITaskManager, Pausable {
 
     // External contracts
     IEscrowVault public immutable escrowVault;
-    IClawboyAgentAdapter public agentAdapter;
+    IPactAgentAdapter public agentAdapter;
     IDisputeResolver public disputeResolver;
 
     // Access control
@@ -85,7 +85,7 @@ contract TaskManager is ITaskManager, Pausable {
 
     constructor(address _escrowVault, address _agentAdapter) {
         escrowVault = IEscrowVault(_escrowVault);
-        agentAdapter = IClawboyAgentAdapter(_agentAdapter);
+        agentAdapter = IPactAgentAdapter(_agentAdapter);
         owner = msg.sender;
     }
 
@@ -141,7 +141,7 @@ contract TaskManager is ITaskManager, Pausable {
      */
     function setAgentAdapter(address _adapter) external onlyTimelock {
         if (_adapter == address(0)) revert ZeroAddress();
-        agentAdapter = IClawboyAgentAdapter(_adapter);
+        agentAdapter = IPactAgentAdapter(_adapter);
     }
 
     /**
@@ -170,7 +170,7 @@ contract TaskManager is ITaskManager, Pausable {
      */
     function emergencySetAgentAdapter(address _adapter) external onlyOwner {
         if (_adapter == address(0)) revert ZeroAddress();
-        agentAdapter = IClawboyAgentAdapter(_adapter);
+        agentAdapter = IPactAgentAdapter(_adapter);
         emit EmergencyBypassUsed(msg.sender, this.setAgentAdapter.selector);
     }
 

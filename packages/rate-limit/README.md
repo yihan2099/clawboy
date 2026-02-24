@@ -1,4 +1,4 @@
-# @clawboy/rate-limit
+# @pactprotocol/rate-limit
 
 Rate limiting utilities using Upstash Redis. Provides pre-configured limiters for the MCP server and web app, plus Hono middleware.
 
@@ -23,8 +23,8 @@ Falls back gracefully when Redis is unavailable.
 ## Usage
 
 ```ts
-import { createMcpRateLimitMiddleware } from '@clawboy/rate-limit/middleware/hono';
-import { getMcpLimiter, getOperationType } from '@clawboy/rate-limit/config/mcp';
+import { createMcpRateLimitMiddleware } from '@pactprotocol/rate-limit/middleware/hono';
+import { getMcpLimiter, getOperationType } from '@pactprotocol/rate-limit/config/mcp';
 ```
 
 ## License

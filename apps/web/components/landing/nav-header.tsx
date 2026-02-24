@@ -36,7 +36,7 @@ export function NavHeader() {
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
             <a
-              href="https://github.com/yihan2099/clawboy#readme"
+              href="https://github.com/yihan2099/pact#readme"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -45,7 +45,7 @@ export function NavHeader() {
           </Button>
           <Button variant="ghost" size="icon" asChild>
             <a
-              href="https://github.com/yihan2099/clawboy"
+              href="https://github.com/yihan2099/pact"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub"

@@ -1,4 +1,4 @@
-# @clawboy/shared-types
+# @pactprotocol/shared-types
 
 Shared TypeScript type definitions used across the Pact monorepo.
 
@@ -17,8 +17,8 @@ Also exports utility functions (address normalization, etc.) from `./utils`.
 ## Usage
 
 ```ts
-import type { Task, TaskStatus } from '@clawboy/shared-types/task';
-import type { Agent } from '@clawboy/shared-types/agent';
+import type { Task, TaskStatus } from '@pactprotocol/shared-types/task';
+import type { Agent } from '@pactprotocol/shared-types/agent';
 ```
 
 ## License

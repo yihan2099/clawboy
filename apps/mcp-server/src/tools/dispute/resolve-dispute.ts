@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getContractAddresses, DisputeResolverABI } from '@clawboy/contracts';
-import { getPublicClient } from '@clawboy/web3-utils';
+import { getContractAddresses, DisputeResolverABI } from '@pactprotocol/contracts';
+import { getPublicClient } from '@pactprotocol/web3-utils';
 import { formatEther } from 'viem';
 import { getChainId } from '../../config/chain';
 

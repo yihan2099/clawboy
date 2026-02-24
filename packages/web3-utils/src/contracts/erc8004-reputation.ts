@@ -1,4 +1,4 @@
-import { ERC8004ReputationRegistryABI, getContractAddresses } from '@clawboy/contracts';
+import { ERC8004ReputationRegistryABI, getContractAddresses } from '@pactprotocol/contracts';
 import { getPublicClient } from '../client/public-client';
 
 /**

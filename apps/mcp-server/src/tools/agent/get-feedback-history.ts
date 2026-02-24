@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getAgentId, getAllFeedback, getFeedbackClients } from '@clawboy/web3-utils';
+import { getAgentId, getAllFeedback, getFeedbackClients } from '@pactprotocol/web3-utils';
 import { getChainId } from '../../config/chain';
 
 export const getFeedbackHistorySchema = z.object({

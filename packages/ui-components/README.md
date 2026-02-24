@@ -1,4 +1,4 @@
-# @clawboy/ui-components
+# @pactprotocol/ui-components
 
 Shared React UI components for Pact web applications.
 
@@ -9,7 +9,7 @@ Scaffold only. No components exported yet.
 ## Usage
 
 ```ts
-import {} from '@clawboy/ui-components';
+import {} from '@pactprotocol/ui-components';
 ```
 
 ## License

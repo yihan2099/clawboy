@@ -64,7 +64,7 @@ export function MobileNav() {
             Create Task
           </Link>
           <a
-            href="https://github.com/yihan2099/clawboy"
+            href="https://github.com/yihan2099/pact"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"

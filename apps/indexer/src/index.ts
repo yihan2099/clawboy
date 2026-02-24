@@ -9,7 +9,7 @@ if (process.env.SENTRY_DSN) {
 }
 
 /**
- * Clawboy Event Indexer
+ * Pact Event Indexer
  *
  * Syncs blockchain events to the Supabase database for fast querying.
  * Includes idempotency protection and dead-letter queue for failed events.
@@ -24,7 +24,7 @@ import {
   getRetryableFailedEvents,
   updateFailedEventRetry,
   resolveFailedEvent,
-} from '@clawboy/database';
+} from '@pactprotocol/database';
 import { startIpfsRetryJob } from './jobs';
 import { startHealthServer } from './health';
 import { processWebhookRetries } from './services/webhook-notifier';
@@ -193,7 +193,7 @@ async function processRetryableEvents(): Promise<void> {
 }
 
 async function main() {
-  console.log('Starting Clawboy Indexer...');
+  console.log('Starting Pact Indexer...');
 
   const pollingIntervalMs = parseInt(process.env.POLLING_INTERVAL_MS || '5000', 10);
   const dlqRetryIntervalMs = parseInt(process.env.DLQ_RETRY_INTERVAL_MS || '60000', 10);

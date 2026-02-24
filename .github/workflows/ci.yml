@@ -61,9 +61,9 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bun run --filter @clawboy/mcp-server test
-      - run: bun run --filter @clawboy/cache test
-      - run: bun run --filter @clawboy/rate-limit test
+      - run: bun run --filter @pactprotocol/mcp-server test
+      - run: bun run --filter @pactprotocol/cache test
+      - run: bun run --filter @pactprotocol/rate-limit test
 
   build:
     name: Build

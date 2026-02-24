@@ -6,7 +6,7 @@
  */
 
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, getDisputeByChainId } from '@clawboy/database';
+import { getTaskByChainId, getDisputeByChainId } from '@pactprotocol/database';
 import {
   notifyTaskCreated,
   notifyWorkSubmitted,

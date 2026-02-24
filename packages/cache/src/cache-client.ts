@@ -5,7 +5,7 @@
  * as fallback when Redis is unavailable.
  */
 
-import { getRedisClient } from '@clawboy/redis';
+import { getRedisClient } from '@pactprotocol/redis';
 import type { ICache, CacheOptions, CacheResult } from './types';
 import { tagIndexKey } from './key-builder';
 import { TTL_CONFIG } from './ttl-config';

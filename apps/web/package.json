@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/web",
+  "name": "@pactprotocol/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,11 +10,11 @@
     "clean": "rm -rf .next node_modules"
   },
   "dependencies": {
-    "@clawboy/contracts": "workspace:*",
-    "@clawboy/database": "workspace:*",
-    "@clawboy/ipfs-utils": "workspace:*",
-    "@clawboy/rate-limit": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
+    "@pactprotocol/contracts": "workspace:*",
+    "@pactprotocol/database": "workspace:*",
+    "@pactprotocol/ipfs-utils": "workspace:*",
+    "@pactprotocol/rate-limit": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
     "@metamask/sdk": "^0.34.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@rainbow-me/rainbowkit": "^2.2.10",

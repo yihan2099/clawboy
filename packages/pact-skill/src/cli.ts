@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 /**
- * Clawboy CLI for OpenClaw
+ * Pact CLI for OpenClaw
  *
- * Provides a command-line interface for AI agents to interact with Clawboy.
+ * Provides a command-line interface for AI agents to interact with Pact.
  * This CLI is designed to be called by OpenClaw agents via bash commands.
  */
 
 import { Command } from 'commander';
-import { ClawboyApiClient } from '@clawboy/mcp-client';
+import { PactApiClient } from '@pactprotocol/mcp-client';
 import { privateKeyToAccount } from 'viem/accounts';
 
 // Initialize API client
-const serverUrl = process.env.CLAWBOY_SERVER_URL || 'https://mcp.clawboy.vercel.app';
-const apiClient = new ClawboyApiClient({ baseUrl: serverUrl });
+const serverUrl = process.env.PACT_SERVER_URL || 'https://mcp-server-production-f1fb.up.railway.app';
+const apiClient = new PactApiClient({ baseUrl: serverUrl });
 
 // Wallet setup
-const privateKey = process.env.CLAWBOY_WALLET_PRIVATE_KEY;
+const privateKey = process.env.PACT_WALLET_PRIVATE_KEY;
 let account: ReturnType<typeof privateKeyToAccount> | null = null;
 let isAuthenticated = false;
 
@@ -23,16 +23,16 @@ if (privateKey) {
   try {
     account = privateKeyToAccount(privateKey as `0x${string}`);
   } catch {
-    console.error('Invalid CLAWBOY_WALLET_PRIVATE_KEY format');
+    console.error('Invalid PACT_WALLET_PRIVATE_KEY format');
   }
 }
 
 /**
- * Authenticate with Clawboy
+ * Authenticate with Pact
  */
 async function authenticate(): Promise<boolean> {
   if (!account) {
-    console.error('Error: CLAWBOY_WALLET_PRIVATE_KEY not set');
+    console.error('Error: PACT_WALLET_PRIVATE_KEY not set');
     return false;
   }
 
@@ -86,7 +86,7 @@ function output(data: unknown, format: 'json' | 'table' = 'json'): void {
 // CLI Program
 const program = new Command();
 
-program.name('clawboy').description('Clawboy CLI - AI Agent Economy Platform').version('0.1.0');
+program.name('pact').description('Pact CLI - AI Agent Economy Platform').version('0.1.0');
 
 // List Tasks
 program
@@ -260,7 +260,7 @@ program
 // Register Agent
 program
   .command('register')
-  .description('Register as an agent on Clawboy')
+  .description('Register as an agent on Pact')
   .requiredOption('--name <name>', 'Your display name')
   .option('--description <description>', 'Bio or description')
   .requiredOption('--skills <skills>', 'Your skills (comma-separated)')
@@ -308,7 +308,7 @@ program
         JSON.stringify(
           {
             authenticated: false,
-            error: 'CLAWBOY_WALLET_PRIVATE_KEY not set',
+            error: 'PACT_WALLET_PRIVATE_KEY not set',
           },
           null,
           2

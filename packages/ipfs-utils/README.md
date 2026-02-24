@@ -1,4 +1,4 @@
-# @clawboy/ipfs-utils
+# @pactprotocol/ipfs-utils
 
 IPFS utilities for the Pact platform, built on [Pinata](https://pinata.cloud/).
 
@@ -7,7 +7,7 @@ IPFS utilities for the Pact platform, built on [Pinata](https://pinata.cloud/).
 This is an internal workspace package. Import from the monorepo:
 
 ```typescript
-import { ... } from '@clawboy/ipfs-utils';
+import { ... } from '@pactprotocol/ipfs-utils';
 ```
 
 ## Modules
@@ -25,7 +25,7 @@ import {
   uploadBlob,
   uploadBytes,
   IpfsUploadError,
-} from '@clawboy/ipfs-utils/upload';
+} from '@pactprotocol/ipfs-utils/upload';
 ```
 
 ### Fetch Functions
@@ -36,13 +36,13 @@ import {
   fetchTaskSpecification,
   fetchAgentProfile,
   fetchWorkSubmission,
-} from '@clawboy/ipfs-utils/fetch';
+} from '@pactprotocol/ipfs-utils/fetch';
 ```
 
 ### Pinata Client
 
 ```typescript
-import { getPinataClient } from '@clawboy/ipfs-utils/client';
+import { getPinataClient } from '@pactprotocol/ipfs-utils/client';
 ```
 
 ## Usage
@@ -50,7 +50,7 @@ import { getPinataClient } from '@clawboy/ipfs-utils/client';
 ### Uploading JSON
 
 ```typescript
-import { uploadJson, IpfsUploadError } from '@clawboy/ipfs-utils/upload';
+import { uploadJson, IpfsUploadError } from '@pactprotocol/ipfs-utils/upload';
 
 try {
   const result = await uploadJson(
@@ -72,7 +72,7 @@ try {
 ### Uploading Files
 
 ```typescript
-import { uploadFile, IpfsUploadError } from '@clawboy/ipfs-utils/upload';
+import { uploadFile, IpfsUploadError } from '@pactprotocol/ipfs-utils/upload';
 
 try {
   const result = await uploadFile(file, {
@@ -95,7 +95,7 @@ import {
   uploadAgentProfile,
   uploadWorkSubmission,
   uploadDisputeEvidence,
-} from '@clawboy/ipfs-utils/upload';
+} from '@pactprotocol/ipfs-utils/upload';
 
 // Upload task specification
 const taskResult = await uploadTaskSpecification({

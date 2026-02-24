@@ -1,11 +1,11 @@
-# @clawboy/redis
+# @pactprotocol/redis
 
 Foundational Redis client package for the Pact platform. Provides a singleton Upstash Redis client with graceful fallback behavior.
 
 ## Installation
 
 ```bash
-bun add @clawboy/redis
+bun add @pactprotocol/redis
 ```
 
 ## Environment Variables
@@ -24,7 +24,7 @@ If either variable is missing, Redis is disabled and `getRedisClient()` returns 
 Returns the Upstash Redis client singleton, or `null` if not configured.
 
 ```typescript
-import { getRedisClient } from '@clawboy/redis';
+import { getRedisClient } from '@pactprotocol/redis';
 
 const redis = getRedisClient();
 if (redis) {
@@ -38,7 +38,7 @@ if (redis) {
 Checks if Redis is available (environment configured).
 
 ```typescript
-import { isRedisEnabled } from '@clawboy/redis';
+import { isRedisEnabled } from '@pactprotocol/redis';
 
 if (isRedisEnabled()) {
   // Redis operations available
@@ -52,7 +52,7 @@ if (isRedisEnabled()) {
 Resets the Redis client singleton. Primarily used for testing.
 
 ```typescript
-import { resetRedisClient } from '@clawboy/redis';
+import { resetRedisClient } from '@pactprotocol/redis';
 
 // In tests
 afterEach(() => {
@@ -68,12 +68,12 @@ When Redis is not configured:
 - `getRedisClient()` returns `null`
 - Consumers should implement their own fallback (e.g., in-memory storage)
 
-The `@clawboy/cache` package provides automatic fallback to in-memory caching when Redis is unavailable.
+The `@pactprotocol/cache` package provides automatic fallback to in-memory caching when Redis is unavailable.
 
 ## Usage Example
 
 ```typescript
-import { getRedisClient, isRedisEnabled } from '@clawboy/redis';
+import { getRedisClient, isRedisEnabled } from '@pactprotocol/redis';
 
 // Pattern: Check availability before use
 async function getSessionData(sessionId: string): Promise<Session | null> {
@@ -87,8 +87,8 @@ async function getSessionData(sessionId: string): Promise<Session | null> {
   return redis.get<Session>(`session:${sessionId}`);
 }
 
-// Pattern: Use with @clawboy/cache for automatic fallback
-import { getCache } from '@clawboy/cache';
+// Pattern: Use with @pactprotocol/cache for automatic fallback
+import { getCache } from '@pactprotocol/cache';
 
 const cache = getCache(); // Uses Redis if available, memory otherwise
 await cache.set('key', value, { ttl: 300 });

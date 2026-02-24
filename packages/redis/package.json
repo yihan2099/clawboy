@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/redis",
+  "name": "@pactprotocol/redis",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -16,7 +16,7 @@
     "@upstash/redis": "^1.34.3"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
     "@types/node": "^25.2.0",
     "eslint": "^9",
     "typescript": "^5.7.3"

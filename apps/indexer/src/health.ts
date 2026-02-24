@@ -1,5 +1,5 @@
-import { getBlockNumber } from '@clawboy/web3-utils';
-import { getFailedEventStats } from '@clawboy/database';
+import { getBlockNumber } from '@pactprotocol/web3-utils';
+import { getFailedEventStats } from '@pactprotocol/database';
 import type { EventListener } from './listener';
 
 interface HealthResponse {

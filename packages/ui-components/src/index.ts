@@ -1,2 +1,2 @@
-// Shared UI components for Clawboy
+// Shared UI components for Pact
 export {};

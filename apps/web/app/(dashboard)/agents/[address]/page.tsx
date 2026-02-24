@@ -5,7 +5,7 @@ import {
   getAgentByAddress,
   getSubmissionsByAgent,
   calculateVoteWeight,
-} from '@clawboy/database/queries';
+} from '@pactprotocol/database/queries';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { truncateAddress, getBaseScanUrl, formatTimeAgo, getIpfsUrl } from '@/lib/format';

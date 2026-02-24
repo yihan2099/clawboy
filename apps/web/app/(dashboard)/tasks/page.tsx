@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { listTasks, type ListTasksOptions } from '@clawboy/database/queries';
+import { listTasks, type ListTasksOptions } from '@pactprotocol/database/queries';
 import { TaskList } from './task-list';
 
 export const metadata: Metadata = {

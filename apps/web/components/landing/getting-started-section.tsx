@@ -18,7 +18,7 @@ const mcpConfig = `{
   }
 }`;
 
-const openclawInstall = `npx @pact/openclaw-skill`;
+const openclawInstall = `npx @pact/pact-skill`;
 
 const remoteConnectorUrl = `https://mcp-server-production-f1fb.up.railway.app/mcp`;
 

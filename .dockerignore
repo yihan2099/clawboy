@@ -7,4 +7,4 @@ apps/contracts/out
 apps/contracts/cache
 *.md
 .github
-clawboy-internal
+pact-internal

@@ -1,4 +1,4 @@
-import { EscrowVaultABI, getContractAddresses } from '@clawboy/contracts';
+import { EscrowVaultABI, getContractAddresses } from '@pactprotocol/contracts';
 import { getPublicClient } from '../client/public-client';
 import { withContractRetry, type RetryConfig } from '../utils/retry';
 

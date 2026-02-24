@@ -1,8 +1,8 @@
 import {
-  ClawboyAgentAdapterABI,
+  PactAgentAdapterABI,
   ERC8004IdentityRegistryABI,
   getContractAddresses,
-} from '@clawboy/contracts';
+} from '@pactprotocol/contracts';
 import { getPublicClient } from '../client/public-client';
 
 /**
@@ -13,7 +13,7 @@ function getDefaultChainId(): number {
 }
 
 /**
- * Get ClawboyAgentAdapter contract address
+ * Get PactAgentAdapter contract address
  */
 export function getAgentAdapterAddress(chainId?: number): `0x${string}` {
   const addresses = getContractAddresses(chainId || getDefaultChainId());
@@ -33,7 +33,7 @@ export async function isAgentRegistered(
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'isRegistered',
     args: [address],
   }) as Promise<boolean>;
@@ -49,7 +49,7 @@ export async function getAgentId(address: `0x${string}`, chainId?: number): Prom
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getAgentId',
     args: [address],
   }) as Promise<bigint>;
@@ -69,7 +69,7 @@ export async function getAgentVoteWeight(
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getVoteWeight',
     args: [address],
   }) as Promise<bigint>;
@@ -93,7 +93,7 @@ export async function getAgentReputationSummary(
 
   const result = await publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getReputationSummary',
     args: [address],
   });
@@ -124,7 +124,7 @@ export async function getIdentityRegistryAddress(chainId?: number): Promise<`0x$
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getIdentityRegistry',
     args: [],
   }) as Promise<`0x${string}`>;
@@ -140,7 +140,7 @@ export async function getReputationRegistryAddress(chainId?: number): Promise<`0
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getReputationRegistry',
     args: [],
   }) as Promise<`0x${string}`>;
@@ -161,7 +161,7 @@ export async function getAgentURI(
   // First get the agent ID
   const agentId = (await publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'getAgentId',
     args: [address],
   })) as bigint;

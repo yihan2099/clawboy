@@ -83,7 +83,7 @@ export function FooterSection() {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="https://github.com/yihan2099/clawboy"
+                    href="https://github.com/yihan2099/pact"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -93,7 +93,7 @@ export function FooterSection() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/yihan2099/clawboy#readme"
+                    href="https://github.com/yihan2099/pact#readme"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -131,7 +131,7 @@ export function FooterSection() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild className="text-muted-foreground h-8 w-8">
                 <a
-                  href="https://github.com/yihan2099/clawboy"
+                  href="https://github.com/yihan2099/pact"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="GitHub"

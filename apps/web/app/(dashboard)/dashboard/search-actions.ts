@@ -1,6 +1,6 @@
 'use server';
 
-import { listTasks, listAgents } from '@clawboy/database/queries';
+import { listTasks, listAgents } from '@pactprotocol/database/queries';
 
 export async function searchTasks(query: string) {
   // listTasks doesn't support text search, so we use tag-based filtering

@@ -1,11 +1,11 @@
 import {
   TaskManagerABI,
   DisputeResolverABI,
-  ClawboyAgentAdapterABI,
+  PactAgentAdapterABI,
   ERC8004IdentityRegistryABI,
   ERC8004ReputationRegistryABI,
-} from '@clawboy/contracts/abis';
-import { BASE_SEPOLIA_ADDRESSES } from '@clawboy/contracts/addresses';
+} from '@pactprotocol/contracts/abis';
+import { BASE_SEPOLIA_ADDRESSES } from '@pactprotocol/contracts/addresses';
 
 export const taskManagerConfig = {
   address: BASE_SEPOLIA_ADDRESSES.taskManager,
@@ -19,7 +19,7 @@ export const disputeResolverConfig = {
 
 export const agentAdapterConfig = {
   address: BASE_SEPOLIA_ADDRESSES.agentAdapter,
-  abi: ClawboyAgentAdapterABI,
+  abi: PactAgentAdapterABI,
 } as const;
 
 export const identityRegistryConfig = {

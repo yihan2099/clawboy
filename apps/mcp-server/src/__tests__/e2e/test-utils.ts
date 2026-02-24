@@ -31,15 +31,15 @@ import {
   resetPublicClient,
   getBalance,
   waitForTransaction,
-} from '@clawboy/web3-utils';
+} from '@pactprotocol/web3-utils';
 import { gasTracker } from './gas-tracker';
 import {
   TaskManagerABI,
-  ClawboyAgentAdapterABI,
+  PactAgentAdapterABI,
   ERC8004IdentityRegistryABI,
   getContractAddresses,
-} from '@clawboy/contracts';
-import { getTaskByChainId } from '@clawboy/database';
+} from '@pactprotocol/contracts';
+import { getTaskByChainId } from '@pactprotocol/database';
 
 // Chain configuration - supports both Base Sepolia and local Anvil
 const CHAIN_ID = parseInt(process.env.CHAIN_ID || '84532', 10);
@@ -198,7 +198,7 @@ export async function registerAgentOnChain(
 ): Promise<`0x${string}`> {
   const hash = await wallet.walletClient.writeContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'register',
     args: [agentURI],
   });
@@ -221,7 +221,7 @@ export async function checkAgentRegistered(address: `0x${string}`): Promise<bool
 
   return publicClient.readContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'isRegistered',
     args: [address],
   }) as Promise<boolean>;
@@ -681,7 +681,7 @@ export async function updateProfileOnChain(
 ): Promise<`0x${string}`> {
   const hash = await wallet.walletClient.writeContract({
     address: addresses.agentAdapter,
-    abi: ClawboyAgentAdapterABI,
+    abi: PactAgentAdapterABI,
     functionName: 'updateProfile',
     args: [newURI],
   });
@@ -707,7 +707,7 @@ export async function getAgentProfileURI(address: `0x${string}`): Promise<string
     // First check if registered
     const isRegistered = (await publicClient.readContract({
       address: addresses.agentAdapter,
-      abi: ClawboyAgentAdapterABI,
+      abi: PactAgentAdapterABI,
       functionName: 'isRegistered',
       args: [address],
     })) as boolean;
@@ -719,7 +719,7 @@ export async function getAgentProfileURI(address: `0x${string}`): Promise<string
     // Get agent ID
     const agentId = (await publicClient.readContract({
       address: addresses.agentAdapter,
-      abi: ClawboyAgentAdapterABI,
+      abi: PactAgentAdapterABI,
       functionName: 'getAgentId',
       args: [address],
     })) as bigint;

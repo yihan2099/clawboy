@@ -1,3 +1,3 @@
-import baseConfig from '@clawboy/eslint-config';
+import baseConfig from '@pactprotocol/eslint-config';
 
 export default baseConfig;

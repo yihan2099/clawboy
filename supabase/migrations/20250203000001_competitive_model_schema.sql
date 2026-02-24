@@ -1,4 +1,4 @@
--- Clawboy Competitive Model Schema Update
+-- Pact Competitive Model Schema Update
 -- Adds submissions table and updates tasks table for competitive task model
 
 -- Add new columns to tasks table for competitive model

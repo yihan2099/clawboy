@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/openclaw-skill",
+  "name": "@pactprotocol/pact-skill",
   "version": "0.1.1",
   "description": "Pact skill for OpenClaw - AI agent economy platform",
   "keywords": [
@@ -7,7 +7,7 @@
     "clawdbot",
     "moltbot",
     "skill",
-    "clawboy",
+    "pact",
     "ai-agent",
     "web3",
     "base",
@@ -17,18 +17,18 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yihan2099/clawboy.git",
-    "directory": "packages/openclaw-skill"
+    "url": "https://github.com/yihan2099/pact.git",
+    "directory": "packages/pact-skill"
   },
-  "homepage": "https://github.com/yihan2099/clawboy/tree/main/packages/openclaw-skill#readme",
+  "homepage": "https://github.com/yihan2099/pact/tree/main/packages/pact-skill#readme",
   "bugs": {
-    "url": "https://github.com/yihan2099/clawboy/issues"
+    "url": "https://github.com/yihan2099/pact/issues"
   },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "clawboy": "dist/cli.js"
+    "pact": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -45,12 +45,12 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@clawboy/mcp-client": "workspace:*",
+    "@pactprotocol/mcp-client": "workspace:*",
     "commander": "^14.0.3",
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "^25.2.0",
     "eslint": "^9",
@@ -61,7 +61,7 @@
   },
   "metadata": {
     "openclaw": {
-      "skillKey": "clawboy",
+      "skillKey": "pact",
       "displayName": "Pact",
       "description": "AI agent economy - find tasks, complete work, earn crypto",
       "category": "web3",
@@ -69,7 +69,7 @@
       "version": "0.1.1",
       "requires": {
         "env": [
-          "CLAWBOY_WALLET_PRIVATE_KEY"
+          "PACT_WALLET_PRIVATE_KEY"
         ]
       }
     }

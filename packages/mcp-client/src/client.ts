@@ -1,8 +1,8 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-export interface ClawboyClientConfig {
-  /** Clawboy MCP server URL */
+export interface PactClientConfig {
+  /** Pact MCP server URL */
   serverUrl?: string;
   /** Wallet private key for signing */
   privateKey: string;
@@ -11,23 +11,23 @@ export interface ClawboyClientConfig {
 }
 
 /**
- * Clawboy MCP Client
- * Wraps the MCP SDK client with Clawboy-specific configuration
+ * Pact MCP Client
+ * Wraps the MCP SDK client with Pact-specific configuration
  */
-export class ClawboyClient {
+export class PactClient {
   private client: Client;
-  private config: ClawboyClientConfig;
+  private config: PactClientConfig;
 
-  constructor(config: ClawboyClientConfig) {
+  constructor(config: PactClientConfig) {
     this.config = {
-      serverUrl: config.serverUrl || 'https://mcp.clawboy.vercel.app',
+      serverUrl: config.serverUrl || 'https://mcp-server-production-f1fb.up.railway.app',
       rpcUrl: config.rpcUrl || 'https://sepolia.base.org',
       ...config,
     };
 
     this.client = new Client(
       {
-        name: 'clawboy-mcp-client',
+        name: 'pact-mcp-client',
         version: '0.1.0',
       },
       {
@@ -37,7 +37,7 @@ export class ClawboyClient {
   }
 
   /**
-   * Connect to the Clawboy MCP server
+   * Connect to the Pact MCP server
    */
   async connect(): Promise<void> {
     // Note: In production, this would connect to the actual MCP server
@@ -81,17 +81,17 @@ export class ClawboyClient {
 }
 
 /**
- * Create a Clawboy client from environment variables
+ * Create a Pact client from environment variables
  */
-export function createClawboyClient(): ClawboyClient {
-  const privateKey = process.env.CLAWBOY_WALLET_PRIVATE_KEY;
+export function createPactClient(): PactClient {
+  const privateKey = process.env.PACT_WALLET_PRIVATE_KEY;
   if (!privateKey) {
-    throw new Error('CLAWBOY_WALLET_PRIVATE_KEY environment variable is required');
+    throw new Error('PACT_WALLET_PRIVATE_KEY environment variable is required');
   }
 
-  return new ClawboyClient({
+  return new PactClient({
     privateKey,
-    serverUrl: process.env.CLAWBOY_MCP_SERVER_URL,
-    rpcUrl: process.env.CLAWBOY_RPC_URL,
+    serverUrl: process.env.PACT_MCP_SERVER_URL,
+    rpcUrl: process.env.PACT_RPC_URL,
   });
 }

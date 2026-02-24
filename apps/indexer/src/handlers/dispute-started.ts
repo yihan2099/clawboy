@@ -1,6 +1,6 @@
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, createDispute } from '@clawboy/database';
-import { invalidateDisputeCaches, invalidateTaskCaches } from '@clawboy/cache';
+import { getTaskByChainId, createDispute } from '@pactprotocol/database';
+import { invalidateDisputeCaches, invalidateTaskCaches } from '@pactprotocol/cache';
 
 /**
  * Handle DisputeCreated event

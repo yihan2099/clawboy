@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.24;
 
-import { IClawboyAgentAdapter } from "./IClawboyAgentAdapter.sol";
+import { IPactAgentAdapter } from "./IPactAgentAdapter.sol";
 import { IERC8004IdentityRegistry } from "./erc8004/interfaces/IERC8004IdentityRegistry.sol";
 import { IERC8004ReputationRegistry } from "./erc8004/interfaces/IERC8004ReputationRegistry.sol";
 
 /**
- * @title ClawboyAgentAdapter
- * @notice Bridges Clawboy's TaskManager and DisputeResolver to ERC-8004 registries
- * @dev Translates Clawboy reputation events into ERC-8004 feedback
+ * @title PactAgentAdapter
+ * @notice Bridges Pact's TaskManager and DisputeResolver to ERC-8004 registries
+ * @dev Translates Pact reputation events into ERC-8004 feedback
  */
-contract ClawboyAgentAdapter is IClawboyAgentAdapter {
+contract PactAgentAdapter is IPactAgentAdapter {
     // ERC-8004 registries
     IERC8004IdentityRegistry public immutable identityRegistry;
     IERC8004ReputationRegistry public immutable reputationRegistry;
@@ -298,7 +298,7 @@ contract ClawboyAgentAdapter is IClawboyAgentAdapter {
         uint64 disputeWins = reputationRegistry.getFeedbackCount(agentId, TAG_DISPUTE, TAG_WIN);
         uint64 disputeLosses = reputationRegistry.getFeedbackCount(agentId, TAG_DISPUTE, TAG_LOSS);
 
-        // Calculate equivalent reputation (same weights as original ClawboyRegistry)
+        // Calculate equivalent reputation (same weights as original PactRegistry)
         // Task wins: +10 each
         // Dispute wins: +15 each
         // Dispute losses: -20 each

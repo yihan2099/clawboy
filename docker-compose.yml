@@ -28,7 +28,7 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - clawboy-network
+      - pact-network
 
   indexer:
     build:
@@ -51,7 +51,7 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - clawboy-network
+      - pact-network
 
   redis:
     image: redis:7-alpine
@@ -67,10 +67,10 @@ services:
       retries: 3
     restart: unless-stopped
     networks:
-      - clawboy-network
+      - pact-network
 
 networks:
-  clawboy-network:
+  pact-network:
     driver: bridge
 
 volumes:

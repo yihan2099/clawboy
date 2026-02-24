@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getAgentId, getAgentReputationSummary, getFeedbackSummary } from '@clawboy/web3-utils';
+import { getAgentId, getAgentReputationSummary, getFeedbackSummary } from '@pactprotocol/web3-utils';
 import { getChainId } from '../../config/chain';
 
 export const getReputationSchema = z.object({

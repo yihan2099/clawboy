@@ -8,8 +8,8 @@ import {
   getAgentsWithFailedIpfs,
   updateTask,
   updateAgent,
-} from '@clawboy/database';
-import { fetchTaskSpecification, fetchAgentProfile, isValidCid } from '@clawboy/ipfs-utils';
+} from '@pactprotocol/database';
+import { fetchTaskSpecification, fetchAgentProfile, isValidCid } from '@pactprotocol/ipfs-utils';
 import { withRetryResult } from '../utils/retry';
 
 /**

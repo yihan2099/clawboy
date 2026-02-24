@@ -36,7 +36,7 @@ function resetAllMocks(fns: Record<string, unknown>) {
   });
 }
 
-// ---------- @clawboy/database ----------
+// ---------- @pactprotocol/database ----------
 
 let _dbInstance: ReturnType<typeof _createMockDatabase> | null = null;
 
@@ -128,7 +128,7 @@ function _createMockDatabase() {
   return {
     ...allExports,
     setupMock() {
-      mock.module('@clawboy/database', () => allExports);
+      mock.module('@pactprotocol/database', () => allExports);
     },
     resetAll() {
       resetAllMocks(allExports);
@@ -141,7 +141,7 @@ export function createMockDatabase() {
   return _dbInstance;
 }
 
-// ---------- @clawboy/ipfs-utils ----------
+// ---------- @pactprotocol/ipfs-utils ----------
 
 let _ipfsInstance: ReturnType<typeof _createMockIpfsUtils> | null = null;
 
@@ -165,7 +165,7 @@ function _createMockIpfsUtils() {
   return {
     ...allExports,
     setupMock() {
-      mock.module('@clawboy/ipfs-utils', () => allExports);
+      mock.module('@pactprotocol/ipfs-utils', () => allExports);
     },
     resetAll() {
       resetAllMocks(allExports);
@@ -178,7 +178,7 @@ export function createMockIpfsUtils() {
   return _ipfsInstance;
 }
 
-// ---------- @clawboy/cache ----------
+// ---------- @pactprotocol/cache ----------
 
 let _cacheInstance: ReturnType<typeof _createMockCache> | null = null;
 
@@ -198,7 +198,7 @@ function _createMockCache() {
   return {
     ...allExports,
     setupMock() {
-      mock.module('@clawboy/cache', () => allExports);
+      mock.module('@pactprotocol/cache', () => allExports);
     },
     resetAll() {
       resetAllMocks(allExports);
@@ -211,7 +211,7 @@ export function createMockCache() {
   return _cacheInstance;
 }
 
-// ---------- @clawboy/shared-types ----------
+// ---------- @pactprotocol/shared-types ----------
 
 let _typesInstance: ReturnType<typeof _createMockSharedTypes> | null = null;
 
@@ -225,7 +225,7 @@ function _createMockSharedTypes() {
   return {
     ...allExports,
     setupMock() {
-      mock.module('@clawboy/shared-types', () => allExports);
+      mock.module('@pactprotocol/shared-types', () => allExports);
     },
     resetAll() {
       resetAllMocks(allExports);
@@ -311,7 +311,7 @@ export function createMockRetry() {
   return _retryInstance;
 }
 
-// ---------- @clawboy/web3-utils ----------
+// ---------- @pactprotocol/web3-utils ----------
 
 let _web3Instance: ReturnType<typeof _createMockWeb3Utils> | null = null;
 
@@ -331,7 +331,7 @@ function _createMockWeb3Utils() {
     ...allExports,
     mockGetLogs,
     setupMock() {
-      mock.module('@clawboy/web3-utils', () => allExports);
+      mock.module('@pactprotocol/web3-utils', () => allExports);
     },
     resetAll() {
       mockGetLogs._reset();
@@ -345,7 +345,7 @@ export function createMockWeb3Utils() {
   return _web3Instance;
 }
 
-// ---------- @clawboy/contracts ----------
+// ---------- @pactprotocol/contracts ----------
 
 let _contractsInstance: ReturnType<typeof _createMockContracts> | null = null;
 
@@ -361,7 +361,7 @@ function _createMockContracts() {
   return {
     ...allExports,
     setupMock() {
-      mock.module('@clawboy/contracts', () => allExports);
+      mock.module('@pactprotocol/contracts', () => allExports);
     },
     resetAll() {
       resetAllMocks(allExports);

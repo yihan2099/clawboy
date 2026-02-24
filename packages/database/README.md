@@ -1,4 +1,4 @@
-# @clawboy/database
+# @pactprotocol/database
 
 Supabase client and query functions for Pact. Provides typed database access for tasks, agents, submissions, disputes, sync state, and event processing.
 
@@ -20,8 +20,8 @@ Supabase client and query functions for Pact. Provides typed database access for
 ## Usage
 
 ```ts
-import { getSupabaseClient } from '@clawboy/database/client';
-import { getTaskById, listTasks } from '@clawboy/database/queries';
+import { getSupabaseClient } from '@pactprotocol/database/client';
+import { getTaskById, listTasks } from '@pactprotocol/database/queries';
 ```
 
 ## License

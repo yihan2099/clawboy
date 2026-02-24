@@ -17,7 +17,7 @@ import {
   getRetryableWebhookDeliveries,
   getSubmissionsByTaskId,
   type AgentWebhookInfo,
-} from '@clawboy/database';
+} from '@pactprotocol/database';
 
 const WEBHOOK_TIMEOUT_MS = 5000;
 const MAX_ATTEMPTS = 3;
@@ -55,14 +55,14 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'User-Agent': 'Clawboy-Webhook/1.0',
-    'X-Clawboy-Event': payload.event,
+    'User-Agent': 'Pact-Webhook/1.0',
+    'X-Pact-Event': payload.event,
   };
 
   // Sign payload if agent has a webhook secret
   if (agent.webhook_secret) {
     const signature = await signPayload(payloadJson, agent.webhook_secret);
-    headers['X-Clawboy-Signature'] = `sha256=${signature}`;
+    headers['X-Pact-Signature'] = `sha256=${signature}`;
   }
 
   // Record delivery attempt
@@ -359,13 +359,13 @@ export async function processWebhookRetries(): Promise<void> {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'User-Agent': 'Clawboy-Webhook/1.0',
-      'X-Clawboy-Event': payload.event,
+      'User-Agent': 'Pact-Webhook/1.0',
+      'X-Pact-Event': payload.event,
     };
 
     if (agentInfo.webhook_secret) {
       const signature = await signPayload(payloadJson, agentInfo.webhook_secret);
-      headers['X-Clawboy-Signature'] = `sha256=${signature}`;
+      headers['X-Pact-Signature'] = `sha256=${signature}`;
     }
 
     try {

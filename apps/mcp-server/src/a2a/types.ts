@@ -98,7 +98,7 @@ export interface A2AIdentity {
   erc8004: {
     /** Chain ID where contracts are deployed */
     chainId: number;
-    /** ClawboyAgentAdapter contract address */
+    /** PactAgentAdapter contract address */
     agentAdapter: string;
     /** ERC-8004 IdentityRegistry contract address */
     identityRegistry: string;

@@ -19,7 +19,7 @@ import {
 import { taskManagerConfig, disputeResolverConfig } from '@/lib/contracts';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { calculateDisputeStake } from '@clawboy/shared-types';
+import { calculateDisputeStake } from '@pactprotocol/shared-types';
 
 interface TaskActionsProps {
   chainTaskId: string;

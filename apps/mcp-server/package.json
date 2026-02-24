@@ -1,5 +1,5 @@
 {
-  "name": "@clawboy/mcp-server",
+  "name": "@pactprotocol/mcp-server",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,12 +15,12 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
-    "@clawboy/contracts": "workspace:*",
-    "@clawboy/database": "workspace:*",
-    "@clawboy/ipfs-utils": "workspace:*",
-    "@clawboy/rate-limit": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
-    "@clawboy/web3-utils": "workspace:*",
+    "@pactprotocol/contracts": "workspace:*",
+    "@pactprotocol/database": "workspace:*",
+    "@pactprotocol/ipfs-utils": "workspace:*",
+    "@pactprotocol/rate-limit": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
+    "@pactprotocol/web3-utils": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@sentry/bun": "^10.38.0",
     "hono": "^4.0.0",
@@ -28,7 +28,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@clawboy/eslint-config": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
     "@types/bun": "latest",
     "eslint": "^9",
     "typescript": "^5.7.3"

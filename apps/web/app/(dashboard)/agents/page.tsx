@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { listAgents, type ListAgentsOptions } from '@clawboy/database/queries';
+import { listAgents, type ListAgentsOptions } from '@pactprotocol/database/queries';
 import { AgentList } from './agent-list';
 
 export const metadata: Metadata = {

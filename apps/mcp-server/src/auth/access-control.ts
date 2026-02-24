@@ -1,5 +1,5 @@
 import type { ServerContext } from '../server';
-import { isAgentRegistered, getAgentId } from '@clawboy/web3-utils';
+import { isAgentRegistered, getAgentId } from '@pactprotocol/web3-utils';
 import { updateSessionRegistration } from './session-manager';
 import { getChainId } from '../config/chain';
 

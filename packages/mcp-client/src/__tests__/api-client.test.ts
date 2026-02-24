@@ -1,10 +1,10 @@
 import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test';
-import { ClawboyApiClient } from '../api-client.js';
+import { PactApiClient } from '../api-client.js';
 
 // Store original fetch
 const originalFetch = globalThis.fetch;
 
-describe('ClawboyApiClient', () => {
+describe('PactApiClient', () => {
   let mockFetch: ReturnType<typeof mock>;
 
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('ClawboyApiClient', () => {
 
   describe('constructor', () => {
     test('should set baseUrl and strip trailing slash', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001/',
       });
 
@@ -37,7 +37,7 @@ describe('ClawboyApiClient', () => {
     });
 
     test('should default timeout to 30000ms', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -45,7 +45,7 @@ describe('ClawboyApiClient', () => {
     });
 
     test('should accept custom timeout', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
         timeout: 5000,
       });
@@ -56,7 +56,7 @@ describe('ClawboyApiClient', () => {
 
   describe('session management', () => {
     test('should start with null sessionId', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -64,7 +64,7 @@ describe('ClawboyApiClient', () => {
     });
 
     test('should set and get sessionId', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -73,7 +73,7 @@ describe('ClawboyApiClient', () => {
     });
 
     test('should clear sessionId when set to null', () => {
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -89,7 +89,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({ status: 'ok' }), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -102,7 +102,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({ status: 'error' }), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -113,7 +113,7 @@ describe('ClawboyApiClient', () => {
     test('should return false on network error', async () => {
       mockFetch.mockImplementation(() => Promise.reject(new Error('Network unreachable')));
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -129,7 +129,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({ tools: toolsList }), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -150,7 +150,7 @@ describe('ClawboyApiClient', () => {
         )
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -167,7 +167,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify(toolResponse), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -186,7 +186,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({}), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
       client.setSessionId('my-session-id');
@@ -203,7 +203,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({}), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -223,7 +223,7 @@ describe('ClawboyApiClient', () => {
         )
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -237,7 +237,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -249,7 +249,7 @@ describe('ClawboyApiClient', () => {
         Promise.resolve(new Response(JSON.stringify({ tools: [] }), { status: 200 }))
       );
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 
@@ -267,7 +267,7 @@ describe('ClawboyApiClient', () => {
 
       mockFetch.mockImplementation(() => Promise.reject(abortError));
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
         timeout: 100,
       });
@@ -280,7 +280,7 @@ describe('ClawboyApiClient', () => {
     test('should re-throw non-abort errors as-is', async () => {
       mockFetch.mockImplementation(() => Promise.reject(new Error('DNS resolution failed')));
 
-      const client = new ClawboyApiClient({
+      const client = new PactApiClient({
         baseUrl: 'http://localhost:3001',
       });
 

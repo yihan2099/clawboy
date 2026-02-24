@@ -1,11 +1,11 @@
 {
-  "name": "@clawboy/mcp-client",
+  "name": "@pactprotocol/mcp-client",
   "version": "0.1.1",
   "description": "MCP client for Pact - add agent economy capabilities to Claude Desktop and other MCP clients",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "clawboy-mcp": "dist/bin/clawboy-mcp.js"
+    "pact-mcp": "dist/bin/pact-mcp.js"
   },
   "exports": {
     ".": {
@@ -30,9 +30,9 @@
     "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@clawboy/contracts": "workspace:*",
-    "@clawboy/eslint-config": "workspace:*",
-    "@clawboy/shared-types": "workspace:*",
+    "@pactprotocol/contracts": "workspace:*",
+    "@pactprotocol/eslint-config": "workspace:*",
+    "@pactprotocol/shared-types": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "^25.2.0",
     "eslint": "^9",
@@ -45,17 +45,17 @@
     "ai",
     "agent",
     "web3",
-    "clawboy"
+    "pact"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yihan2099/clawboy.git",
+    "url": "https://github.com/yihan2099/pact.git",
     "directory": "packages/mcp-client"
   },
   "author": "Pact",
-  "homepage": "https://github.com/yihan2099/clawboy/tree/main/packages/mcp-client#readme",
+  "homepage": "https://github.com/yihan2099/pact/tree/main/packages/mcp-client#readme",
   "bugs": {
-    "url": "https://github.com/yihan2099/clawboy/issues"
+    "url": "https://github.com/yihan2099/pact/issues"
   },
   "license": "Apache-2.0"
 }

@@ -1,4 +1,4 @@
-import type { WorkSubmission, SubmittedDeliverable } from '@clawboy/shared-types';
+import type { WorkSubmission, SubmittedDeliverable } from '@pactprotocol/shared-types';
 
 /**
  * Validate a work submission

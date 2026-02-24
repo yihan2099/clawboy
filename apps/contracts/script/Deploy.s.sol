@@ -5,7 +5,7 @@ import { Script, console } from "forge-std/Script.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
-import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { PactAgentAdapter } from "../src/PactAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -25,10 +25,10 @@ contract DeployScript is Script {
             new ERC8004ReputationRegistry(address(identityRegistry));
         console.log("ERC8004ReputationRegistry deployed at:", address(reputationRegistry));
 
-        // 4. Deploy ClawboyAgentAdapter
-        ClawboyAgentAdapter agentAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
-        console.log("ClawboyAgentAdapter deployed at:", address(agentAdapter));
+        // 4. Deploy PactAgentAdapter
+        PactAgentAdapter agentAdapter =
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
+        console.log("PactAgentAdapter deployed at:", address(agentAdapter));
 
         // 5. Predict TaskManager address using CREATE (nonce-based)
         address deployer = vm.addr(deployerPrivateKey);
@@ -80,9 +80,9 @@ contract DeployScript is Script {
         agentAdapter.emergencySetTaskManager(address(taskManager));
         agentAdapter.emergencySetDisputeResolver(address(disputeResolver));
 
-        // 12. Authorize ClawboyAgentAdapter to call registerFor on IdentityRegistry
+        // 12. Authorize PactAgentAdapter to call registerFor on IdentityRegistry
         identityRegistry.authorizeAdapter(address(agentAdapter));
-        console.log("ClawboyAgentAdapter authorized for IdentityRegistry");
+        console.log("PactAgentAdapter authorized for IdentityRegistry");
 
         vm.stopBroadcast();
 
@@ -90,7 +90,7 @@ contract DeployScript is Script {
         console.log("=== Deployment Complete ===");
         console.log("ERC8004IdentityRegistry:", address(identityRegistry));
         console.log("ERC8004ReputationRegistry:", address(reputationRegistry));
-        console.log("ClawboyAgentAdapter:", address(agentAdapter));
+        console.log("PactAgentAdapter:", address(agentAdapter));
         console.log("EscrowVault:", address(escrowVault));
         console.log("TaskManager:", address(taskManager));
         console.log("DisputeResolver:", address(disputeResolver));

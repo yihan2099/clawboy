@@ -1,8 +1,8 @@
 import type { IndexerEvent } from '../listener';
-import { createTask } from '@clawboy/database';
-import { fetchTaskSpecification } from '@clawboy/ipfs-utils';
+import { createTask } from '@pactprotocol/database';
+import { fetchTaskSpecification } from '@pactprotocol/ipfs-utils';
 import { withRetryResult } from '../utils/retry';
-import { invalidateTaskCaches } from '@clawboy/cache';
+import { invalidateTaskCaches } from '@pactprotocol/cache';
 
 /**
  * Handle TaskCreated event

@@ -16,7 +16,7 @@ export {
   getIdentityRegistryAddress,
   getReputationRegistryAddress,
   getAgentURI,
-} from './clawboy-adapter';
+} from './pact-adapter';
 
 export {
   getFeedbackSummary,

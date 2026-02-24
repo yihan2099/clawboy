@@ -50,7 +50,7 @@ const mockUpdateDispute = mock(() => Promise.resolve());
 const mockIncrementDisputesWon = mock(() => Promise.resolve());
 const mockIncrementDisputesLost = mock(() => Promise.resolve());
 
-mock.module('@clawboy/database', () => ({
+mock.module('@pactprotocol/database', () => ({
   createTask: mockCreateTask,
   getTask: mockGetTask,
   getTaskByChainId: mockGetTaskByChainId,
@@ -74,12 +74,12 @@ const mockFetchJson = mock(() =>
   Promise.resolve({ name: 'E2E Agent', skills: ['coding'], type: 'ai-agent' })
 );
 
-mock.module('@clawboy/ipfs-utils', () => ({
+mock.module('@pactprotocol/ipfs-utils', () => ({
   fetchTaskSpecification: mockFetchTaskSpecification,
   fetchJson: mockFetchJson,
 }));
 
-mock.module('@clawboy/cache', () => ({
+mock.module('@pactprotocol/cache', () => ({
   invalidateTaskCaches: mock(() => Promise.resolve()),
   invalidateSubmissionCaches: mock(() => Promise.resolve()),
   invalidateDisputeCaches: mock(() => Promise.resolve()),

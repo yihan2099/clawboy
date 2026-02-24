@@ -7,9 +7,9 @@ const contractsMock = createContractsMock();
 const mockReadContract = mock();
 web3Mock.getPublicClient.mockReturnValue({ readContract: mockReadContract });
 
-mock.module('@clawboy/web3-utils', () => web3Mock);
+mock.module('@pactprotocol/web3-utils', () => web3Mock);
 
-mock.module('@clawboy/contracts', () => ({
+mock.module('@pactprotocol/contracts', () => ({
   ...contractsMock,
   getContractAddresses: () => ({
     disputeResolver: '0xDisputeResolver',

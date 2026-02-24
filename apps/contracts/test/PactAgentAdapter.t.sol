@@ -2,15 +2,15 @@
 pragma solidity ^0.8.24;
 
 import { Test, console } from "forge-std/Test.sol";
-import { ClawboyAgentAdapter } from "../src/ClawboyAgentAdapter.sol";
+import { PactAgentAdapter } from "../src/PactAgentAdapter.sol";
 import { ERC8004IdentityRegistry } from "../src/erc8004/ERC8004IdentityRegistry.sol";
 import { ERC8004ReputationRegistry } from "../src/erc8004/ERC8004ReputationRegistry.sol";
 import { TaskManager } from "../src/TaskManager.sol";
 import { EscrowVault } from "../src/EscrowVault.sol";
 import { DisputeResolver } from "../src/DisputeResolver.sol";
 
-contract ClawboyAgentAdapterTest is Test {
-    ClawboyAgentAdapter public agentAdapter;
+contract PactAgentAdapterTest is Test {
+    PactAgentAdapter public agentAdapter;
     ERC8004IdentityRegistry public identityRegistry;
     ERC8004ReputationRegistry public reputationRegistry;
     TaskManager public taskManager;
@@ -33,9 +33,9 @@ contract ClawboyAgentAdapterTest is Test {
         // Deploy ERC-8004 ReputationRegistry
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
-        // Deploy ClawboyAgentAdapter
+        // Deploy PactAgentAdapter
         agentAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =
@@ -85,12 +85,12 @@ contract ClawboyAgentAdapterTest is Test {
 
     function test_TransferOwnership_RevertIfNotOwner() public {
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.transferOwnership(randomUser);
     }
 
     function test_TransferOwnership_RevertIfZeroAddress() public {
-        vm.expectRevert(ClawboyAgentAdapter.ZeroAddress.selector);
+        vm.expectRevert(PactAgentAdapter.ZeroAddress.selector);
         agentAdapter.transferOwnership(address(0));
     }
 
@@ -98,7 +98,7 @@ contract ClawboyAgentAdapterTest is Test {
         agentAdapter.transferOwnership(newOwner);
 
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.NotPendingOwner.selector);
+        vm.expectRevert(PactAgentAdapter.NotPendingOwner.selector);
         agentAdapter.acceptOwnership();
     }
 
@@ -116,7 +116,7 @@ contract ClawboyAgentAdapterTest is Test {
 
         // First pending can no longer accept
         vm.prank(firstPending);
-        vm.expectRevert(ClawboyAgentAdapter.NotPendingOwner.selector);
+        vm.expectRevert(PactAgentAdapter.NotPendingOwner.selector);
         agentAdapter.acceptOwnership();
 
         // Second pending can accept
@@ -128,12 +128,12 @@ contract ClawboyAgentAdapterTest is Test {
     function test_TransferOwnership_EmitsEvents() public {
         // Test OwnershipTransferInitiated event
         vm.expectEmit(true, true, false, false);
-        emit ClawboyAgentAdapter.OwnershipTransferInitiated(deployer, newOwner);
+        emit PactAgentAdapter.OwnershipTransferInitiated(deployer, newOwner);
         agentAdapter.transferOwnership(newOwner);
 
         // Test OwnershipTransferred event
         vm.expectEmit(true, true, false, false);
-        emit ClawboyAgentAdapter.OwnershipTransferred(deployer, newOwner);
+        emit PactAgentAdapter.OwnershipTransferred(deployer, newOwner);
         vm.prank(newOwner);
         agentAdapter.acceptOwnership();
     }
@@ -147,11 +147,11 @@ contract ClawboyAgentAdapterTest is Test {
 
         // Non-owner cannot use emergency function
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.emergencySetTaskManager(newTaskManager);
 
         // Direct call requires timelock (which isn't set, so reverts)
-        vm.expectRevert(ClawboyAgentAdapter.OnlyTimelock.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyTimelock.selector);
         agentAdapter.setTaskManager(newTaskManager);
 
         // Owner can use emergency function
@@ -164,11 +164,11 @@ contract ClawboyAgentAdapterTest is Test {
 
         // Non-owner cannot use emergency function
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.OnlyOwner.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyOwner.selector);
         agentAdapter.emergencySetDisputeResolver(newDisputeResolver);
 
         // Direct call requires timelock (which isn't set, so reverts)
-        vm.expectRevert(ClawboyAgentAdapter.OnlyTimelock.selector);
+        vm.expectRevert(PactAgentAdapter.OnlyTimelock.selector);
         agentAdapter.setDisputeResolver(newDisputeResolver);
 
         // Owner can use emergency function
@@ -183,7 +183,7 @@ contract ClawboyAgentAdapterTest is Test {
 
         // Random user cannot call recordTaskWin
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.Unauthorized.selector);
+        vm.expectRevert(PactAgentAdapter.Unauthorized.selector);
         agentAdapter.recordTaskWin(agent1, 1);
 
         // TaskManager can call (authorized)
@@ -198,7 +198,7 @@ contract ClawboyAgentAdapterTest is Test {
 
         // Random user cannot call recordDisputeWin
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.Unauthorized.selector);
+        vm.expectRevert(PactAgentAdapter.Unauthorized.selector);
         agentAdapter.recordDisputeWin(agent1, 1);
 
         // TaskManager can call (authorized)
@@ -213,7 +213,7 @@ contract ClawboyAgentAdapterTest is Test {
 
         // Random user cannot call recordDisputeLoss
         vm.prank(randomUser);
-        vm.expectRevert(ClawboyAgentAdapter.Unauthorized.selector);
+        vm.expectRevert(PactAgentAdapter.Unauthorized.selector);
         agentAdapter.recordDisputeLoss(agent1, 1);
 
         // DisputeResolver can call (authorized)
@@ -239,13 +239,13 @@ contract ClawboyAgentAdapterTest is Test {
         agentAdapter.register("ipfs://agent1-profile-cid");
 
         vm.prank(agent1);
-        vm.expectRevert(ClawboyAgentAdapter.AlreadyRegistered.selector);
+        vm.expectRevert(PactAgentAdapter.AlreadyRegistered.selector);
         agentAdapter.register("ipfs://another-profile-cid");
     }
 
     function test_UpdateProfile_RevertIfNotRegistered() public {
         vm.prank(agent1);
-        vm.expectRevert(ClawboyAgentAdapter.NotRegistered.selector);
+        vm.expectRevert(PactAgentAdapter.NotRegistered.selector);
         agentAdapter.updateProfile("ipfs://new-profile-cid");
     }
 
@@ -264,8 +264,8 @@ contract ClawboyAgentAdapterTest is Test {
 
     function test_UpdateProfile_RevertIfUnauthorizedAdapter() public {
         // Deploy unauthorized adapter (NOT calling authorizeAdapter)
-        ClawboyAgentAdapter unauthorizedAdapter =
-            new ClawboyAgentAdapter(address(identityRegistry), address(reputationRegistry));
+        PactAgentAdapter unauthorizedAdapter =
+            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         vm.prank(agent1);
         identityRegistry.register("ipfs://agent1-profile-cid");

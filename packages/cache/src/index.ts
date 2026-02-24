@@ -1,13 +1,13 @@
 /**
- * @clawboy/cache
+ * @pactprotocol/cache
  *
- * Caching layer for the Clawboy platform.
+ * Caching layer for the Pact platform.
  * Provides Redis-first caching with in-memory fallback.
  *
  * Usage:
  * ```typescript
- * import { getCache, cacheThrough } from '@clawboy/cache';
- * import { getCachedTaskList } from '@clawboy/cache/helpers';
+ * import { getCache, cacheThrough } from '@pactprotocol/cache';
+ * import { getCachedTaskList } from '@pactprotocol/cache/helpers';
  *
  * // Direct cache access
  * const cache = getCache();

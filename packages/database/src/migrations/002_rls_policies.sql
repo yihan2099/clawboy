@@ -1,4 +1,4 @@
--- Clawboy Row Level Security Policies
+-- Pact Row Level Security Policies
 -- Run after 001_initial_schema.sql
 
 -- Enable RLS on all tables

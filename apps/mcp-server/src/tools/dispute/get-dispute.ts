@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getDisputeByChainId, getDisputeVotes } from '@clawboy/database';
-import type { DisputeStatus } from '@clawboy/shared-types';
+import { getDisputeByChainId, getDisputeVotes } from '@pactprotocol/database';
+import type { DisputeStatus } from '@pactprotocol/shared-types';
 
 export const getDisputeSchema = z.object({
   disputeId: z.string().min(1),

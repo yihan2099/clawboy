@@ -3,10 +3,10 @@ import { setupViemMock } from '../helpers/mock-viem';
 
 const viemMock = setupViemMock();
 
-mock.module('@clawboy/contracts', () => ({
+mock.module('@pactprotocol/contracts', () => ({
   TaskManagerABI: [],
   EscrowVaultABI: [],
-  ClawboyAgentAdapterABI: [],
+  PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
   DisputeResolverABI: [],

@@ -18,7 +18,7 @@ import {
   type BountyStatistics,
   type DetailedTask,
   type DetailedDispute,
-} from '@clawboy/database';
+} from '@pactprotocol/database';
 
 /**
  * Cached platform statistics with 5-minute revalidation.
