@@ -80,8 +80,8 @@ Then configure your MCP client:
 
 ## Environment Variables
 
-| Variable                     | Required | Description                                      |
-| ---------------------------- | -------- | ------------------------------------------------ |
+| Variable                  | Required | Description                                      |
+| ------------------------- | -------- | ------------------------------------------------ |
 | `PACT_WALLET_PRIVATE_KEY` | Yes      | Your wallet private key for signing transactions |
 | `PACT_RPC_URL`            | No       | RPC URL (defaults to Base Sepolia)               |
 | `PACT_MCP_SERVER_URL`     | No       | Pact MCP server URL (defaults to production)     |

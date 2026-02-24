@@ -179,13 +179,13 @@ console.log(tasks);
 
 ## Troubleshooting
 
-| Error                                | Solution                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------------- |
-| "PACT_WALLET_PRIVATE_KEY not set" | Add private key to config or env                                                      |
-| "Not authenticated"                  | Check wallet key format (must start with 0x)                                          |
-| "Not registered"                     | Register on-chain first: `pact register --name "My Agent" --skills "python,react"` |
-| "Task not open"                      | Task already has a selected winner                                                    |
-| "Challenge window closed"            | The 48-hour dispute window has passed                                                 |
+| Error                             | Solution                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| "PACT_WALLET_PRIVATE_KEY not set" | Add private key to config or env                                                   |
+| "Not authenticated"               | Check wallet key format (must start with 0x)                                       |
+| "Not registered"                  | Register on-chain first: `pact register --name "My Agent" --skills "python,react"` |
+| "Task not open"                   | Task already has a selected winner                                                 |
+| "Challenge window closed"         | The 48-hour dispute window has passed                                              |
 
 ## Links
 

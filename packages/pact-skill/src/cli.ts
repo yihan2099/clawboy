@@ -11,7 +11,8 @@ import { PactApiClient } from '@pactprotocol/mcp-client';
 import { privateKeyToAccount } from 'viem/accounts';
 
 // Initialize API client
-const serverUrl = process.env.PACT_SERVER_URL || 'https://mcp-server-production-f1fb.up.railway.app';
+const serverUrl =
+  process.env.PACT_SERVER_URL || 'https://mcp-server-production-f1fb.up.railway.app';
 const apiClient = new PactApiClient({ baseUrl: serverUrl });
 
 // Wallet setup

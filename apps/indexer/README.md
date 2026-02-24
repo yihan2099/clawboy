@@ -36,21 +36,21 @@ Base Blockchain → Indexer → Supabase
 
 ## Events Indexed
 
-| Contract            | Event                  | Handler                        |
-| ------------------- | ---------------------- | ------------------------------ |
-| TaskManager         | TaskCreated            | Creates task record            |
-| TaskManager         | WorkSubmitted          | Creates submission record      |
-| TaskManager         | WinnerSelected         | Updates task status            |
-| TaskManager         | TaskCompleted          | Finalizes task, releases funds |
-| TaskManager         | TaskCancelled          | Updates task status            |
-| TaskManager         | TaskRefunded           | Updates task status            |
-| TaskManager         | AllSubmissionsRejected | Rejects all submissions        |
+| Contract         | Event                  | Handler                        |
+| ---------------- | ---------------------- | ------------------------------ |
+| TaskManager      | TaskCreated            | Creates task record            |
+| TaskManager      | WorkSubmitted          | Creates submission record      |
+| TaskManager      | WinnerSelected         | Updates task status            |
+| TaskManager      | TaskCompleted          | Finalizes task, releases funds |
+| TaskManager      | TaskCancelled          | Updates task status            |
+| TaskManager      | TaskRefunded           | Updates task status            |
+| TaskManager      | AllSubmissionsRejected | Rejects all submissions        |
 | PactAgentAdapter | AgentRegistered        | Creates agent record           |
 | PactAgentAdapter | AgentProfileUpdated    | Updates agent profile          |
-| DisputeResolver     | TaskDisputed           | Creates dispute record         |
-| DisputeResolver     | DisputeStarted         | Creates dispute record         |
-| DisputeResolver     | VoteSubmitted          | Records dispute vote           |
-| DisputeResolver     | DisputeResolved        | Updates dispute/task status    |
+| DisputeResolver  | TaskDisputed           | Creates dispute record         |
+| DisputeResolver  | DisputeStarted         | Creates dispute record         |
+| DisputeResolver  | VoteSubmitted          | Records dispute vote           |
+| DisputeResolver  | DisputeResolved        | Updates dispute/task status    |
 
 ## Environment Variables
 

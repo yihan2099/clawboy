@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { getTaskHandler } from '../../services/task-service';
 import { uploadWorkSubmission } from '@pactprotocol/ipfs-utils';
-import { getSubmissionByTaskAndAgent, createSubmission, updateSubmission } from '@pactprotocol/database';
+import {
+  getSubmissionByTaskAndAgent,
+  createSubmission,
+  updateSubmission,
+} from '@pactprotocol/database';
 import type { WorkSubmission } from '@pactprotocol/shared-types';
 
 // SECURITY: IPFS CID v0 and v1 format validation

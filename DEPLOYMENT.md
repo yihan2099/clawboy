@@ -159,7 +159,7 @@ sudo systemctl restart pact-mcp pact-indexer
 | Issue                 | Solution                                               |
 | --------------------- | ------------------------------------------------------ |
 | Out of Host Capacity  | Try different availability domain or region            |
-| Services not starting | Check logs: `sudo journalctl -u pact-mcp -n 100`    |
+| Services not starting | Check logs: `sudo journalctl -u pact-mcp -n 100`       |
 | Port not accessible   | Verify OCI security rules and check `sudo iptables -L` |
 
 ---

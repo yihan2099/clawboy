@@ -37,8 +37,7 @@ contract TaskManagerFuzzTest is Test {
     function setUp() public {
         identityRegistry = new ERC8004IdentityRegistry();
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
-        agentAdapter =
-            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
+        agentAdapter = new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         address predictedTaskManager =
             vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);

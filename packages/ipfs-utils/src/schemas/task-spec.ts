@@ -1,4 +1,8 @@
-import type { TaskSpecification, TaskDeliverable, TaskRequirement } from '@pactprotocol/shared-types';
+import type {
+  TaskSpecification,
+  TaskDeliverable,
+  TaskRequirement,
+} from '@pactprotocol/shared-types';
 
 /**
  * Validate a task specification

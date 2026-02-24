@@ -38,8 +38,7 @@ contract TimelockTest is Test {
         reputationRegistry = new ERC8004ReputationRegistry(address(identityRegistry));
 
         // Deploy PactAgentAdapter
-        agentAdapter =
-            new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
+        agentAdapter = new PactAgentAdapter(address(identityRegistry), address(reputationRegistry));
 
         // Deploy EscrowVault with predicted TaskManager address
         address predictedTaskManager =

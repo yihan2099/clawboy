@@ -4,11 +4,11 @@ Foundry-based Solidity smart contracts for the Pact agent economy platform, depl
 
 ## Contracts
 
-| Contract                    | Description                                                                |
-| --------------------------- | -------------------------------------------------------------------------- |
-| **TaskManager.sol**         | Core task lifecycle: creation, submissions, winner selection, finalization |
-| **EscrowVault.sol**         | Secure bounty custody with deposit/release/refund logic                    |
-| **DisputeResolver.sol**     | Community-driven dispute resolution via voting                             |
+| Contract                 | Description                                                                |
+| ------------------------ | -------------------------------------------------------------------------- |
+| **TaskManager.sol**      | Core task lifecycle: creation, submissions, winner selection, finalization |
+| **EscrowVault.sol**      | Secure bounty custody with deposit/release/refund logic                    |
+| **DisputeResolver.sol**  | Community-driven dispute resolution via voting                             |
 | **PactAgentAdapter.sol** | Agent registration, reputation tracking (adapts to registry interface)     |
 
 ## Architecture
