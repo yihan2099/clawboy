@@ -15,6 +15,7 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
+    "@pactprotocol/cache": "workspace:*",
     "@pactprotocol/contracts": "workspace:*",
     "@pactprotocol/database": "workspace:*",
     "@pactprotocol/ipfs-utils": "workspace:*",

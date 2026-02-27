@@ -1,57 +1,67 @@
 import { describe, test, expect, beforeEach, mock } from 'bun:test';
-import { createDatabaseMock } from '../../helpers/mock-deps';
 
-const dbMock = createDatabaseMock();
-
-// Override getSupabaseClient with a fluent query mock for this specific test
-const mockSupabaseQuery = {
-  select: mock(),
-  eq: mock(),
-  order: mock(),
-  range: mock(),
-};
-
-mockSupabaseQuery.select.mockReturnValue(mockSupabaseQuery);
-mockSupabaseQuery.eq.mockReturnValue(mockSupabaseQuery);
-mockSupabaseQuery.order.mockReturnValue(mockSupabaseQuery);
-mockSupabaseQuery.range.mockReturnValue(
+const mockListDisputesHandler = mock(() =>
   Promise.resolve({
-    data: [
+    disputes: [
       {
         id: 'dispute-uuid',
-        chain_dispute_id: '1',
-        task_id: 'task-1',
-        disputer_address: '0xDisputer',
-        dispute_stake: '10000000000000000',
-        voting_deadline: new Date(Date.now() + 86400000).toISOString(),
+        chainDisputeId: '1',
+        taskId: 'task-1',
+        disputerAddress: '0xDisputer',
+        disputeStake: '10000000000000000',
+        votingDeadline: new Date(Date.now() + 86400000).toISOString(),
         status: 'active',
-        disputer_won: null,
-        votes_for_disputer: 10,
-        votes_against_disputer: 5,
-        created_at: '2024-01-01T00:00:00Z',
+        disputerWon: null,
+        votesForDisputer: 10,
+        votesAgainstDisputer: 5,
+        createdAt: '2024-01-01T00:00:00Z',
+        canBeResolved: false,
       },
     ],
-    error: null,
-    count: 1,
+    pagination: {
+      total: 1,
+      limit: 20,
+      offset: 0,
+      hasMore: false,
+    },
+    readyForResolutionCount: 0,
   })
 );
 
-dbMock.getSupabaseClient.mockReturnValue({
-  from: () => mockSupabaseQuery,
-});
-
-mock.module('@pactprotocol/database', () => dbMock);
-
-mock.module('../../../utils/error-sanitizer', () => ({
-  sanitizeErrorMessage: (e: any) => e?.message || String(e),
+mock.module('../../../services/dispute-service', () => ({
+  listDisputesHandler: mockListDisputesHandler,
 }));
 
 import { listDisputesTool, listDisputesSchema } from '../../../tools/dispute/list-disputes';
 
 describe('list_disputes tool', () => {
   beforeEach(() => {
-    dbMock.getDisputesReadyForResolution.mockReset();
-    dbMock.getDisputesReadyForResolution.mockResolvedValue([]);
+    mockListDisputesHandler.mockReset();
+    mockListDisputesHandler.mockResolvedValue({
+      disputes: [
+        {
+          id: 'dispute-uuid',
+          chainDisputeId: '1',
+          taskId: 'task-1',
+          disputerAddress: '0xDisputer',
+          disputeStake: '10000000000000000',
+          votingDeadline: new Date(Date.now() + 86400000).toISOString(),
+          status: 'active',
+          disputerWon: null,
+          votesForDisputer: 10,
+          votesAgainstDisputer: 5,
+          createdAt: '2024-01-01T00:00:00Z',
+          canBeResolved: false,
+        },
+      ],
+      pagination: {
+        total: 1,
+        limit: 20,
+        offset: 0,
+        hasMore: false,
+      },
+      readyForResolutionCount: 0,
+    });
   });
 
   test('should have correct tool metadata', () => {
@@ -76,5 +86,13 @@ describe('list_disputes tool', () => {
 
   test('should reject limit above 100', () => {
     expect(() => listDisputesSchema.parse({ limit: 101 })).toThrow();
+  });
+
+  test('should call handler and return result', async () => {
+    const result = await listDisputesTool.handler({});
+
+    expect(mockListDisputesHandler).toHaveBeenCalled();
+    expect(result.disputes).toHaveLength(1);
+    expect(result.pagination.total).toBe(1);
   });
 });

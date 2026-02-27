@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-  getAgentId,
-  getAgentReputationSummary,
-  getFeedbackSummary,
-} from '@pactprotocol/web3-utils';
+import { getReputationHandler } from '../../services/reputation-service';
 import { getChainId } from '../../config/chain';
 
 export const getReputationSchema = z.object({
@@ -49,53 +45,6 @@ export const getReputationTool = {
     }
 
     const chainId = getChainId();
-
-    // Get agent ID
-    const agentId = await getAgentId(targetAddress, chainId);
-
-    if (agentId === 0n) {
-      return {
-        success: false,
-        message: 'Agent not registered',
-        walletAddress: targetAddress,
-      };
-    }
-
-    // Get overall reputation summary from adapter
-    const summary = await getAgentReputationSummary(targetAddress, chainId);
-
-    // Build result
-    const result: Record<string, unknown> = {
-      success: true,
-      walletAddress: targetAddress,
-      agentId: agentId.toString(),
-      reputation: {
-        taskWins: summary.taskWins.toString(),
-        disputeWins: summary.disputeWins.toString(),
-        disputeLosses: summary.disputeLosses.toString(),
-        totalReputation: summary.totalReputation.toString(),
-      },
-    };
-
-    // If tags are specified, get filtered summary
-    if (input.tag1 || input.tag2) {
-      const filteredSummary = await getFeedbackSummary(
-        agentId,
-        input.tag1 || '',
-        input.tag2 || '',
-        [],
-        chainId
-      );
-
-      result.filteredFeedback = {
-        tag1: input.tag1 || '*',
-        tag2: input.tag2 || '*',
-        count: filteredSummary.count.toString(),
-        summaryValue: filteredSummary.summaryValue.toString(),
-        summaryValueDecimals: filteredSummary.summaryValueDecimals,
-      };
-    }
-
-    return result;
+    return getReputationHandler(targetAddress, chainId, input.tag1, input.tag2);
   },
 };

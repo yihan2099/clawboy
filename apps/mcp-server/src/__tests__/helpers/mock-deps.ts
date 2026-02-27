@@ -362,6 +362,8 @@ export function createCacheMock() {
     getCachedPeriodStats: mock(() => Promise.resolve(null)),
     getCachedCreatorStats: mock(() => Promise.resolve(null)),
     getCachedAgentStats: mock(() => Promise.resolve(null)),
+    getCachedDispute: mock(() => Promise.resolve(null)),
+    getCachedDisputeList: mock(() => Promise.resolve(null)),
   };
 }
 

@@ -2,6 +2,8 @@ import { listTasks, getTaskById } from '@pactprotocol/database';
 import { fetchTaskSpecification, uploadTaskSpecification } from '@pactprotocol/ipfs-utils';
 import { formatTokenAmount, parseTokenAmount } from '@pactprotocol/web3-utils';
 import { getTokenByAddress, resolveToken } from '@pactprotocol/contracts';
+import { cacheThrough, TTL_CONFIG } from '@pactprotocol/cache';
+import { getCachedTask } from '@pactprotocol/cache/helpers';
 import type { ListTasksInput, CreateTaskInput, GetTaskInput } from '@pactprotocol/shared-types';
 import type { TaskListItem, GetTaskResponse } from '@pactprotocol/shared-types';
 import { type TaskStatus } from '@pactprotocol/shared-types';
@@ -73,48 +75,62 @@ export async function listTasksHandler(
     }
   }
 
-  const { tasks, total } = await listTasks({
-    status: input.status as TaskStatus | undefined,
-    tags: input.tags,
-    minBounty: minBountyWei,
-    maxBounty: maxBountyWei,
-    bountyToken: bountyTokenAddress,
-    limit: input.limit || 20,
-    offset: input.offset || 0,
-    sortBy,
-    sortOrder: input.sortOrder,
-  });
+  const limit = input.limit || 20;
+  const offset = input.offset || 0;
+  const status = input.status || '';
+  const tags = input.tags;
+  const cacheKey = `tasks:s:${status}t:${tags?.join(',') || ''}bt:${bountyTokenAddress || ''}min:${minBountyWei || ''}max:${maxBountyWei || ''}l:${limit}o:${offset}sb:${sortBy || ''}so:${input.sortOrder || ''}`;
 
-  const taskItems: TaskListItemWithFormatted[] = tasks.map((task) => {
-    // Get token info for formatting
-    const tokenConfig = getTokenByAddress(chainId, task.bounty_token);
-    const decimals = tokenConfig?.decimals ?? 18;
-    const symbol = tokenConfig?.symbol ?? 'ETH';
-    const formatted = formatTokenAmount(BigInt(task.bounty_amount), decimals) + ' ' + symbol;
+  const { data } = await cacheThrough(
+    cacheKey,
+    async () => {
+      const { tasks, total } = await listTasks({
+        status: input.status as TaskStatus | undefined,
+        tags: input.tags,
+        minBounty: minBountyWei,
+        maxBounty: maxBountyWei,
+        bountyToken: bountyTokenAddress,
+        limit,
+        offset,
+        sortBy,
+        sortOrder: input.sortOrder,
+      });
 
-    return {
-      id: task.id,
-      title: task.title,
-      bountyAmount: task.bounty_amount,
-      bountyToken: task.bounty_token as `0x${string}`,
-      bountyFormatted: formatted,
-      bountyTokenSymbol: symbol,
-      status: task.status as TaskStatus,
-      creatorAddress: task.creator_address as `0x${string}`,
-      deadline: task.deadline,
-      tags: task.tags,
-      createdAt: task.created_at,
-      submissionCount: task.submission_count,
-      winnerAddress: task.winner_address,
-      challengeDeadline: task.challenge_deadline,
-    };
-  });
+      const taskItems: TaskListItemWithFormatted[] = tasks.map((task) => {
+        // Get token info for formatting
+        const tokenConfig = getTokenByAddress(chainId, task.bounty_token);
+        const decimals = tokenConfig?.decimals ?? 18;
+        const symbol = tokenConfig?.symbol ?? 'ETH';
+        const formatted = formatTokenAmount(BigInt(task.bounty_amount), decimals) + ' ' + symbol;
 
-  return {
-    tasks: taskItems,
-    total,
-    hasMore: (input.offset || 0) + taskItems.length < total,
-  };
+        return {
+          id: task.id,
+          title: task.title,
+          bountyAmount: task.bounty_amount,
+          bountyToken: task.bounty_token as `0x${string}`,
+          bountyFormatted: formatted,
+          bountyTokenSymbol: symbol,
+          status: task.status as TaskStatus,
+          creatorAddress: task.creator_address as `0x${string}`,
+          deadline: task.deadline,
+          tags: task.tags,
+          createdAt: task.created_at,
+          submissionCount: task.submission_count,
+          winnerAddress: task.winner_address,
+          challengeDeadline: task.challenge_deadline,
+        };
+      });
+
+      return {
+        tasks: taskItems,
+        total,
+        hasMore: offset + taskItems.length < total,
+      };
+    },
+    { ttl: TTL_CONFIG.TASK_LIST, tags: ['task_list'] }
+  );
+
+  return data;
 }
 
 /** Extended get task response with formatted bounty */
@@ -136,44 +152,48 @@ export async function getTaskHandler(
     return null;
   }
 
-  // Fetch specification from IPFS
-  let specification;
-  try {
-    specification = await fetchTaskSpecification(task.specification_cid);
-  } catch {
-    specification = {
+  const { data } = await getCachedTask<GetTaskResponseWithFormatted>(input.taskId, async () => {
+    // Fetch specification from IPFS
+    let specification;
+    try {
+      specification = await fetchTaskSpecification(task.specification_cid);
+    } catch {
+      specification = {
+        title: task.title,
+        description: task.description,
+        deliverables: [],
+      };
+    }
+
+    // Get token info for formatting
+    const tokenConfig = getTokenByAddress(chainId, task.bounty_token);
+    const decimals = tokenConfig?.decimals ?? 18;
+    const symbol = tokenConfig?.symbol ?? 'ETH';
+    const formatted = formatTokenAmount(BigInt(task.bounty_amount), decimals) + ' ' + symbol;
+
+    return {
+      id: task.id,
       title: task.title,
       description: task.description,
-      deliverables: [],
+      status: task.status,
+      bountyAmount: task.bounty_amount,
+      bountyToken: task.bounty_token,
+      bountyFormatted: formatted,
+      bountyTokenSymbol: symbol,
+      creator: task.creator_address,
+      deadline: task.deadline,
+      tags: task.tags,
+      deliverables: specification.deliverables || [],
+      requirements: specification.requirements,
+      submissionCount: task.submission_count,
+      winnerAddress: task.winner_address || undefined,
+      selectedAt: task.selected_at || undefined,
+      challengeDeadline: task.challenge_deadline || undefined,
+      createdAt: task.created_at,
     };
-  }
+  });
 
-  // Get token info for formatting
-  const tokenConfig = getTokenByAddress(chainId, task.bounty_token);
-  const decimals = tokenConfig?.decimals ?? 18;
-  const symbol = tokenConfig?.symbol ?? 'ETH';
-  const formatted = formatTokenAmount(BigInt(task.bounty_amount), decimals) + ' ' + symbol;
-
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    status: task.status,
-    bountyAmount: task.bounty_amount,
-    bountyToken: task.bounty_token,
-    bountyFormatted: formatted,
-    bountyTokenSymbol: symbol,
-    creator: task.creator_address,
-    deadline: task.deadline,
-    tags: task.tags,
-    deliverables: specification.deliverables || [],
-    requirements: specification.requirements,
-    submissionCount: task.submission_count,
-    winnerAddress: task.winner_address || undefined,
-    selectedAt: task.selected_at || undefined,
-    challengeDeadline: task.challenge_deadline || undefined,
-    createdAt: task.created_at,
-  };
+  return data;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getAgentId, getAllFeedback, getFeedbackClients } from '@pactprotocol/web3-utils';
+import { getFeedbackHistoryHandler } from '../../services/reputation-service';
 import { getChainId } from '../../config/chain';
 
 export const getFeedbackHistorySchema = z.object({
@@ -40,44 +40,6 @@ export const getFeedbackHistoryTool = {
     }
 
     const chainId = getChainId();
-
-    // Get agent ID
-    const agentId = await getAgentId(targetAddress, chainId);
-
-    if (agentId === 0n) {
-      return {
-        success: false,
-        message: 'Agent not registered',
-        walletAddress: targetAddress,
-      };
-    }
-
-    // Get feedback clients
-    const clients = await getFeedbackClients(agentId, chainId);
-
-    // Get all feedback entries
-    const feedbackEntries = await getAllFeedback(agentId, input.limit, chainId);
-
-    // Format feedback entries for output
-    const formattedFeedback = feedbackEntries
-      .filter((entry) => !entry.isRevoked)
-      .map((entry) => ({
-        clientAddress: entry.clientAddress,
-        feedbackIndex: entry.feedbackIndex.toString(),
-        tag1: entry.tag1,
-        tag2: entry.tag2,
-        value: entry.value.toString(),
-        valueDecimals: entry.valueDecimals,
-        isRevoked: entry.isRevoked,
-      }));
-
-    return {
-      success: true,
-      walletAddress: targetAddress,
-      agentId: agentId.toString(),
-      totalClients: clients.length,
-      feedbackCount: formattedFeedback.length,
-      feedback: formattedFeedback,
-    };
+    return getFeedbackHistoryHandler(targetAddress, chainId, input.limit);
   },
 };

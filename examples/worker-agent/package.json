@@ -1,0 +1,13 @@
+{
+  "name": "pact-example-worker-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@pactprotocol/mcp-client": "workspace:*",
+    "viem": "^2.21.0"
+  }
+}

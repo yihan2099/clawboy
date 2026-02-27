@@ -1,9 +1,23 @@
 import { describe, test, expect, beforeEach, mock } from 'bun:test';
-import { createWeb3UtilsMock } from '../../helpers/mock-deps';
 
-const web3Mock = createWeb3UtilsMock();
+const mockGetReputationHandler = mock(
+  (): Promise<Record<string, unknown>> =>
+    Promise.resolve({
+      success: true,
+      walletAddress: '0xaabbccddaabbccddaabbccddaabbccddaabbccdd',
+      agentId: '1',
+      reputation: {
+        taskWins: '5',
+        disputeWins: '2',
+        disputeLosses: '1',
+        totalReputation: '100',
+      },
+    })
+);
 
-mock.module('@pactprotocol/web3-utils', () => web3Mock);
+mock.module('../../../services/reputation-service', () => ({
+  getReputationHandler: mockGetReputationHandler,
+}));
 
 mock.module('../../../config/chain', () => ({
   getChainId: () => 84532,
@@ -17,16 +31,18 @@ const context = {
 
 describe('get_reputation tool', () => {
   beforeEach(() => {
-    web3Mock.getAgentId.mockReset();
-    web3Mock.getAgentId.mockResolvedValue(1n);
-    web3Mock.getAgentReputationSummary.mockReset();
-    web3Mock.getAgentReputationSummary.mockResolvedValue({
-      taskWins: 5n,
-      disputeWins: 2n,
-      disputeLosses: 1n,
-      totalReputation: 100n,
+    mockGetReputationHandler.mockReset();
+    mockGetReputationHandler.mockResolvedValue({
+      success: true,
+      walletAddress: '0xaabbccddaabbccddaabbccddaabbccddaabbccdd',
+      agentId: '1',
+      reputation: {
+        taskWins: '5',
+        disputeWins: '2',
+        disputeLosses: '1',
+        totalReputation: '100',
+      },
     });
-    web3Mock.getFeedbackSummary.mockReset();
   });
 
   test('should return reputation summary for registered agent', async () => {
@@ -39,7 +55,11 @@ describe('get_reputation tool', () => {
   });
 
   test('should return not registered message for unregistered agent', async () => {
-    web3Mock.getAgentId.mockResolvedValue(0n);
+    mockGetReputationHandler.mockResolvedValue({
+      success: false,
+      message: 'Agent not registered',
+      walletAddress: context.callerAddress,
+    });
 
     const result = await getReputationTool.handler({}, context);
 
@@ -51,14 +71,27 @@ describe('get_reputation tool', () => {
     const target = '0x1111111111111111111111111111111111111111';
     await getReputationTool.handler({ walletAddress: target }, context);
 
-    expect(web3Mock.getAgentId).toHaveBeenCalledWith(target, 84532);
+    expect(mockGetReputationHandler).toHaveBeenCalledWith(target, 84532, undefined, undefined);
   });
 
   test('should include filtered feedback when tags specified', async () => {
-    web3Mock.getFeedbackSummary.mockResolvedValue({
-      count: 3n,
-      summaryValue: 50n,
-      summaryValueDecimals: 0,
+    mockGetReputationHandler.mockResolvedValue({
+      success: true,
+      walletAddress: context.callerAddress,
+      agentId: '1',
+      reputation: {
+        taskWins: '5',
+        disputeWins: '2',
+        disputeLosses: '1',
+        totalReputation: '100',
+      },
+      filteredFeedback: {
+        tag1: 'task',
+        tag2: 'win',
+        count: '3',
+        summaryValue: '50',
+        summaryValueDecimals: 0,
+      },
     });
 
     const result = await getReputationTool.handler({ tag1: 'task', tag2: 'win' }, context);

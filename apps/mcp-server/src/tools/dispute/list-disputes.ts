@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { getDisputesReadyForResolution } from '@pactprotocol/database';
-import { getSupabaseClient } from '@pactprotocol/database';
-import type { DisputeStatus } from '@pactprotocol/shared-types';
-import { sanitizeErrorMessage } from '../../utils/error-sanitizer';
+import { listDisputesHandler } from '../../services/dispute-service';
 
 export const listDisputesSchema = z.object({
   status: z.enum(['active', 'resolved', 'all']).optional().default('active'),
@@ -40,63 +37,6 @@ export const listDisputesTool = {
   },
   handler: async (args: unknown) => {
     const input = listDisputesSchema.parse(args);
-    const supabase = getSupabaseClient();
-
-    // Build query
-    let query = supabase.from('disputes').select('*', { count: 'exact' });
-
-    // Apply status filter
-    if (input.status === 'active') {
-      query = query.eq('status', 'active');
-    } else if (input.status === 'resolved') {
-      query = query.eq('status', 'resolved');
-    }
-    // 'all' - no status filter
-
-    // Apply task filter
-    if (input.taskId) {
-      query = query.eq('task_id', input.taskId);
-    }
-
-    // Apply pagination and ordering
-    query = query
-      .order('created_at', { ascending: false })
-      .range(input.offset, input.offset + input.limit - 1);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      throw new Error(`Failed to list disputes: ${sanitizeErrorMessage(error)}`);
-    }
-
-    // Get disputes ready for resolution
-    const readyForResolution = await getDisputesReadyForResolution();
-    const readyIds = new Set(readyForResolution.map((d) => d.id));
-
-    const disputes = (data ?? []).map((d) => ({
-      id: d.id,
-      chainDisputeId: d.chain_dispute_id,
-      taskId: d.task_id,
-      disputerAddress: d.disputer_address,
-      disputeStake: d.dispute_stake,
-      votingDeadline: d.voting_deadline,
-      status: d.status as DisputeStatus,
-      disputerWon: d.disputer_won,
-      votesForDisputer: d.votes_for_disputer,
-      votesAgainstDisputer: d.votes_against_disputer,
-      createdAt: d.created_at,
-      canBeResolved: readyIds.has(d.id),
-    }));
-
-    return {
-      disputes,
-      pagination: {
-        total: count ?? 0,
-        limit: input.limit,
-        offset: input.offset,
-        hasMore: (count ?? 0) > input.offset + input.limit,
-      },
-      readyForResolutionCount: readyForResolution.length,
-    };
+    return listDisputesHandler(input);
   },
 };

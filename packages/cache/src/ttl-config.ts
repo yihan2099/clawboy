@@ -31,6 +31,12 @@ export const TTL_CONFIG = {
   /** Dispute data */
   DISPUTE: 60, // 1 minute (votes can change quickly)
 
+  /** Agent reputation data (on-chain, changes after task/dispute resolution) */
+  REPUTATION: 300, // 5 minutes
+
+  /** Agent feedback history (on-chain, changes after feedback submission) */
+  FEEDBACK_HISTORY: 300, // 5 minutes
+
   /** Default TTL for unspecified types */
   DEFAULT: 300, // 5 minutes
 } as const;

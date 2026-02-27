@@ -1,38 +1,81 @@
 import { describe, test, expect, beforeEach, mock } from 'bun:test';
-import { createDatabaseMock } from '../../helpers/mock-deps';
 
-const dbMock = createDatabaseMock();
+const mockGetDisputeHandler = mock(() =>
+  Promise.resolve({
+    dispute: {
+      id: 'dispute-uuid',
+      chainDisputeId: '1',
+      taskId: 'task-1',
+      disputerAddress: '0xDisputer',
+      disputeStake: '10000000000000000',
+      votingDeadline: new Date(Date.now() + 86400000).toISOString(),
+      status: 'active',
+      disputerWon: null,
+      votesForDisputer: 10,
+      votesAgainstDisputer: 5,
+      createdAt: '2024-01-01T00:00:00Z',
+      resolvedAt: null,
+    },
+    votes: [
+      {
+        voterAddress: '0xVoter1',
+        supportsDisputer: true,
+        weight: 5,
+        votedAt: '2024-01-02T00:00:00Z',
+      },
+    ],
+    summary: {
+      totalVotes: 1,
+      totalWeightFor: 10,
+      totalWeightAgainst: 5,
+      isActive: true,
+      timeRemainingMs: 86400000,
+      canBeResolved: false,
+    },
+  })
+);
 
-mock.module('@pactprotocol/database', () => dbMock);
+mock.module('../../../services/dispute-service', () => ({
+  getDisputeHandler: mockGetDisputeHandler,
+}));
 
 import { getDisputeTool } from '../../../tools/dispute/get-dispute';
 
 describe('get_dispute tool', () => {
   beforeEach(() => {
-    dbMock.getDisputeByChainId.mockReset();
-    dbMock.getDisputeByChainId.mockResolvedValue({
-      id: 'dispute-uuid',
-      chain_dispute_id: '1',
-      task_id: 'task-1',
-      disputer_address: '0xDisputer',
-      dispute_stake: '10000000000000000',
-      voting_deadline: new Date(Date.now() + 86400000).toISOString(),
-      status: 'active',
-      disputer_won: null,
-      votes_for_disputer: 10,
-      votes_against_disputer: 5,
-      created_at: '2024-01-01T00:00:00Z',
-      resolved_at: null,
-    } as any);
-    dbMock.getDisputeVotes.mockReset();
-    dbMock.getDisputeVotes.mockResolvedValue([
-      {
-        voter_address: '0xVoter1',
-        supports_disputer: true,
-        vote_weight: 5,
-        voted_at: '2024-01-02T00:00:00Z',
+    mockGetDisputeHandler.mockReset();
+    mockGetDisputeHandler.mockResolvedValue({
+      dispute: {
+        id: 'dispute-uuid',
+        chainDisputeId: '1',
+        taskId: 'task-1',
+        disputerAddress: '0xDisputer',
+        disputeStake: '10000000000000000',
+        votingDeadline: new Date(Date.now() + 86400000).toISOString(),
+        status: 'active',
+        disputerWon: null,
+        votesForDisputer: 10,
+        votesAgainstDisputer: 5,
+        createdAt: '2024-01-01T00:00:00Z',
+        resolvedAt: null,
       },
-    ] as any);
+      votes: [
+        {
+          voterAddress: '0xVoter1',
+          supportsDisputer: true,
+          weight: 5,
+          votedAt: '2024-01-02T00:00:00Z',
+        },
+      ],
+      summary: {
+        totalVotes: 1,
+        totalWeightFor: 10,
+        totalWeightAgainst: 5,
+        isActive: true,
+        timeRemainingMs: 86400000,
+        canBeResolved: false,
+      },
+    } as any);
   });
 
   test('should return dispute with votes and summary', async () => {
@@ -47,7 +90,7 @@ describe('get_dispute tool', () => {
   });
 
   test('should throw when dispute not found', async () => {
-    dbMock.getDisputeByChainId.mockResolvedValue(null as any);
+    mockGetDisputeHandler.mockRejectedValue(new Error('Dispute not found: 99'));
 
     await expect(getDisputeTool.handler({ disputeId: '99' })).rejects.toThrow('Dispute not found');
   });
@@ -59,19 +102,30 @@ describe('get_dispute tool', () => {
   });
 
   test('should show canBeResolved when deadline passed and active', async () => {
-    dbMock.getDisputeByChainId.mockResolvedValue({
-      id: 'dispute-uuid',
-      chain_dispute_id: '1',
-      task_id: 'task-1',
-      disputer_address: '0xDisputer',
-      dispute_stake: '10000000000000000',
-      voting_deadline: new Date(Date.now() - 86400000).toISOString(), // past
-      status: 'active',
-      disputer_won: null,
-      votes_for_disputer: 10,
-      votes_against_disputer: 5,
-      created_at: '2024-01-01T00:00:00Z',
-      resolved_at: null,
+    mockGetDisputeHandler.mockResolvedValue({
+      dispute: {
+        id: 'dispute-uuid',
+        chainDisputeId: '1',
+        taskId: 'task-1',
+        disputerAddress: '0xDisputer',
+        disputeStake: '10000000000000000',
+        votingDeadline: new Date(Date.now() - 86400000).toISOString(),
+        status: 'active',
+        disputerWon: null,
+        votesForDisputer: 10,
+        votesAgainstDisputer: 5,
+        createdAt: '2024-01-01T00:00:00Z',
+        resolvedAt: null,
+      },
+      votes: [],
+      summary: {
+        totalVotes: 0,
+        totalWeightFor: 10,
+        totalWeightAgainst: 5,
+        isActive: true,
+        timeRemainingMs: 0,
+        canBeResolved: true,
+      },
     } as any);
 
     const result = await getDisputeTool.handler({ disputeId: '1' });
