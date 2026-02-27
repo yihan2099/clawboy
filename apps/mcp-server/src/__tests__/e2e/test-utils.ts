@@ -37,6 +37,7 @@ import {
   TaskManagerABI,
   PactAgentAdapterABI,
   ERC8004IdentityRegistryABI,
+  DisputeResolverABI,
   getContractAddresses,
 } from '@pactprotocol/contracts';
 import { getTaskByChainId } from '@pactprotocol/database';
@@ -826,4 +827,252 @@ export async function skipTime(seconds: number): Promise<void> {
  */
 export async function skipPastChallengeWindow(): Promise<void> {
   await skipTime(CHALLENGE_WINDOW_SECONDS + 1);
+}
+
+// ============================================================================
+// Dispute Constants and Helpers
+// ============================================================================
+
+/**
+ * Voting period duration in seconds (48 hours)
+ * Matches DisputeResolver.votingPeriod
+ */
+export const VOTING_PERIOD_SECONDS = 48 * 60 * 60; // 48 hours = 172,800 seconds
+
+/**
+ * Selection deadline duration in seconds (7 days)
+ * Matches TaskManager.selectionDeadline
+ */
+export const SELECTION_DEADLINE_SECONDS = 7 * 24 * 60 * 60; // 7 days = 604,800 seconds
+
+/**
+ * Skip past the voting period (48 hours + 1 second)
+ * Convenience function for resolving disputes in tests
+ */
+export async function skipPastVotingPeriod(): Promise<void> {
+  await skipTime(VOTING_PERIOD_SECONDS + 1);
+}
+
+/**
+ * Get the voting deadline for a dispute (useful for timing resolution)
+ * Uses blockchain time (block.timestamp) for comparison, which is important
+ * when testing with Anvil's evm_increaseTime
+ */
+export async function getDisputeVotingDeadline(disputeId: bigint): Promise<{
+  deadline: Date;
+  isPassed: boolean;
+  remainingMs: number;
+  blockTimestamp: number;
+}> {
+  const publicClient = getPublicClient(CHAIN_ID);
+
+  const result = await publicClient.readContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'getDispute',
+    args: [disputeId],
+  });
+
+  // Get current block to compare against blockchain time (not Date.now())
+  const block = await publicClient.getBlock();
+  const blockTimestamp = Number(block.timestamp);
+
+  // viem returns a hybrid object with both numeric indices and named properties
+  const r = result as unknown as { [key: number]: unknown; votingDeadline?: bigint };
+  const votingDeadline = Number((r[4] as bigint) ?? r.votingDeadline ?? 0n);
+  const deadlineMs = votingDeadline * 1000;
+
+  return {
+    deadline: new Date(deadlineMs),
+    isPassed: blockTimestamp > votingDeadline,
+    remainingMs: Math.max(0, (votingDeadline - blockTimestamp) * 1000),
+    blockTimestamp,
+  };
+}
+
+/**
+ * Start a dispute on-chain
+ */
+export async function startDisputeOnChain(
+  wallet: TestWallet,
+  taskId: bigint,
+  stakeWei: bigint
+): Promise<{ hash: `0x${string}`; disputeId: bigint }> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'startDispute',
+    args: [taskId],
+    value: stakeWei,
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Start dispute transaction failed');
+  }
+
+  gasTracker.track('startDispute', receipt.gasUsed, receipt.effectiveGasPrice);
+
+  // Get dispute ID from events
+  const publicClient = getPublicClient(CHAIN_ID);
+  const txReceipt = await publicClient.getTransactionReceipt({ hash });
+
+  let disputeId: bigint | undefined;
+  for (const log of txReceipt.logs) {
+    if (log.address.toLowerCase() === addresses.disputeResolver.toLowerCase()) {
+      if (log.topics[1]) {
+        disputeId = BigInt(log.topics[1]);
+        break;
+      }
+    }
+  }
+
+  if (disputeId === undefined) {
+    // Fallback: get dispute count
+    const disputeCount = await publicClient.readContract({
+      address: addresses.disputeResolver,
+      abi: DisputeResolverABI,
+      functionName: 'disputeCount',
+    });
+    disputeId = (disputeCount as bigint) - 1n;
+  }
+
+  return { hash, disputeId };
+}
+
+/**
+ * Submit a vote on-chain
+ */
+export async function submitVoteOnChain(
+  wallet: TestWallet,
+  disputeId: bigint,
+  supportsDisputer: boolean
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'submitVote',
+    args: [disputeId, supportsDisputer],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Submit vote transaction failed');
+  }
+
+  gasTracker.track('submitVote', receipt.gasUsed, receipt.effectiveGasPrice);
+
+  return hash;
+}
+
+/**
+ * Resolve a dispute on-chain
+ */
+export async function resolveDisputeOnChain(
+  wallet: TestWallet,
+  disputeId: bigint
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'resolveDispute',
+    args: [disputeId],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Resolve dispute transaction failed');
+  }
+
+  gasTracker.track('resolveDispute', receipt.gasUsed, receipt.effectiveGasPrice);
+
+  return hash;
+}
+
+/**
+ * Get dispute data from chain
+ */
+export async function getDisputeFromChain(disputeId: bigint): Promise<{
+  id: bigint;
+  taskId: bigint;
+  disputer: `0x${string}`;
+  disputeStake: bigint;
+  votingDeadline: bigint;
+  status: number;
+  disputerWon: boolean;
+  votesForDisputer: bigint;
+  votesAgainstDisputer: bigint;
+}> {
+  const publicClient = getPublicClient(CHAIN_ID);
+
+  const result = await publicClient.readContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'getDispute',
+    args: [disputeId],
+  });
+
+  // viem returns a hybrid object with both numeric indices and named properties
+  const r = result as unknown as {
+    [key: number]: unknown;
+    id?: bigint;
+    taskId?: bigint;
+    disputer?: `0x${string}`;
+    disputeStake?: bigint;
+    votingDeadline?: bigint;
+    status?: number;
+    disputerWon?: boolean;
+    votesForDisputer?: bigint;
+    votesAgainstDisputer?: bigint;
+  };
+
+  // Try numeric indices first (more reliable), fall back to named properties
+  return {
+    id: (r[0] as bigint) ?? r.id ?? 0n,
+    taskId: (r[1] as bigint) ?? r.taskId ?? 0n,
+    disputer: (r[2] as `0x${string}`) ?? r.disputer ?? '0x0',
+    disputeStake: (r[3] as bigint) ?? r.disputeStake ?? 0n,
+    votingDeadline: (r[4] as bigint) ?? r.votingDeadline ?? 0n,
+    status: (r[5] as number) ?? r.status ?? 0,
+    disputerWon: (r[6] as boolean) ?? r.disputerWon ?? false,
+    votesForDisputer: (r[7] as bigint) ?? r.votesForDisputer ?? 0n,
+    votesAgainstDisputer: (r[8] as bigint) ?? r.votesAgainstDisputer ?? 0n,
+  };
+}
+
+/**
+ * Get minimum dispute stake
+ */
+export async function getMinDisputeStake(): Promise<bigint> {
+  const publicClient = getPublicClient(CHAIN_ID);
+
+  return publicClient.readContract({
+    address: addresses.disputeResolver,
+    abi: DisputeResolverABI,
+    functionName: 'MIN_DISPUTE_STAKE',
+  }) as Promise<bigint>;
+}
+
+/**
+ * Refund an expired task on-chain (anyone can call after selection deadline passes)
+ */
+export async function refundExpiredTaskOnChain(
+  wallet: TestWallet,
+  taskId: bigint
+): Promise<`0x${string}`> {
+  const hash = await wallet.walletClient.writeContract({
+    address: addresses.taskManager,
+    abi: TaskManagerABI,
+    functionName: 'refundExpiredTask',
+    args: [taskId],
+  });
+
+  const receipt = await waitForTransaction(hash, CHAIN_ID);
+  if (receipt.status !== 'success') {
+    throw new Error('Refund expired task transaction failed');
+  }
+
+  gasTracker.track('refundExpiredTask', receipt.gasUsed, receipt.effectiveGasPrice);
+
+  return hash;
 }

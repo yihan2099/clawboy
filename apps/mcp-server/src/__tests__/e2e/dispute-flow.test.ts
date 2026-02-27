@@ -41,13 +41,23 @@ import {
   waitForTaskStatus,
   sleep,
   resetClients,
+  isLocalAnvil,
+  skipPastVotingPeriod,
+  skipTime,
+  startDisputeOnChain,
+  submitVoteOnChain,
+  resolveDisputeOnChain,
+  getDisputeFromChain,
+  getMinDisputeStake,
+  refundExpiredTaskOnChain,
+  SELECTION_DEADLINE_SECONDS,
   TaskStatus,
   taskStatusToString,
   type TestWallet,
 } from './test-utils';
 
 import { getContractAddresses, DisputeResolverABI } from '@pactprotocol/contracts';
-import { getPublicClient, waitForTransaction } from '@pactprotocol/web3-utils';
+import { getPublicClient } from '@pactprotocol/web3-utils';
 
 // MCP Tool handlers
 import { registerAgentTool } from '../../tools/agent/register-agent';
@@ -89,172 +99,9 @@ const shouldSkipTests =
   !AGENT_PRIVATE_KEY.startsWith('0x') ||
   !VOTER_PRIVATE_KEY.startsWith('0x');
 
-/**
- * Start a dispute on-chain
- */
-async function startDisputeOnChain(
-  wallet: TestWallet,
-  taskId: bigint,
-  stakeWei: bigint
-): Promise<{ hash: `0x${string}`; disputeId: bigint }> {
-  const addresses = getContractAddresses(CHAIN_ID);
-
-  const hash = await wallet.walletClient.writeContract({
-    address: addresses.disputeResolver,
-    abi: DisputeResolverABI,
-    functionName: 'startDispute',
-    args: [taskId],
-    value: stakeWei,
-  });
-
-  const receipt = await waitForTransaction(hash, CHAIN_ID);
-  if (receipt.status !== 'success') {
-    throw new Error('Start dispute transaction failed');
-  }
-
-  // Get dispute ID from events
-  const publicClient = getPublicClient(CHAIN_ID);
-  const txReceipt = await publicClient.getTransactionReceipt({ hash });
-
-  let disputeId: bigint | undefined;
-  for (const log of txReceipt.logs) {
-    if (log.address.toLowerCase() === addresses.disputeResolver.toLowerCase()) {
-      if (log.topics[1]) {
-        disputeId = BigInt(log.topics[1]);
-        break;
-      }
-    }
-  }
-
-  if (disputeId === undefined) {
-    // Fallback: get dispute count
-    const disputeCount = await publicClient.readContract({
-      address: addresses.disputeResolver,
-      abi: DisputeResolverABI,
-      functionName: 'disputeCount',
-    });
-    disputeId = (disputeCount as bigint) - 1n;
-  }
-
-  return { hash, disputeId };
-}
-
-/**
- * Submit a vote on-chain
- */
-async function submitVoteOnChain(
-  wallet: TestWallet,
-  disputeId: bigint,
-  supportsDisputer: boolean
-): Promise<`0x${string}`> {
-  const addresses = getContractAddresses(CHAIN_ID);
-
-  const hash = await wallet.walletClient.writeContract({
-    address: addresses.disputeResolver,
-    abi: DisputeResolverABI,
-    functionName: 'submitVote',
-    args: [disputeId, supportsDisputer],
-  });
-
-  const receipt = await waitForTransaction(hash, CHAIN_ID);
-  if (receipt.status !== 'success') {
-    throw new Error('Submit vote transaction failed');
-  }
-
-  return hash;
-}
-
-/**
- * Resolve a dispute on-chain
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function _resolveDisputeOnChain(
-  wallet: TestWallet,
-  disputeId: bigint
-): Promise<`0x${string}`> {
-  const addresses = getContractAddresses(CHAIN_ID);
-
-  const hash = await wallet.walletClient.writeContract({
-    address: addresses.disputeResolver,
-    abi: DisputeResolverABI,
-    functionName: 'resolveDispute',
-    args: [disputeId],
-  });
-
-  const receipt = await waitForTransaction(hash, CHAIN_ID);
-  if (receipt.status !== 'success') {
-    throw new Error('Resolve dispute transaction failed');
-  }
-
-  return hash;
-}
-
-/**
- * Get dispute data from chain
- */
-async function getDisputeFromChain(disputeId: bigint): Promise<{
-  id: bigint;
-  taskId: bigint;
-  disputer: `0x${string}`;
-  disputeStake: bigint;
-  votingDeadline: bigint;
-  status: number;
-  disputerWon: boolean;
-  votesForDisputer: bigint;
-  votesAgainstDisputer: bigint;
-}> {
-  const publicClient = getPublicClient(CHAIN_ID);
-  const addresses = getContractAddresses(CHAIN_ID);
-
-  const result = await publicClient.readContract({
-    address: addresses.disputeResolver,
-    abi: DisputeResolverABI,
-    functionName: 'getDispute',
-    args: [disputeId],
-  });
-
-  // viem returns a hybrid object with both numeric indices and named properties
-  // Cast to a type that allows both access patterns
-  const r = result as unknown as {
-    [key: number]: unknown;
-    id?: bigint;
-    taskId?: bigint;
-    disputer?: `0x${string}`;
-    disputeStake?: bigint;
-    votingDeadline?: bigint;
-    status?: number;
-    disputerWon?: boolean;
-    votesForDisputer?: bigint;
-    votesAgainstDisputer?: bigint;
-  };
-
-  // Try numeric indices first (more reliable), fall back to named properties
-  return {
-    id: (r[0] as bigint) ?? r.id ?? 0n,
-    taskId: (r[1] as bigint) ?? r.taskId ?? 0n,
-    disputer: (r[2] as `0x${string}`) ?? r.disputer ?? '0x0',
-    disputeStake: (r[3] as bigint) ?? r.disputeStake ?? 0n,
-    votingDeadline: (r[4] as bigint) ?? r.votingDeadline ?? 0n,
-    status: (r[5] as number) ?? r.status ?? 0,
-    disputerWon: (r[6] as boolean) ?? r.disputerWon ?? false,
-    votesForDisputer: (r[7] as bigint) ?? r.votesForDisputer ?? 0n,
-    votesAgainstDisputer: (r[8] as bigint) ?? r.votesAgainstDisputer ?? 0n,
-  };
-}
-
-/**
- * Get minimum dispute stake
- */
-async function getMinDisputeStake(): Promise<bigint> {
-  const publicClient = getPublicClient(CHAIN_ID);
-  const addresses = getContractAddresses(CHAIN_ID);
-
-  return publicClient.readContract({
-    address: addresses.disputeResolver,
-    abi: DisputeResolverABI,
-    functionName: 'MIN_DISPUTE_STAKE',
-  }) as Promise<bigint>;
-}
+// Local helper functions moved to test-utils.ts:
+// startDisputeOnChain, submitVoteOnChain, resolveDisputeOnChain,
+// getDisputeFromChain, getMinDisputeStake
 
 describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
   // Test state
@@ -666,32 +513,328 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     expect(task.status).toBe(TaskStatus.Disputed);
   });
 
-  // Note: Resolution test is commented because it requires waiting for voting period
-  /*
-  test('Step 9: Resolve dispute (after voting period)', async () => {
-    console.log('\n--- Step 9: Resolve Dispute ---\n');
+});
 
-    // Check if voting period has passed
-    const dispute = await getDisputeFromChain(disputeId);
-    const now = BigInt(Math.floor(Date.now() / 1000));
+// ============================================================================
+// Anvil-Only Tests: Dispute Resolution (requires time manipulation)
+// ============================================================================
 
-    if (now < dispute.votingDeadline) {
-      console.log('Voting period not yet ended. Skipping resolution.');
-      return;
+const shouldSkipAnvilTests = shouldSkipTests || !isLocalAnvil();
+
+describe.skipIf(shouldSkipAnvilTests)('E2E: Dispute Resolution (Anvil Only)', () => {
+  let creatorWallet: TestWallet;
+  let agentWallet: TestWallet;
+  let voterWallet: TestWallet;
+  let chainTaskId: bigint;
+  let dbTaskId: string;
+  let disputeId: bigint;
+
+  beforeAll(async () => {
+    console.log('\n========================================');
+    console.log('E2E Dispute Resolution Test - Local Anvil');
+    console.log('(Time manipulation enabled)');
+    console.log('========================================\n');
+
+    resetClients();
+
+    creatorWallet = createTestWallet(CREATOR_PRIVATE_KEY!);
+    agentWallet = createTestWallet(AGENT_PRIVATE_KEY!);
+    voterWallet = createTestWallet(VOTER_PRIVATE_KEY!);
+
+    console.log(`Creator wallet: ${creatorWallet.address}`);
+    console.log(`Agent wallet: ${agentWallet.address}`);
+    console.log(`Voter wallet: ${voterWallet.address}`);
+
+    // Ensure agents are registered
+    const agentRegistered = await checkAgentRegistered(agentWallet.address);
+    if (!agentRegistered) {
+      console.log('Registering agent...');
+      const profileResult = await registerAgentTool.handler(
+        {
+          name: `E2E Resolve Test Agent ${Date.now()}`,
+          description: 'Test agent for dispute resolution',
+          skills: ['testing'],
+          preferredTaskTypes: ['code'],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await registerAgentOnChain(agentWallet, profileResult.agentURI);
+      await sleep(3000);
     }
 
-    // Resolve the dispute
-    const txHash = await resolveDisputeOnChain(agentWallet, disputeId);
-    console.log(`Dispute resolved: ${txHash}`);
-
-    // Verify final state
-    const finalDispute = await getDisputeFromChain(disputeId);
-    console.log(`Disputer won: ${finalDispute.disputerWon}`);
-    console.log(`Final status: ${finalDispute.status}`); // 1 = Resolved
-
-    expect(finalDispute.status).toBe(1);
+    const voterRegistered = await checkAgentRegistered(voterWallet.address);
+    if (!voterRegistered) {
+      console.log('Registering voter...');
+      const profileResult = await registerAgentTool.handler(
+        {
+          name: `E2E Resolve Test Voter ${Date.now()}`,
+          description: 'Test voter for dispute resolution',
+          skills: ['review'],
+          preferredTaskTypes: ['document'],
+        },
+        { callerAddress: voterWallet.address }
+      );
+      await registerAgentOnChain(voterWallet, profileResult.agentURI);
+      await sleep(3000);
+    }
   });
-  */
+
+  test(
+    'Resolve dispute after voting period',
+    async () => {
+      console.log('\n--- Dispute Resolution with Time Skip ---\n');
+
+      const BOUNTY_ETH = '0.002';
+
+      // Step 1: Create task
+      console.log('Creating task...');
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E Dispute Resolve Test ${Date.now()}`,
+          description: 'Task for testing dispute resolution with time skip',
+          deliverables: [
+            {
+              type: 'document' as const,
+              description: 'Test deliverable',
+              format: 'text',
+            },
+          ],
+          bountyAmount: BOUNTY_ETH,
+          tags: ['test', 'dispute-resolve'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      const { taskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        BOUNTY_ETH
+      );
+      chainTaskId = taskId;
+      console.log(`Task created: ${chainTaskId}`);
+
+      await sleep(3000);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
+      dbTaskId = dbTask!.id;
+
+      // Step 2: Submit work from both agents
+      console.log('Submitting work...');
+      const agentSubmit = await submitWorkTool.handler(
+        {
+          taskId: dbTaskId,
+          summary: 'Agent submission for resolve test',
+          description: 'Work to be selected as winner',
+          deliverables: [
+            { type: 'document' as const, description: 'Output', url: 'https://example.com/out' },
+          ],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await submitWorkOnChain(agentWallet, chainTaskId, agentSubmit.submissionCid);
+
+      const voterSubmit = await submitWorkTool.handler(
+        {
+          taskId: dbTaskId,
+          summary: 'Voter submission for resolve test',
+          description: 'Competing work that will dispute',
+          deliverables: [
+            { type: 'document' as const, description: 'Alt output', url: 'https://example.com/alt' },
+          ],
+        },
+        { callerAddress: voterWallet.address }
+      );
+      await submitWorkOnChain(voterWallet, chainTaskId, voterSubmit.submissionCid);
+
+      // Step 3: Select winner
+      console.log('Selecting winner...');
+      await selectWinnerOnChain(creatorWallet, chainTaskId, agentWallet.address);
+      await sleep(2000);
+
+      // Step 4: Start dispute
+      console.log('Starting dispute...');
+      const minStake = await getMinDisputeStake();
+      const bountyWei = parseEther(BOUNTY_ETH);
+      const percentStake = bountyWei / 100n;
+      const requiredStake = percentStake > minStake ? percentStake : minStake;
+
+      const { disputeId: dId } = await startDisputeOnChain(voterWallet, chainTaskId, requiredStake);
+      disputeId = dId;
+      console.log(`Dispute started: ${disputeId}`);
+
+      // Step 5: Submit vote (agent votes against disputer)
+      console.log('Submitting vote...');
+      await submitVoteOnChain(agentWallet, disputeId, false);
+
+      // Step 6: Skip past voting period
+      console.log('Skipping time past voting period (48h + 1s)...');
+      await skipPastVotingPeriod();
+      console.log('Time advanced');
+
+      // Step 7: Resolve dispute
+      console.log('Resolving dispute...');
+      const txHash = await resolveDisputeOnChain(agentWallet, disputeId);
+      console.log(`Dispute resolved: ${txHash}`);
+
+      // Step 8: Verify final state
+      const finalDispute = await getDisputeFromChain(disputeId);
+      console.log(`Dispute status: ${finalDispute.status}`); // 1 = Resolved
+      console.log(`Disputer won: ${finalDispute.disputerWon}`);
+      console.log(`Votes for disputer: ${finalDispute.votesForDisputer}`);
+      console.log(`Votes against disputer: ${finalDispute.votesAgainstDisputer}`);
+
+      expect(finalDispute.status).toBe(1); // Resolved
+
+      // Verify task status updated
+      const task = await getTaskFromChain(chainTaskId);
+      console.log(`Task status: ${taskStatusToString(task.status)}`);
+
+      // If disputer lost, task should be back to InReview or Completed
+      // If disputer won, task should be Refunded
+      if (finalDispute.disputerWon) {
+        expect(task.status).toBe(TaskStatus.Refunded);
+      } else {
+        // Disputer lost - task reverts to InReview (winner keeps selection)
+        expect(task.status).toBe(TaskStatus.InReview);
+      }
+
+      console.log('\n========================================');
+      console.log('Dispute Resolution Test Complete!');
+      console.log('========================================\n');
+    },
+    TEST_TIMEOUT * 2
+  );
+});
+
+// ============================================================================
+// Anvil-Only Tests: Selection Deadline Enforcement
+// ============================================================================
+
+describe.skipIf(shouldSkipAnvilTests)('E2E: Selection Deadline Enforcement (Anvil Only)', () => {
+  let creatorWallet: TestWallet;
+  let agentWallet: TestWallet;
+  let chainTaskId: bigint;
+
+  beforeAll(async () => {
+    console.log('\n========================================');
+    console.log('E2E Selection Deadline Test - Local Anvil');
+    console.log('(Time manipulation enabled)');
+    console.log('========================================\n');
+
+    resetClients();
+
+    creatorWallet = createTestWallet(CREATOR_PRIVATE_KEY!);
+    agentWallet = createTestWallet(AGENT_PRIVATE_KEY!);
+
+    console.log(`Creator wallet: ${creatorWallet.address}`);
+    console.log(`Agent wallet: ${agentWallet.address}`);
+
+    // Ensure agent is registered
+    const isRegistered = await checkAgentRegistered(agentWallet.address);
+    if (!isRegistered) {
+      console.log('Registering agent...');
+      const profileResult = await registerAgentTool.handler(
+        {
+          name: `E2E Deadline Test Agent ${Date.now()}`,
+          description: 'Test agent for selection deadline',
+          skills: ['testing'],
+          preferredTaskTypes: ['code'],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await registerAgentOnChain(agentWallet, profileResult.agentURI);
+      await sleep(3000);
+    }
+  });
+
+  test(
+    'Refund task after selection deadline expires',
+    async () => {
+      console.log('\n--- Selection Deadline Enforcement ---\n');
+
+      const BOUNTY_ETH = '0.003';
+
+      // Step 1: Create task with short deadline (1 hour)
+      console.log('Creating task with 1-hour deadline...');
+      const TASK_DEADLINE_SECONDS = 60 * 60; // 1 hour
+      const taskResult = await createTaskTool.handler(
+        {
+          title: `E2E Selection Deadline Test ${Date.now()}`,
+          description: 'Task for testing selection deadline enforcement',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Test output',
+              format: 'text',
+            },
+          ],
+          bountyAmount: BOUNTY_ETH,
+          tags: ['test', 'deadline'],
+        },
+        { callerAddress: creatorWallet.address }
+      );
+
+      const { taskId } = await createTaskOnChain(
+        creatorWallet,
+        taskResult.specificationCid,
+        BOUNTY_ETH,
+        TASK_DEADLINE_SECONDS
+      );
+      chainTaskId = taskId;
+      console.log(`Task created: ${chainTaskId}`);
+
+      await sleep(3000);
+      const dbTask = await waitForTaskInDB(chainTaskId, INDEXER_SYNC_WAIT_MS);
+      console.log(`Database task: ${dbTask!.id}`);
+
+      // Step 2: Submit work
+      console.log('Submitting work...');
+      const submitResult = await submitWorkTool.handler(
+        {
+          taskId: dbTask!.id,
+          summary: 'Deadline test submission',
+          description: 'Work for deadline enforcement test',
+          deliverables: [
+            {
+              type: 'code' as const,
+              description: 'Output',
+              url: 'https://example.com/deadline-test',
+            },
+          ],
+        },
+        { callerAddress: agentWallet.address }
+      );
+      await submitWorkOnChain(agentWallet, chainTaskId, submitResult.submissionCid);
+      console.log('Work submitted');
+
+      // Step 3: Verify task is still Open (no winner selected)
+      let task = await getTaskFromChain(chainTaskId);
+      console.log(`Task status before time skip: ${taskStatusToString(task.status)}`);
+      expect(task.status).toBe(TaskStatus.Open);
+
+      // Step 4: Skip past task deadline + selection deadline
+      // Total skip: 1 hour (task deadline) + 7 days (selection deadline) + 1 second
+      const totalSkipSeconds = TASK_DEADLINE_SECONDS + SELECTION_DEADLINE_SECONDS + 1;
+      console.log(`Skipping time: ${totalSkipSeconds}s (deadline + selection period + 1s)...`);
+      await skipTime(totalSkipSeconds);
+      console.log('Time advanced');
+
+      // Step 5: Refund expired task (anyone can call)
+      console.log('Refunding expired task...');
+      const txHash = await refundExpiredTaskOnChain(agentWallet, chainTaskId);
+      console.log(`Refund tx: ${txHash}`);
+
+      // Step 6: Verify task is refunded
+      await sleep(2000);
+      task = await getTaskFromChain(chainTaskId);
+      console.log(`Task status after refund: ${taskStatusToString(task.status)}`);
+      expect(task.status).toBe(TaskStatus.Refunded);
+
+      console.log('\n========================================');
+      console.log('Selection Deadline Enforcement Test Complete!');
+      console.log('========================================\n');
+    },
+    TEST_TIMEOUT * 2
+  );
 });
 
 // Export for manual testing
