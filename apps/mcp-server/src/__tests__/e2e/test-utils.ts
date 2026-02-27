@@ -238,7 +238,17 @@ export async function createTaskOnChain(
   deadlineSeconds: number = 7 * 24 * 60 * 60 // Default 7 days
 ): Promise<{ hash: `0x${string}`; taskId: bigint }> {
   const bountyWei = parseEther(bountyEth);
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineSeconds);
+
+  // Use chain timestamp on Anvil since time manipulation may shift it from system time
+  let currentTimestamp: number;
+  if (isLocalAnvil()) {
+    const pubClient = getPublicClient(CHAIN_ID);
+    const block = await pubClient.getBlock();
+    currentTimestamp = Number(block.timestamp);
+  } else {
+    currentTimestamp = Math.floor(Date.now() / 1000);
+  }
+  const deadline = BigInt(currentTimestamp + deadlineSeconds);
 
   const hash = await wallet.walletClient.writeContract({
     address: addresses.taskManager,

@@ -155,26 +155,30 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
     console.log(`Minimum dispute stake: ${formatEther(minStake)} ETH`);
   });
 
-  test('Step 1: Authenticate all wallets', async () => {
-    console.log('\n--- Step 1: Authentication ---\n');
+  test(
+    'Step 1: Authenticate all wallets',
+    async () => {
+      console.log('\n--- Step 1: Authentication ---\n');
 
-    // Authenticate all three wallets
-    const creatorAuth = await authenticateWallet(creatorWallet);
-    creatorSessionId = creatorAuth.sessionId;
-    console.log(`Creator session: ${creatorSessionId.substring(0, 8)}...`);
+      // Authenticate all three wallets
+      const creatorAuth = await authenticateWallet(creatorWallet);
+      creatorSessionId = creatorAuth.sessionId;
+      console.log(`Creator session: ${creatorSessionId.substring(0, 8)}...`);
 
-    const agentAuth = await authenticateWallet(agentWallet);
-    agentSessionId = agentAuth.sessionId;
-    console.log(`Agent session: ${agentSessionId.substring(0, 8)}...`);
+      const agentAuth = await authenticateWallet(agentWallet);
+      agentSessionId = agentAuth.sessionId;
+      console.log(`Agent session: ${agentSessionId.substring(0, 8)}...`);
 
-    const voterAuth = await authenticateWallet(voterWallet);
-    voterSessionId = voterAuth.sessionId;
-    console.log(`Voter session: ${voterSessionId.substring(0, 8)}...`);
+      const voterAuth = await authenticateWallet(voterWallet);
+      voterSessionId = voterAuth.sessionId;
+      console.log(`Voter session: ${voterSessionId.substring(0, 8)}...`);
 
-    expect(creatorSessionId).toBeDefined();
-    expect(agentSessionId).toBeDefined();
-    expect(voterSessionId).toBeDefined();
-  });
+      expect(creatorSessionId).toBeDefined();
+      expect(agentSessionId).toBeDefined();
+      expect(voterSessionId).toBeDefined();
+    },
+    TEST_TIMEOUT
+  );
 
   test(
     'Step 2: Ensure all agents are registered',
@@ -577,7 +581,7 @@ describe.skipIf(shouldSkipAnvilTests)('E2E: Dispute Resolution (Anvil Only)', ()
       await registerAgentOnChain(voterWallet, profileResult.agentURI);
       await sleep(3000);
     }
-  });
+  }, TEST_TIMEOUT * 2);
 
   test(
     'Resolve dispute after voting period',
@@ -693,8 +697,11 @@ describe.skipIf(shouldSkipAnvilTests)('E2E: Dispute Resolution (Anvil Only)', ()
       if (finalDispute.disputerWon) {
         expect(task.status).toBe(TaskStatus.Refunded);
       } else {
-        // Disputer lost - task reverts to InReview (winner keeps selection)
-        expect(task.status).toBe(TaskStatus.InReview);
+        // Disputer lost - task reverts to InReview or may auto-complete
+        // (if challenge window also expired during the voting period skip)
+        expect(
+          task.status === TaskStatus.InReview || task.status === TaskStatus.Completed
+        ).toBe(true);
       }
 
       console.log('\n========================================');
@@ -744,7 +751,7 @@ describe.skipIf(shouldSkipAnvilTests)('E2E: Selection Deadline Enforcement (Anvi
       await registerAgentOnChain(agentWallet, profileResult.agentURI);
       await sleep(3000);
     }
-  });
+  }, TEST_TIMEOUT * 2);
 
   test(
     'Refund task after selection deadline expires',

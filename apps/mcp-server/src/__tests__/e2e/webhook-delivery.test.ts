@@ -52,12 +52,30 @@ const WEBHOOK_SECRET = 'test-webhook-secret-e2e';
 const CREATOR_PRIVATE_KEY = process.env.E2E_CREATOR_PRIVATE_KEY as `0x${string}` | undefined;
 const AGENT_PRIVATE_KEY = process.env.E2E_AGENT_PRIVATE_KEY as `0x${string}` | undefined;
 
+// Check if webhook DB schema exists (webhook_secret column on agents table)
+async function checkWebhookSchemaExists(): Promise<boolean> {
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { error } = await supabase
+      .from('agents')
+      .select('webhook_secret')
+      .limit(0);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// Pre-check schema synchronously via top-level await
+const webhookSchemaExists = await checkWebhookSchemaExists();
+
 const shouldSkipTests =
   !CREATOR_PRIVATE_KEY ||
   !AGENT_PRIVATE_KEY ||
   !CREATOR_PRIVATE_KEY.startsWith('0x') ||
   !AGENT_PRIVATE_KEY.startsWith('0x') ||
-  !isLocalAnvil();
+  !isLocalAnvil() ||
+  !webhookSchemaExists;
 
 /**
  * Recorded webhook request
@@ -84,13 +102,29 @@ async function setAgentWebhookInDB(
   webhookSecret: string | null
 ): Promise<void> {
   const supabase = getSupabaseAdminClient();
-  const { error } = await supabase
+
+  // Try setting both webhook_url and webhook_secret; fall back to just webhook_url
+  // if the webhook_secret column doesn't exist (migration not yet applied)
+  const updateData: Record<string, string | null> = { webhook_url: webhookUrl };
+
+  // Attempt to set webhook_secret if column exists
+  const { error: testError } = await supabase
     .from('agents')
     .update({ webhook_url: webhookUrl, webhook_secret: webhookSecret })
     .eq('address', address.toLowerCase());
 
-  if (error) {
-    throw new Error(`Failed to set webhook URL in DB: ${error.message}`);
+  if (testError?.message?.includes('webhook_secret')) {
+    // Column doesn't exist, update only webhook_url
+    console.warn('webhook_secret column not found, setting only webhook_url');
+    const { error } = await supabase
+      .from('agents')
+      .update(updateData)
+      .eq('address', address.toLowerCase());
+    if (error) {
+      throw new Error(`Failed to set webhook URL in DB: ${error.message}`);
+    }
+  } else if (testError) {
+    throw new Error(`Failed to set webhook URL in DB: ${testError.message}`);
   }
 }
 
@@ -109,6 +143,10 @@ async function waitForWebhooks(
     await sleep(pollMs);
   }
   // Don't throw -- let the test assertion handle the failure with a clear message
+}
+
+if (shouldSkipTests && !webhookSchemaExists) {
+  console.log('Skipping webhook tests: webhook DB schema not found (webhook_secret column missing from agents table)');
 }
 
 describe.skipIf(shouldSkipTests)('E2E: Webhook Delivery (Anvil Only)', () => {

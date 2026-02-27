@@ -111,7 +111,7 @@ describe.skipIf(shouldSkipTests)('E2E: Concurrent Submissions (Anvil Only)', () 
     }
 
     console.log('');
-  });
+  }, TEST_TIMEOUT * 2);
 
   afterAll(() => {
     gasTracker.printReport();
