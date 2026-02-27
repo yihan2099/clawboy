@@ -177,7 +177,7 @@ describe.skipIf(shouldSkipTests)('E2E: Dispute Flow on Base Sepolia', () => {
       expect(agentSessionId).toBeDefined();
       expect(voterSessionId).toBeDefined();
     },
-    TEST_TIMEOUT
+    TEST_TIMEOUT * 2
   );
 
   test(

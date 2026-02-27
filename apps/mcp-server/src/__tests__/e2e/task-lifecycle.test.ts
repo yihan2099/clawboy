@@ -129,30 +129,34 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
           'Get testnet ETH from https://www.alchemy.com/faucets/base-sepolia'
       );
     }
-  });
+  }, TEST_TIMEOUT);
 
-  test('Step 1: Authenticate both wallets', async () => {
-    console.log('\n--- Step 1: Authentication ---\n');
+  test(
+    'Step 1: Authenticate both wallets',
+    async () => {
+      console.log('\n--- Step 1: Authentication ---\n');
 
-    // Authenticate creator
-    console.log('Authenticating creator wallet...');
-    const creatorAuth = await authenticateWallet(creatorWallet);
-    creatorSessionId = creatorAuth.sessionId;
-    console.log(`Creator session: ${creatorSessionId.substring(0, 8)}...`);
-    console.log(`Creator registered: ${creatorAuth.isRegistered}`);
+      // Authenticate creator
+      console.log('Authenticating creator wallet...');
+      const creatorAuth = await authenticateWallet(creatorWallet);
+      creatorSessionId = creatorAuth.sessionId;
+      console.log(`Creator session: ${creatorSessionId.substring(0, 8)}...`);
+      console.log(`Creator registered: ${creatorAuth.isRegistered}`);
 
-    // Authenticate agent
-    console.log('\nAuthenticating agent wallet...');
-    const agentAuth = await authenticateWallet(agentWallet);
-    agentSessionId = agentAuth.sessionId;
-    console.log(`Agent session: ${agentSessionId.substring(0, 8)}...`);
-    console.log(`Agent registered: ${agentAuth.isRegistered}`);
+      // Authenticate agent
+      console.log('\nAuthenticating agent wallet...');
+      const agentAuth = await authenticateWallet(agentWallet);
+      agentSessionId = agentAuth.sessionId;
+      console.log(`Agent session: ${agentSessionId.substring(0, 8)}...`);
+      console.log(`Agent registered: ${agentAuth.isRegistered}`);
 
-    expect(creatorSessionId).toBeDefined();
-    expect(agentSessionId).toBeDefined();
-    expect(creatorAuth.walletAddress.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
-    expect(agentAuth.walletAddress.toLowerCase()).toBe(agentWallet.address.toLowerCase());
-  });
+      expect(creatorSessionId).toBeDefined();
+      expect(agentSessionId).toBeDefined();
+      expect(creatorAuth.walletAddress.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
+      expect(agentAuth.walletAddress.toLowerCase()).toBe(agentWallet.address.toLowerCase());
+    },
+    TEST_TIMEOUT
+  );
 
   test(
     'Step 2: Register agent (if not already registered)',
@@ -457,7 +461,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
       );
       await registerAgentOnChain(agentWallet, profileResult.agentURI);
     }
-  });
+  }, TEST_TIMEOUT * 2);
 
   test(
     'Test 8: Creator cancels task before submissions',
@@ -801,7 +805,7 @@ describe.skipIf(shouldSkipFinalizationTests)(
         await registerAgentOnChain(agentWallet, profileResult.agentURI);
         console.log('Agent registered');
       }
-    });
+    }, TEST_TIMEOUT * 2);
 
     test(
       'Complete lifecycle with finalization and payment verification',

@@ -122,7 +122,7 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
       );
       await registerAgentOnChain(agentWallet, profileResult.agentURI);
     }
-  });
+  }, TEST_TIMEOUT * 2);
 
   describe('Insufficient Balance Errors', () => {
     test('should fail to create task with insufficient balance', async () => {

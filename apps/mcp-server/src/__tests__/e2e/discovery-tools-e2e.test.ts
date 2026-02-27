@@ -105,7 +105,7 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
     console.log(`Agent session: ${agentSessionId.substring(0, 8)}...`);
     console.log(`Agent registered: ${agentIsRegistered}`);
     console.log('');
-  });
+  }, TEST_TIMEOUT);
 
   describe('get_capabilities', () => {
     test('Test 1: Unauthenticated capabilities check', async () => {

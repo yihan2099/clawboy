@@ -52,10 +52,10 @@ export const submitVoteTool = {
     const taskId = r[1] as bigint;
     const disputer = r[2] as `0x${string}`;
     const votingDeadline = r[4] as bigint;
-    const status = r[5] as number;
+    const status = Number(r[5]);
     const votesForDisputer = r[7] as bigint;
     const votesAgainstDisputer = r[8] as bigint;
-    if (typeof status !== 'number' || typeof id !== 'bigint') {
+    if (Number.isNaN(status) || typeof id !== 'bigint') {
       throw new Error('Unexpected field types in getDispute response');
     }
 

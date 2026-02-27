@@ -45,9 +45,9 @@ export const startDisputeTool = {
       throw new Error('Unexpected contract response format for getTask');
     }
     const creator = r[1] as `0x${string}`;
-    const status = r[2] as number;
+    const status = Number(r[2]);
     const bountyAmount = r[3] as bigint;
-    if (typeof status !== 'number' || typeof bountyAmount !== 'bigint') {
+    if (Number.isNaN(status) || typeof bountyAmount !== 'bigint') {
       throw new Error('Unexpected field types in getTask response');
     }
 
