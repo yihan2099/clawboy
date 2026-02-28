@@ -8,6 +8,8 @@ services:
     environment:
       - PORT=3001
       - HOST=0.0.0.0
+      # ENVIRONMENT: RPC_URL and CHAIN_ID default to Base Sepolia testnet (84532).
+      # Override both in production: RPC_URL=https://mainnet.base.org CHAIN_ID=8453
       - RPC_URL=${RPC_URL:-https://sepolia.base.org}
       - CHAIN_ID=${CHAIN_ID:-84532}
       - SUPABASE_URL=${SUPABASE_URL}
@@ -35,6 +37,8 @@ services:
       context: .
       dockerfile: Dockerfile.indexer
     environment:
+      # ENVIRONMENT: RPC_URL and CHAIN_ID default to Base Sepolia testnet (84532).
+      # Override both in production: RPC_URL=https://mainnet.base.org CHAIN_ID=8453
       - RPC_URL=${RPC_URL:-https://sepolia.base.org}
       - CHAIN_ID=${CHAIN_ID:-84532}
       - POLLING_INTERVAL_MS=${POLLING_INTERVAL_MS:-5000}

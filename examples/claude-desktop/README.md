@@ -48,4 +48,9 @@ For local development with Anvil, change the config to:
 }
 ```
 
+> **SECURITY WARNING**: The private key above (`0xac0974...`) is the well-known Anvil
+> test account #0. It is **public knowledge** and appears in Foundry/Hardhat documentation.
+> **Never use this key with real funds or on any mainnet.** Replace it with your own
+> test wallet private key for local development.
+
 This uses Anvil Account #0, which is pre-funded with 10000 ETH on a local chain.

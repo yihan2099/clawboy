@@ -227,9 +227,10 @@ BEGIN
   FROM failed_events fe
   WHERE fe.status IN ('pending', 'retrying')
     AND fe.retry_count < fe.max_retries
-    -- Add backoff: wait longer between retries
+    -- Exponential backoff: 2^retry_count minutes, capped at 1440 min (24 hours) to prevent
+    -- POWER(2, large_n) from overflowing PostgreSQL INTERVAL max (~178,000,000 years).
     AND (fe.last_retry_at IS NULL OR
-         fe.last_retry_at < NOW() - (INTERVAL '1 minute' * POWER(2, fe.retry_count)))
+         fe.last_retry_at < NOW() - (INTERVAL '1 minute' * LEAST(POWER(2, fe.retry_count), 1440)))
   ORDER BY fe.created_at ASC
   LIMIT p_limit;
 END;

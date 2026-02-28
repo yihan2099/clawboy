@@ -11,7 +11,10 @@ if (!process.env.RESEND_NEWSLETTER_SEGMENT_ID) {
   console.error('RESEND_NEWSLETTER_SEGMENT_ID is not configured');
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// RELIABILITY: Resend constructor accepts undefined/empty string but all API calls
+// will fail with 401. The check above logs the misconfiguration at startup.
+// An empty string is equivalent to missing — both result in auth failures.
+const resend = new Resend(process.env.RESEND_API_KEY || undefined);
 const audienceId = process.env.RESEND_NEWSLETTER_SEGMENT_ID;
 
 export type NewsletterState = {
@@ -48,10 +51,31 @@ export async function subscribeNewsletter(
   }
 
   try {
-    await resend.contacts.create({
+    // Resend SDK uses a { data, error } response pattern — API errors do NOT throw.
+    // Check the returned error object rather than relying on string matching in a catch block.
+    const { error } = await resend.contacts.create({
       email,
       audienceId,
     });
+
+    if (error) {
+      // 409 = contact already exists in the audience
+      // Use statusCode rather than message string matching for robustness.
+      if (error.statusCode === 409) {
+        // SECURITY: Don't log email addresses to prevent PII exposure in logs
+        console.info('[newsletter] Duplicate subscription attempt');
+        return {
+          success: true,
+          message: "You're already subscribed!",
+        };
+      }
+
+      console.error('[newsletter] Failed to add subscriber:', error.statusCode, error.name);
+      return {
+        success: false,
+        message: 'Something went wrong. Please try again.',
+      };
+    }
 
     // SECURITY: Don't log email addresses to prevent PII exposure in logs
     console.info('[newsletter] New subscriber added');
@@ -60,17 +84,8 @@ export async function subscribeNewsletter(
       message: "You're subscribed!",
     };
   } catch (error: unknown) {
-    // Handle duplicate contact error
-    if (error instanceof Error && error.message.includes('already exists')) {
-      // SECURITY: Don't log email addresses to prevent PII exposure in logs
-      console.info('[newsletter] Duplicate subscription attempt');
-      return {
-        success: true,
-        message: "You're already subscribed!",
-      };
-    }
-
-    console.error('[newsletter] Failed to add subscriber:', error);
+    // Only reaches here for unexpected throws (network errors, etc.)
+    console.error('[newsletter] Unexpected error adding subscriber:', error);
     return {
       success: false,
       message: 'Something went wrong. Please try again.',

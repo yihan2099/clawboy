@@ -26,10 +26,19 @@ export function validateTaskSpecification(data: unknown): {
   }
 
   // Title check
+  // Note: .length counts UTF-16 code units, not bytes. For multi-byte characters (emoji, CJK),
+  // a 200-char limit may allow a title that is much larger in bytes. If the on-chain or IPFS
+  // storage system has a byte limit, use TextEncoder to check byte length instead.
   if (typeof spec.title !== 'string' || spec.title.length === 0) {
     errors.push('Title is required and must be a non-empty string');
   } else if (spec.title.length > 200) {
     errors.push('Title must be 200 characters or less');
+  } else {
+    // Also enforce a byte limit to prevent extremely large titles from multi-byte characters
+    const titleBytes = new TextEncoder().encode(spec.title).length;
+    if (titleBytes > 800) {
+      errors.push('Title must be 800 bytes or less (multi-byte characters count as multiple bytes)');
+    }
   }
 
   // Description check

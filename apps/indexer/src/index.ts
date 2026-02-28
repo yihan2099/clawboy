@@ -289,4 +289,10 @@ async function main() {
   }
 }
 
-main();
+main().catch((error) => {
+  // Top-level guard: prevents an unhandled promise rejection from silently killing the process.
+  // In practice, all expected startup errors are caught inside main() and exit via process.exit(1).
+  // This catch handles unexpected throws from code paths not yet wrapped in try/catch.
+  console.error('Unhandled fatal error in indexer main():', error);
+  process.exit(1);
+});

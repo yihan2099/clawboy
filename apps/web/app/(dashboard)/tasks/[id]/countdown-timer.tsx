@@ -14,6 +14,15 @@ export function CountdownTimer({ deadline }: CountdownTimerProps) {
     function update() {
       const now = Date.now();
       const end = new Date(deadline).getTime();
+
+      // Guard: new Date(invalidString).getTime() returns NaN; NaN <= 0 is false,
+      // which would show "NaN:NaN:NaN" instead of an error message.
+      if (!Number.isFinite(end)) {
+        setTimeLeft('Invalid deadline');
+        setIsExpired(true);
+        return;
+      }
+
       const diff = end - now;
 
       if (diff <= 0) {

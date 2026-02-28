@@ -199,11 +199,13 @@ export async function updateAgentReputation(address: string, delta: number): Pro
 }
 
 /**
- * Calculate vote weight for an agent (log2(reputation + 1))
+ * Calculate vote weight for an agent (log2(reputation + 1)).
+ * Returns minimum weight 1 for invalid/missing reputation values.
  */
 export function calculateVoteWeight(reputation: string | number): number {
   const rep = typeof reputation === 'string' ? parseInt(reputation, 10) : reputation;
-  if (rep <= 0) return 1;
+  // Guard against NaN (from invalid string), Infinity, or negative values
+  if (!Number.isFinite(rep) || rep <= 0) return 1;
   return Math.max(1, Math.floor(Math.log2(rep + 1)));
 }
 

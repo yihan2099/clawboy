@@ -43,10 +43,18 @@ export async function fetchJson<T = unknown>(cid: string, options: FetchOptions 
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch CID ${cid}: ${response.status}`);
+      throw new Error(`Failed to fetch CID ${cid}: HTTP ${response.status}`);
     }
 
     return response.json() as Promise<T>;
+  } catch (error) {
+    // Distinguish timeout (AbortError) from other network errors for better diagnostics.
+    // Previously, an AbortError would surface as an opaque "AbortError: The operation was aborted"
+    // message which doesn't indicate the timeout duration.
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`IPFS fetch timed out after ${timeout}ms for CID ${cid}`);
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }

@@ -40,8 +40,10 @@ export default async function DisputeDetailPage({ params }: DisputeDetailPagePro
     getTaskById(dispute.task_id).catch(() => null),
   ]);
 
-  const votesFor = parseInt(dispute.votes_for_disputer || '0');
-  const votesAgainst = parseInt(dispute.votes_against_disputer || '0');
+  // Use Number() with NaN guard instead of parseInt() to handle non-numeric strings safely.
+  // After migration 20250228000003, these columns are NUMERIC and will be numeric values.
+  const votesFor = Math.max(0, Number(dispute.votes_for_disputer) || 0);
+  const votesAgainst = Math.max(0, Number(dispute.votes_against_disputer) || 0);
   const totalVotes = votesFor + votesAgainst;
   const forPercent = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 50;
 

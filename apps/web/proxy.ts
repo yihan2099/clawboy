@@ -45,8 +45,16 @@ function getClientIp(request: NextRequest): string {
     }
   }
 
-  // Fallback: Return a consistent identifier for unknown IPs
-  // This prevents rate limit bypass but may group multiple users
+  // Fallback: Return a consistent identifier for unknown IPs.
+  // LIMITATION: All clients that reach this branch share a single rate-limit bucket,
+  // effectively bypassing per-IP limiting. This happens when:
+  //   1. TRUST_PROXY_HEADERS is false (deliberately untrusted proxy environment), or
+  //   2. Proxy headers contain invalid/non-IP values.
+  // Log so operators can detect misconfigured proxy setups.
+  console.warn(
+    '[rate-limit] Unable to extract client IP — grouping under unknown-client bucket. ' +
+    'If behind a trusted proxy, set TRUST_PROXY_HEADERS=true.'
+  );
   return 'unknown-client';
 }
 

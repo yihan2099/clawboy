@@ -93,7 +93,12 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       return;
     }
 
-    // Validate deliverables
+    // Validate deliverables — require at least one with a non-empty description
+    const validDeliverables = deliverables.filter((d) => d.description.trim());
+    if (validDeliverables.length === 0) {
+      setValidationError('At least one deliverable with a description is required.');
+      return;
+    }
     for (let i = 0; i < deliverables.length; i++) {
       const d = deliverables[i];
       if (!d.description.trim()) {
@@ -106,9 +111,9 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       }
     }
 
-    // Build WorkSubmission object
-    const submission = {
-      version: '1.0' as const,
+    // Build WorkSubmission object — typed directly to avoid the `as unknown as` cast
+    const submission: WorkSubmission = {
+      version: '1.0',
       taskId: chainTaskId,
       summary: summary.trim(),
       deliverables: deliverables.map((d) => ({
@@ -122,7 +127,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
 
     let submissionCid: string;
     try {
-      const result = await uploadSubmission(submission as unknown as WorkSubmission);
+      const result = await uploadSubmission(submission);
       submissionCid = `ipfs://${result.cid}`;
     } catch (err) {
       setValidationError('Failed to upload submission to IPFS. Please try again.');

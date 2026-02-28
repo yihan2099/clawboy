@@ -13,7 +13,11 @@ ALTER TABLE submissions
 ALTER TABLE agents
   ADD COLUMN IF NOT EXISTS ipfs_fetch_failed BOOLEAN NOT NULL DEFAULT false;
 
--- Index for finding records that need IPFS retry
+-- Partial indexes covering only failed records (ipfs_fetch_failed = true).
+-- This is intentional: the IPFS retry job queries WHERE ipfs_fetch_failed = true,
+-- so only those rows need to be indexed. In a healthy system most rows have
+-- ipfs_fetch_failed = false — indexing them would waste space and provide no benefit
+-- since the retry job never queries for healthy records.
 CREATE INDEX IF NOT EXISTS idx_tasks_ipfs_failed
   ON tasks(ipfs_fetch_failed) WHERE ipfs_fetch_failed = true;
 

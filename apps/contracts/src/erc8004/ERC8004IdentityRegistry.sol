@@ -143,6 +143,13 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
 
     /**
      * @dev Internal registration logic
+     * @dev RACE CONDITION NOTE: If the owner's wallet was previously linked to another agent
+     *      (e.g. via setAgentWallet()), this auto-link silently overwrites that mapping.
+     *      The previous agentId's _agentToWallet entry still points to owner, creating an
+     *      inconsistency. To prevent this, the caller should verify _walletToAgent[owner] == 0
+     *      before calling _register if wallet-to-agent uniqueness is required.
+     *      For now, registration through authorized adapters (PactAgentAdapter) enforces
+     *      uniqueness at the adapter level; direct admin registration should pass pre-validated owners.
      */
     function _register(address owner, string memory agentURI) private returns (uint256 agentId) {
         agentId = ++_agentCounter;
@@ -150,7 +157,8 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
         _mint(owner, agentId);
         _agentURIs[agentId] = agentURI;
 
-        // Auto-link the registering wallet to the agent
+        // Auto-link the registering wallet to the agent.
+        // If the wallet was previously linked to a different agent, that old link is overwritten.
         _agentToWallet[agentId] = owner;
         _walletToAgent[owner] = agentId;
 

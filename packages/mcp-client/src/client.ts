@@ -37,14 +37,25 @@ export class PactClient {
   }
 
   /**
-   * Connect to the Pact MCP server
+   * Connect to the Pact MCP server.
+   *
+   * INCOMPLETE: This StdioClientTransport with `args: ['--version']` is a placeholder
+   * that runs `node --version` and immediately exits — it cannot actually communicate
+   * with the MCP server. This class is not production-ready.
+   *
+   * Production use should either:
+   *   1. Use the HTTP transport via PactApiClient (packages/mcp-client/src/api-client.ts), or
+   *   2. Replace the StdioClientTransport args with the real MCP server command, e.g.:
+   *      new StdioClientTransport({ command: 'bun', args: ['run', '/path/to/mcp-server'] })
    */
   async connect(): Promise<void> {
-    // Note: In production, this would connect to the actual MCP server
-    // For now, we create a stdio transport for local development
+    console.warn(
+      '[PactMcpClient] connect() is using a placeholder transport (node --version). ' +
+      'This is not a working MCP connection. Use PactApiClient for HTTP-based tool calls.'
+    );
     const transport = new StdioClientTransport({
       command: 'node',
-      args: ['--version'], // Placeholder
+      args: ['--version'], // Placeholder — replace with real server command
     });
 
     await this.client.connect(transport);

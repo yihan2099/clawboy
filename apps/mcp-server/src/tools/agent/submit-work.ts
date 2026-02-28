@@ -91,9 +91,14 @@ export const submitWorkTool = {
       );
     }
 
-    // Check if deadline has passed
+    // Check if deadline has passed (server-side pre-validation).
+    // The smart contract also enforces this at submitWork() via the DeadlinePassed
+    // revert, so this is a UX improvement that provides early feedback before
+    // the agent builds and uploads an IPFS submission that will be rejected on-chain.
     if (task.deadline && new Date(task.deadline) < new Date()) {
-      throw new Error('Task deadline has passed');
+      throw new Error(
+        `Task deadline has passed (deadline: ${task.deadline}). Submissions are no longer accepted.`
+      );
     }
 
     // Create work submission for IPFS

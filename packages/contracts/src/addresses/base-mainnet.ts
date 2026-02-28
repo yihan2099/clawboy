@@ -1,7 +1,12 @@
 /**
  * Contract addresses on Base mainnet
  * Updated for ERC-8004 Trustless Agents integration
- * TODO: Deploy contracts to Base mainnet
+ * TODO: Deploy contracts to Base mainnet and replace zero addresses below.
+ *
+ * ENVIRONMENT WARNING: All addresses are 0x000...000 (placeholder) because the contracts
+ * have not been deployed to Base mainnet yet. Any code path that uses these addresses
+ * with chainId=8453 will interact with the zero address, which will silently fail or
+ * revert on-chain. Do NOT use these addresses in production until mainnet deployment.
  */
 export const BASE_MAINNET_ADDRESSES = {
   // ERC-8004 Registries
@@ -16,3 +21,17 @@ export const BASE_MAINNET_ADDRESSES = {
 } as const;
 
 export const BASE_MAINNET_CHAIN_ID = 8453;
+
+// Guard: warn loudly if mainnet addresses are accessed at runtime, since they are
+// all zero and cannot function correctly until mainnet deployment.
+if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
+  const allZero = Object.values(BASE_MAINNET_ADDRESSES).every(
+    (addr) => addr === '0x0000000000000000000000000000000000000000'
+  );
+  if (allZero) {
+    console.warn(
+      '[base-mainnet] BASE_MAINNET_ADDRESSES are all zero — contracts not yet deployed to Base mainnet. ' +
+      'Do not use these addresses in production.'
+    );
+  }
+}

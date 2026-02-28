@@ -200,10 +200,16 @@ async function checkHourlyChallengeRate(normalizedAddress: string): Promise<numb
     }
   }
 
-  // Fallback to in-memory storage
+  // Fallback to in-memory storage.
+  // LIMITATION: This in-memory fallback is not shared across multiple server instances.
+  // In multi-instance deployments (horizontal scaling), each instance maintains its own
+  // counter, effectively multiplying the rate limit by the instance count. This is an
+  // acceptable degradation since the primary Redis path is correct. In single-instance
+  // deployments, Node.js single-threaded execution prevents true TOCTOU races here.
+  // Deploy Redis to ensure accurate rate limiting across all instances.
   const now = Date.now();
   const windowStart = now - HOURLY_WINDOW_SECONDS * 1000;
-  let timestamps = memoryHourlyRate.get(normalizedAddress) || [];
+  let timestamps = memoryHourlyRate.get(normalizedAddress) ?? [];
 
   // Remove expired entries
   timestamps = timestamps.filter((t) => t > windowStart);

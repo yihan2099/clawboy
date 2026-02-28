@@ -40,8 +40,13 @@ export function getChain(chainId: number): Chain {
 }
 
 /**
- * Get or create a public client for read operations
- * Caches clients per chain ID
+ * Get or create a public client for read operations.
+ * Caches clients per chain ID.
+ *
+ * RELIABILITY NOTE: The cache has no automatic invalidation. If the RPC URL is rotated
+ * (e.g. after a node outage), call resetPublicClient(chainId) to clear the stale entry.
+ * In long-running processes, consider periodically resetting clients if RPC connectivity
+ * becomes unreliable.
  */
 export function getPublicClient(
   chainId: number = parseInt(process.env.CHAIN_ID || '84532', 10),
@@ -81,10 +86,16 @@ export function getDefaultRpcUrl(chainId: number): string {
 }
 
 /**
- * Reset all cached public clients (useful for testing)
+ * Reset cached public client(s).
+ * Pass a chainId to reset only that chain's client, or call with no argument to reset all.
+ * Useful for testing and for forcing reconnection after RPC URL rotation.
  */
-export function resetPublicClient(): void {
-  publicClients.clear();
+export function resetPublicClient(chainId?: number): void {
+  if (chainId !== undefined) {
+    publicClients.delete(chainId);
+  } else {
+    publicClients.clear();
+  }
 }
 
 /**

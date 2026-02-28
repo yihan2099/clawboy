@@ -332,6 +332,11 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
      * @dev Update reputation for voters based on whether they voted with majority.
      *      Processes up to VOTER_REP_BATCH_SIZE voters inline. If more voters remain,
      *      they must be processed via processVoterReputationBatch().
+     *
+     * CODE QUALITY NOTE: The per-voter update logic (comparing supportsDisputer vs disputerWon
+     * and calling updateVoterReputation) is duplicated in processVoterReputationBatch().
+     * A future refactor could extract it to a private helper `_applyVoterRepUpdate(address voter, bool disputerWon)`.
+     * Avoided here to minimize change risk on production contract code.
      */
     function _updateVoterReputation(uint256 disputeId, bool disputerWon) private {
         address[] storage voters = _voters[disputeId];

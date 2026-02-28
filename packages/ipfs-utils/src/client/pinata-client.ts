@@ -34,7 +34,10 @@ export function resetPinataClient(): void {
 }
 
 /**
- * Get the IPFS gateway URL for a CID
+ * Get the IPFS gateway URL for a CID.
+ * Configure PINATA_GATEWAY to use a dedicated gateway for better rate limits and reliability.
+ * The public Pinata gateway (fallback) has rate limits and is a single point of failure.
+ * For production, set PINATA_GATEWAY to a dedicated gateway URL (e.g. https://mysite.mypinata.cloud).
  */
 export function getGatewayUrl(cid: string): string {
   const gateway = process.env.PINATA_GATEWAY || 'https://gateway.pinata.cloud';
@@ -77,7 +80,20 @@ export function isValidCid(cid: string): boolean {
 /**
  * Get the public group ID for public content uploads.
  * Returns undefined if not configured (content will be private).
+ * Pinata group IDs are UUIDs; an invalid value will cause Pinata API errors at upload time.
  */
 export function getPublicGroupId(): string | undefined {
-  return process.env.PINATA_PUBLIC_GROUP_ID;
+  const groupId = process.env.PINATA_PUBLIC_GROUP_ID;
+  if (!groupId) return undefined;
+
+  // Pinata group IDs are UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(groupId)) {
+    console.warn(
+      `[pinata-client] PINATA_PUBLIC_GROUP_ID "${groupId}" does not look like a valid UUID. ` +
+      'Uploads to this group may fail with a Pinata API error.'
+    );
+  }
+
+  return groupId;
 }

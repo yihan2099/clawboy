@@ -31,7 +31,11 @@ export function ResolveDispute({ chainDisputeId, votesFor, votesAgainst }: Resol
   if (!address) return null;
 
   const totalVotes = votesFor + votesAgainst;
-  const disputerWins = totalVotes > 0 && votesFor / totalVotes >= 0.6;
+  // NOTE: This 60% threshold must match DisputeResolver.DISPUTE_THRESHOLD_BPS (6000 bps).
+  // This is UI-only — the authoritative check is in DisputeResolver.resolveDispute() on-chain.
+  // If the on-chain threshold is ever changed, update this constant accordingly.
+  const DISPUTE_WIN_THRESHOLD = 0.6;
+  const disputerWins = totalVotes > 0 && votesFor / totalVotes >= DISPUTE_WIN_THRESHOLD;
   const isLoading = isPending || isConfirming;
 
   return (

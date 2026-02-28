@@ -299,8 +299,12 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Get the balance of an escrow
      * @param taskId The task ID
-     * @return token The token address
-     * @return amount The escrowed amount
+     * @return token The token address (address(0) for ETH; also address(0) if escrow never existed)
+     * @return amount The escrowed amount (0 if released or if escrow never existed)
+     * @dev LIMITATION: Callers cannot distinguish between a released escrow and one that was
+     *      never created — both return (address(0), 0) for ETH escrows. If you need to know
+     *      whether an escrow ever existed, use `hasEscrow(taskId)` instead (checks escrow.amount
+     *      was set). For released escrows, `_escrows[taskId].released` is true off-chain via events.
      */
     function getBalance(uint256 taskId) external view returns (address token, uint256 amount) {
         Escrow storage escrow = _escrows[taskId];

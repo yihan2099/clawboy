@@ -104,8 +104,9 @@ app.use(
       // If wildcard is allowed, permit all origins
       if (allowedOrigins.includes('*')) return origin;
 
-      // Check if origin is in allowlist
-      if (allowedOrigins.includes(origin)) return origin;
+      // Check if origin is in allowlist (case-insensitive per RFC 6454 §6.1:
+      // scheme and host are case-insensitive, so "HTTPS://Pact.Ing" == "https://pact.ing")
+      if (allowedOrigins.some((o) => o.toLowerCase() === origin.toLowerCase())) return origin;
 
       // Reject unknown origins by returning null
       return null;
@@ -191,23 +192,38 @@ function getClientIp(c: { req: { header: (name: string) => string | undefined } 
 
 // SECURITY: Body size limit middleware (1MB max for all API routes)
 const MAX_BODY_SIZE = 1_048_576; // 1MB in bytes
+
+/**
+ * Parse Content-Length header safely.
+ * Returns the parsed value only when it is a valid positive integer.
+ * parseInt() returns NaN for invalid values and has precision issues for
+ * numbers > 2^53, so we use Number() and validate the result.
+ */
+function parseContentLength(header: string | undefined): number | null {
+  if (!header) return null;
+  // Content-Length must be a non-negative integer per RFC 9110 §8.6
+  if (!/^\d+$/.test(header.trim())) return null;
+  const n = Number(header.trim());
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 app.use('/tools/*', async (c, next) => {
-  const contentLength = c.req.header('Content-Length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+  const cl = parseContentLength(c.req.header('Content-Length'));
+  if (cl !== null && cl > MAX_BODY_SIZE) {
     return c.json({ error: 'Payload Too Large', maxSize: '1MB' }, 413);
   }
   await next();
 });
 app.use('/a2a', async (c, next) => {
-  const contentLength = c.req.header('Content-Length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+  const cl = parseContentLength(c.req.header('Content-Length'));
+  if (cl !== null && cl > MAX_BODY_SIZE) {
     return c.json({ error: 'Payload Too Large', maxSize: '1MB' }, 413);
   }
   await next();
 });
 app.use('/mcp', async (c, next) => {
-  const contentLength = c.req.header('Content-Length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+  const cl = parseContentLength(c.req.header('Content-Length'));
+  if (cl !== null && cl > MAX_BODY_SIZE) {
     return c.json({ error: 'Payload Too Large', maxSize: '1MB' }, 413);
   }
   await next();
@@ -275,6 +291,7 @@ app.get('/health', async (c) => {
   }
 
   // Redis check
+  // SECURITY: Do not expose UPSTASH_REDIS_REST_URL in error messages (may contain credentials).
   if (process.env.UPSTASH_REDIS_REST_URL) {
     try {
       const start = Date.now();
@@ -286,8 +303,9 @@ app.get('/health', async (c) => {
       } else {
         checks.redis = { status: 'error', error: `HTTP ${res.status}` };
       }
-    } catch (e) {
-      checks.redis = { status: 'error', error: e instanceof Error ? e.message : 'Unknown' };
+    } catch {
+      // Do not include raw error message — it may contain the Redis URL/credentials
+      checks.redis = { status: 'error', error: 'Connection failed' };
     }
   } else {
     checks.redis = { status: 'unavailable', error: 'Redis not configured (using memory fallback)' };

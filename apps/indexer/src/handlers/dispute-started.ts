@@ -26,13 +26,27 @@ export async function handleDisputeCreated(event: IndexerEvent): Promise<void> {
     throw new Error(`Task ${taskId} (chain: ${event.chainId}) not found in database`);
   }
 
+  // Validate and convert the on-chain Unix timestamp (seconds) to ISO-8601.
+  // Number(bigint) is safe for any Unix timestamp that fits within Number.MAX_SAFE_INTEGER
+  // (year 285,428,751), but we guard against unreasonably large values from malformed events.
+  const votingDeadlineSeconds = votingDeadline;
+  if (votingDeadlineSeconds > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error(
+      `DisputeCreated event has unreasonable votingDeadline: ${votingDeadlineSeconds}`
+    );
+  }
+  const votingDeadlineMs = Number(votingDeadlineSeconds) * 1000;
+  if (!Number.isFinite(votingDeadlineMs) || votingDeadlineMs < 0) {
+    throw new Error(`Invalid votingDeadline timestamp: ${votingDeadlineSeconds}`);
+  }
+
   // Create dispute record
   await createDispute({
     task_id: task.id,
     chain_dispute_id: disputeId.toString(),
     disputer_address: disputer.toLowerCase(),
     dispute_stake: stake.toString(),
-    voting_deadline: new Date(Number(votingDeadline) * 1000).toISOString(),
+    voting_deadline: new Date(votingDeadlineMs).toISOString(),
     status: 'active',
     tx_hash: event.transactionHash,
   });

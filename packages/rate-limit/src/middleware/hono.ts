@@ -119,8 +119,14 @@ export function createMcpRateLimitMiddleware(): MiddlewareHandler {
         }
       }
     } catch (error) {
-      // SECURITY: Fail closed - reject request if rate limiter is unavailable
-      // This prevents abuse when Redis is down or misconfigured
+      // SECURITY: Fail closed — reject requests if rate limiter is unavailable.
+      // Trade-off: this hurts availability (returns 503 during Redis outages) but
+      // prevents abuse during the window where rate limiting is bypassed.
+      //
+      // AVAILABILITY IMPACT: All requests are blocked until Redis recovers.
+      // To switch to fail-open (allow requests during Redis outages, accepting
+      // the abuse risk), change the return below to `await next(); return;`.
+      // Deploy Redis with high-availability (cluster/sentinel) to minimize outage windows.
       console.error('Rate limiter error, rejecting request for safety:', error);
       return c.json(
         {

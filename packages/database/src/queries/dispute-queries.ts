@@ -207,7 +207,9 @@ export async function getDisputeVote(
 }
 
 /**
- * Check if a voter has voted on a dispute
+ * Check if a voter has voted on a dispute.
+ * Returns true if a vote record exists, false if not found (PGRST116).
+ * Propagates other database errors to the caller — does NOT swallow them.
  */
 export async function hasVoted(disputeId: string, voterAddress: string): Promise<boolean> {
   const vote = await getDisputeVote(disputeId, voterAddress);

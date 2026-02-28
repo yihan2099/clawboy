@@ -156,16 +156,23 @@ export async function updateSessionRegistration(
         return false;
       }
 
+      // Calculate remaining TTL first — reject expired sessions rather than
+      // extending them. Math.max(1, ...) would silently revive an expired session
+      // with a 1-second TTL if remainingMs <= 0.
+      const remainingMs = session.expiresAt - Date.now();
+      if (remainingMs <= 0) {
+        // Session has already expired; clean it up and report not found
+        await redis.del(sessionKey).catch(() => {});
+        return false;
+      }
+      const remainingSeconds = Math.floor(remainingMs / 1000);
+
       // Update the session with new registration status and agentId
       const updatedSession: AuthSession = {
         ...session,
         isRegistered,
         ...(agentId && { agentId }),
       };
-
-      // Calculate remaining TTL
-      const remainingMs = session.expiresAt - Date.now();
-      const remainingSeconds = Math.max(1, Math.floor(remainingMs / 1000));
 
       await redis.set(sessionKey, JSON.stringify(updatedSession), { ex: remainingSeconds });
       return true;

@@ -26,6 +26,10 @@ export function getSupabaseClient(): SimpleSupabaseClient {
 
   supabaseClient = createClient(supabaseUrl, supabaseKey, {
     auth: {
+      // RELIABILITY: persistSession: false is correct for server-side (Node.js/Bun) clients.
+      // Session persistence uses localStorage/cookies which are browser-only. In a server
+      // environment, enabling persistence would throw errors or leak sessions across requests.
+      // All authentication is handled at the application layer (wallet signatures/JWT).
       persistSession: false,
     },
   });

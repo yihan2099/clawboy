@@ -50,11 +50,15 @@ export function sanitizeErrorMessage(error: unknown): string {
   // Log the full error internally for debugging
   console.error('[ERROR_SANITIZED] Internal error suppressed from client response:', message);
 
-  // Report to Sentry if available (fire-and-forget to keep function sync)
+  // Report to Sentry if available. Fire-and-forget is intentional here:
+  // sanitizeErrorMessage() is called in synchronous error-handling paths and
+  // must not delay the HTTP response. Sentry.captureException() is best-effort
+  // — if it fails or Sentry is not installed, the console.error() above ensures
+  // the error is still recorded locally. This is an acceptable trade-off.
   import('@sentry/bun')
     .then((Sentry) => Sentry.captureException(error))
     .catch(() => {
-      // Sentry not available, skip
+      // Sentry not available or failed to load — error already logged above
     });
 
   return 'An internal error occurred. Please try again later.';

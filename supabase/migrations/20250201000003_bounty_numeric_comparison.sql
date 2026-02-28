@@ -70,6 +70,12 @@ BEGIN
     AND (p_creator_address IS NULL OR t.creator_address = p_creator_address)
     AND (p_claimed_by IS NULL OR t.claimed_by = p_claimed_by)
     AND (p_tags IS NULL OR t.tags && p_tags)
+  -- PERFORMANCE NOTE: CASE-based dynamic sort is a common PostgreSQL pattern but evaluates
+  -- all CASE branches for every row. An alternative is to use multiple static functions
+  -- (one per sort option) or PL/pgSQL EXECUTE for dynamic SQL. With expected task counts
+  -- in the thousands rather than millions, this CASE approach is acceptable. If sort
+  -- performance becomes an issue with larger datasets, consider replacing with
+  -- EXECUTE format('ORDER BY %I %s', p_sort_by, p_sort_order) within DECLARE...BEGIN.
   ORDER BY
     CASE WHEN p_sort_order = 'desc' AND p_sort_by = 'bounty_amount' THEN t.bounty_amount::numeric END DESC,
     CASE WHEN p_sort_order = 'asc' AND p_sort_by = 'bounty_amount' THEN t.bounty_amount::numeric END ASC,

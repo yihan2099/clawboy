@@ -81,7 +81,12 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     );
 
     if (countError) {
-      // Non-fatal: return tasks without accurate total
+      // Non-fatal: count function unavailable or failed. Return tasks.length as the total.
+      // LIMITATION: If the caller is paginating (offset > 0 or limit < actual total), this
+      // will report an incorrect total (e.g. page size instead of full result set count).
+      // The pagination UI may show incorrect "N total results" — acceptable degradation
+      // vs. failing the entire request. Deploy the count_tasks_with_bounty_filter RPC to fix.
+      console.warn('[task-queries] count_tasks_with_bounty_filter failed:', countError.message);
       return { tasks, total: tasks.length };
     }
 

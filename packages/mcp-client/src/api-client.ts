@@ -88,6 +88,11 @@ export class PactApiClient {
       throw new Error(`Failed to list tools: ${response.statusText}`);
     }
     const data = await response.json();
+    // Defensive check: API may return { tools: [...] } or malformed response
+    if (!data || !Array.isArray(data.tools)) {
+      console.warn('[PactApiClient] listTools: unexpected response shape:', typeof data);
+      return [];
+    }
     return data.tools;
   }
 

@@ -47,7 +47,10 @@ export const skillMetadata = {
 };
 
 /**
- * Default configuration
+ * Default configuration.
+ * ENVIRONMENT: Override serverUrl via the PACT_SERVER_URL environment variable.
+ * The hardcoded URL is the current Railway deployment; set PACT_SERVER_URL to point
+ * to a different instance (staging, mainnet, self-hosted) without code changes.
  */
 export const defaultConfig = {
   serverUrl: 'https://mcp-server-production-f1fb.up.railway.app',

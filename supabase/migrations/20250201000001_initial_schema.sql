@@ -43,7 +43,12 @@ CREATE TABLE IF NOT EXISTS agents (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Claims table
+-- Claims table (LEGACY — superseded by competitive model submissions table)
+-- This table implemented the original claim-based task model. It is retained for
+-- backwards compatibility and historical data. The competitive model (migration
+-- 20250203000001_competitive_model_schema.sql) uses the `submissions` table instead.
+-- TODO: Once all active tasks using the claims model are resolved, this table and its
+-- associated verdicts table can be safely dropped via a cleanup migration.
 CREATE TABLE IF NOT EXISTS claims (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID NOT NULL REFERENCES tasks(id),
@@ -82,7 +87,13 @@ CREATE TABLE IF NOT EXISTS sync_state (
   UNIQUE(chain_id, contract_address)
 );
 
--- Add verdict reference to claims
+-- Add verdict reference to claims.
+-- NOTE: This creates a circular FK dependency: claims.verdict_id → verdicts.id AND
+-- verdicts.claim_id → claims.id. Both FKs are DEFERRABLE-compatible (FK enforcement
+-- is deferred until commit) but PostgreSQL does not automatically defer them. To insert
+-- a verdict+claim pair atomically, use: SET CONSTRAINTS ALL DEFERRED within a transaction.
+-- In practice, the competitive model (20250203000001_competitive_model_schema.sql) replaces
+-- claims/verdicts with the submissions table, so these tables are legacy and unused.
 ALTER TABLE claims
   ADD CONSTRAINT fk_verdict
   FOREIGN KEY (verdict_id)

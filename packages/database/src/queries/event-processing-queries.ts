@@ -253,7 +253,27 @@ export async function updateFailedEventRetry(
 ): Promise<void> {
   const supabase = getSupabaseAdminClient();
 
-  // Get current retry count
+  // Atomically increment retry_count in the database and read back the new values.
+  // Using a SELECT-then-UPDATE pattern would have a race window where two concurrent
+  // retries could both read the same retry_count. The RPC function increments atomically.
+  const { data: updated, error: rpcError } = await supabase
+    .rpc('increment_failed_event_retry', {
+      p_event_id: eventId,
+      p_error_message: errorMessage,
+      p_error_stack: errorStack || null,
+      p_last_retry_at: new Date().toISOString(),
+    })
+    .single();
+
+  if (!rpcError && updated) {
+    // RPC succeeded — atomic increment done
+    return;
+  }
+
+  // Fallback: RPC not available (function may not exist yet before migration).
+  // NOTE: This fallback has a TOCTOU race window — deploy migration to eliminate it.
+  console.warn('increment_failed_event_retry RPC not available, using fallback:', rpcError?.message);
+
   const { data: current, error: fetchError } = await supabase
     .from('failed_events')
     .select('retry_count, max_retries')

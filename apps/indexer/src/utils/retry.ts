@@ -8,6 +8,16 @@ export interface RetryOptions {
   maxDelayMs?: number;
   backoffMultiplier?: number;
   onRetry?: (attempt: number, error: Error, delayMs: number) => void;
+  /**
+   * Optional predicate to determine if an error is retryable.
+   * Return true to retry, false to throw immediately without further attempts.
+   * Defaults to retrying all errors (current behavior — may waste retries on permanent failures
+   * like 404 Not Found or invalid IPFS CIDs).
+   *
+   * Example — only retry network/timeout errors:
+   *   shouldRetry: (err) => err.message.includes('timeout') || err.message.includes('ECONNRESET')
+   */
+  shouldRetry?: (error: Error) => boolean;
 }
 
 const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry'>> = {
@@ -51,7 +61,7 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
     ...DEFAULT_OPTIONS,
     ...options,
   };
-  const { onRetry } = options;
+  const { onRetry, shouldRetry } = options;
 
   let lastError: Error;
 
@@ -60,6 +70,12 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+
+      // If shouldRetry is provided and returns false, abort immediately.
+      // This prevents wasting retries on permanent failures (404, invalid CID, etc.)
+      if (shouldRetry && !shouldRetry(lastError)) {
+        throw lastError;
+      }
 
       if (attempt === maxAttempts) {
         // Final attempt failed, throw the error

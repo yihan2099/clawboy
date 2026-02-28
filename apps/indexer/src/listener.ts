@@ -38,14 +38,17 @@ export function createEventListener(
   let eventHandler: ((event: IndexerEvent) => Promise<void>) | null = null;
 
   const parseEvent = (log: Log, name: string): IndexerEvent => {
+    // viem's Log type doesn't include `args` generically because it varies by ABI.
+    // When viem decodes a log with an ABI (via getContractEvents), it adds `args` to the
+    // log object at runtime. We access it via a type-safe extension cast rather than `any`.
+    const decodedLog = log as Log & { args?: Record<string, unknown> };
     return {
       name,
       chainId,
       blockNumber: log.blockNumber ?? 0n,
       transactionHash: log.transactionHash ?? '0x0',
       logIndex: log.logIndex ?? 0,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args: (log as any).args || {},
+      args: decodedLog.args ?? {},
     };
   };
 

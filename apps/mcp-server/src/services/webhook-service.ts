@@ -9,7 +9,11 @@ export interface WebhookPayload {
 const WEBHOOK_TIMEOUT_MS = 5000;
 
 /**
- * Compute HMAC-SHA256 signature for a payload
+ * Compute HMAC-SHA256 signature for a payload.
+ * Uses Web Crypto API (crypto.subtle) which is constant-time by specification.
+ * This function is used for SIGNING outgoing webhooks only — if the system
+ * ever needs to VERIFY incoming webhook signatures, use crypto.subtle.verify()
+ * rather than string comparison (===) to maintain constant-time behavior.
  */
 async function signPayload(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();

@@ -83,7 +83,10 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
     }
 
     // Fire-and-forget webhook notifications after successful event processing.
-    // This never throws -- errors are logged but don't block event processing.
+    // Intentional: webhook failures must never block event indexing or trigger
+    // DLQ retries — database consistency is the primary concern; webhooks are
+    // best-effort delivery. dispatchWebhookNotifications() catches all internal
+    // errors. Webhook retry logic is handled separately by processWebhookRetries().
     dispatchWebhookNotifications(event);
   } catch (error) {
     console.error(`Failed to process event ${event.name}:`, error);

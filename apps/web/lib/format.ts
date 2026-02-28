@@ -102,15 +102,23 @@ export function getBaseScanTxUrl(txHash: string): string {
   return `https://sepolia.basescan.org/tx/${txHash}`;
 }
 
+// IPFS gateway base URL. Configure NEXT_PUBLIC_IPFS_GATEWAY to use a private/dedicated
+// gateway (e.g. your own Pinata dedicated gateway) for better reliability and rate limits.
+// Falls back to the public Pinata gateway if not set.
+// NOTE: Relying on a single gateway is a single point of failure. For production, consider
+// setting up gateway fallback logic or using a dedicated gateway via Pinata/Cloudflare.
+const IPFS_GATEWAY =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IPFS_GATEWAY) ||
+  'https://gateway.pinata.cloud';
+
 /**
  * Get the IPFS gateway URL for a CID
  */
 export function getIpfsUrl(cid: string): string {
-  // Use public IPFS gateway - can be replaced with Pinata gateway if env var is available
   if (cid.startsWith('ipfs://')) {
     cid = cid.replace('ipfs://', '');
   }
-  return `https://gateway.pinata.cloud/ipfs/${cid}`;
+  return `${IPFS_GATEWAY}/ipfs/${cid}`;
 }
 
 /**
@@ -181,16 +189,38 @@ export function formatDisputeStatus(status: string, disputerWon: boolean | null)
 }
 
 /**
- * Format bounty amount from wei to ETH with appropriate decimals
+ * Format bounty amount from wei to ETH with appropriate decimals.
+ *
+ * Uses BigInt arithmetic for the threshold comparisons to avoid floating-point
+ * precision loss (e.g. parseFloat("0.123456789012345678") loses the last digits).
+ * Display formatting uses the string from formatUnits directly (sliced at the
+ * desired decimal position) rather than converting through Number.
  */
 export function formatBounty(weiAmount: string): string {
   try {
-    const eth = formatUnits(BigInt(weiAmount), 18);
-    const num = parseFloat(eth);
-    if (num === 0) return '0 ETH';
-    if (num < 0.0001) return '<0.0001 ETH';
-    if (num < 1) return `${num.toFixed(4)} ETH`;
-    return `${num.toFixed(2)} ETH`;
+    const wei = BigInt(weiAmount);
+
+    if (wei === BigInt(0)) return '0 ETH';
+
+    // Thresholds in wei to avoid floating-point comparisons:
+    // 0.0001 ETH = 100_000_000_000_000 wei (1e14)
+    // 1 ETH     = 1_000_000_000_000_000_000 wei (1e18)
+    const THRESHOLD_0001 = BigInt('100000000000000'); // 0.0001 ETH in wei
+    const THRESHOLD_1 = BigInt('1000000000000000000'); // 1 ETH in wei
+
+    const ethStr = formatUnits(wei, 18); // e.g. "0.123456789012345678"
+
+    if (wei < THRESHOLD_0001) return '<0.0001 ETH';
+
+    // Trim ethStr to the desired number of decimal places without converting to float
+    function trimDecimals(s: string, places: number): string {
+      const [intPart, fracPart = ''] = s.split('.');
+      const trimmed = fracPart.slice(0, places).replace(/0+$/, '');
+      return trimmed ? `${intPart}.${trimmed}` : intPart!;
+    }
+
+    if (wei < THRESHOLD_1) return `${trimDecimals(ethStr, 4)} ETH`;
+    return `${trimDecimals(ethStr, 2)} ETH`;
   } catch {
     return '0 ETH';
   }

@@ -29,7 +29,16 @@ export async function getAgentsWithWebhooks(): Promise<AgentWebhookInfo[]> {
     throw new Error(`Failed to get agents with webhooks: ${error.message}`);
   }
 
-  return (data ?? []).filter((a): a is AgentWebhookInfo => a.webhook_url !== null);
+  const results = data ?? [];
+  // The query already filters WHERE webhook_url IS NOT NULL, so any null values here
+  // indicate a database inconsistency (race condition during webhook removal). Log them.
+  const nullCount = results.filter((a) => a.webhook_url === null).length;
+  if (nullCount > 0) {
+    console.warn(
+      `[webhook-queries] getAgentsWithWebhooks: ${nullCount} record(s) had null webhook_url despite NOT NULL filter`
+    );
+  }
+  return results.filter((a): a is AgentWebhookInfo => a.webhook_url !== null);
 }
 
 /**
@@ -78,7 +87,14 @@ export async function getAgentsWebhookInfoByAddresses(
     throw new Error(`Failed to get agents webhook info: ${error.message}`);
   }
 
-  return (data ?? []).filter((a): a is AgentWebhookInfo => a.webhook_url !== null);
+  const byAddressResults = data ?? [];
+  const nullByAddrCount = byAddressResults.filter((a) => a.webhook_url === null).length;
+  if (nullByAddrCount > 0) {
+    console.warn(
+      `[webhook-queries] getAgentsWebhookInfoByAddresses: ${nullByAddrCount} record(s) had null webhook_url despite NOT NULL filter`
+    );
+  }
+  return byAddressResults.filter((a): a is AgentWebhookInfo => a.webhook_url !== null);
 }
 
 /**

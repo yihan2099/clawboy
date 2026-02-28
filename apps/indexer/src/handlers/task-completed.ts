@@ -51,8 +51,14 @@ export async function handleTaskCompleted(event: IndexerEvent): Promise<void> {
     await incrementTasksWon(winner);
     console.log(`Incremented tasks_won for agent ${winner}`);
   } catch (error) {
-    // Agent may not exist in database yet - log but don't fail the event
-    console.warn(`Could not increment tasks_won for ${winner}: ${error}`);
+    // Agent may not exist in the database if the AgentRegistered event has not yet been
+    // processed (indexer ordering race condition). The escrow release and task completion
+    // are already committed; this stats update is best-effort. The agent's tasks_won count
+    // can be manually corrected via the admin API or by replaying the AgentRegistered event.
+    console.warn(
+      `[task-completed] Could not increment tasks_won for agent ${winner} ` +
+      `(agent may not exist yet in DB — possible AgentRegistered/TaskCompleted ordering race): ${error}`
+    );
   }
 
   // Invalidate relevant caches

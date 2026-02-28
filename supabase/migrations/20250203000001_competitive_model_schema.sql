@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- DESIGN: One submission row per (task, agent) pair. Resubmission is handled by
+  -- updating the existing row (submission_cid, updated_at) via updateSubmission().
+  -- The constraint prevents accidental duplicate inserts; the MCP submit-work tool
+  -- calls getSubmissionByTaskAndAgent() first to decide between insert and update.
   UNIQUE(task_id, agent_address)
 );
 

@@ -48,6 +48,16 @@ const erc20Abi = [
   },
 ] as const;
 
+// ENVIRONMENT: Fallback to Base Sepolia testnet (84532) if NEXT_PUBLIC_CHAIN_ID is not set.
+// In production this must be set to the correct mainnet chain ID to avoid submitting
+// transactions to the wrong network. The smart contract will reject cross-chain calls,
+// but the user experience will be confusing without a clear error.
+if (!process.env.NEXT_PUBLIC_CHAIN_ID) {
+  console.warn(
+    '[create-task] NEXT_PUBLIC_CHAIN_ID is not set — defaulting to Base Sepolia testnet (84532). ' +
+    'Set this env var in production.'
+  );
+}
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
 
 type DeliverableType = 'code' | 'document' | 'data' | 'file' | 'other';
@@ -93,8 +103,17 @@ export function CreateTaskForm() {
   const supportedTokens = getSupportedTokens(CHAIN_ID);
   const selectedToken = supportedTokens.find((t) => t.symbol === tokenSymbol);
 
-  const bountyAmountParsed =
-    bountyAmount && selectedToken ? parseUnits(bountyAmount, selectedToken.decimals) : BigInt(0);
+  const bountyAmountParsed = (() => {
+    // Guard against NaN/invalid input before calling parseUnits, which throws on invalid values.
+    // parseFloat on '' or non-numeric strings returns NaN, so we use Number() + isFinite.
+    const n = Number(bountyAmount);
+    if (!bountyAmount || !Number.isFinite(n) || n <= 0 || !selectedToken) return BigInt(0);
+    try {
+      return parseUnits(bountyAmount, selectedToken.decimals);
+    } catch {
+      return BigInt(0);
+    }
+  })();
   const isErc20 = selectedToken && !isNativeToken(selectedToken.address);
 
   const {
@@ -132,7 +151,9 @@ export function CreateTaskForm() {
   const needsApproval =
     isErc20 &&
     bountyAmountParsed > BigInt(0) &&
-    (allowance === undefined || (allowance as bigint) < bountyAmountParsed);
+    // allowance is typed as bigint by the erc20Abi readContract, but wagmi returns
+    // undefined before the query resolves. Use explicit undefined check instead of cast.
+    (allowance === undefined || allowance < bountyAmountParsed);
 
   // Refetch allowance after approval confirmation
   useEffect(() => {
@@ -175,8 +196,13 @@ export function CreateTaskForm() {
       newErrors.deliverables = 'At least one deliverable with a description is required';
     }
 
-    if (!bountyAmount || parseFloat(bountyAmount) <= 0) {
-      newErrors.bountyAmount = 'Bounty amount must be greater than 0';
+    {
+      // parseFloat returns NaN for empty/non-numeric strings; NaN comparisons always return false.
+      // Use Number() + isNaN guard to correctly reject empty, NaN, and non-positive values.
+      const parsedBounty = Number(bountyAmount);
+      if (!bountyAmount || !Number.isFinite(parsedBounty) || parsedBounty <= 0) {
+        newErrors.bountyAmount = 'Bounty amount must be a positive number';
+      }
     }
 
     const tags = parseTags(tagsInput);

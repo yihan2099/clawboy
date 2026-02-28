@@ -45,9 +45,15 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
   } else {
     ipfsFetchFailed = true;
     console.error(
-      `Failed to fetch task spec for CID ${specificationCid} after ${fetchResult.attempts} attempts: ${fetchResult.error}`
+      `Failed to fetch task spec for CID ${specificationCid} after ${fetchResult.attempts} attempts: ${fetchResult.error?.message ?? fetchResult.error}`
     );
-    console.warn('Task will be created with default values; IPFS fetch will be retried later');
+    // Non-silent failure: task is recorded with ipfs_fetch_failed=true.
+    // The IPFS retry job (startIpfsRetryJob in index.ts) will periodically
+    // re-attempt to fetch and backfill title/description/tags for failed tasks.
+    console.warn(
+      `Task ${specificationCid} created with placeholder values. ` +
+        `IPFS retry job will attempt to backfill metadata.`
+    );
   }
 
   // Create task in database

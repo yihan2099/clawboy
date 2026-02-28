@@ -36,6 +36,9 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
     notFound();
   }
 
+  // PERFORMANCE: Limit to 10 recent submissions per agent profile page. For agents with many
+  // submissions, add pagination or a "View all" link. Increasing this limit without pagination
+  // will slow down server rendering proportionally.
   const { submissions } = await getSubmissionsByAgent(agent.address, { limit: 10 });
   const voteWeight = calculateVoteWeight(agent.reputation);
   const reputation = parseInt(agent.reputation, 10) || 0;

@@ -102,15 +102,20 @@ export function parseAuthChallenge(message: string): {
  * SECURITY: Validate challenge timestamp is within acceptable window
  * @param timestamp - ISO 8601 timestamp string
  * @param maxAgeMs - Maximum age in milliseconds (default 5 minutes)
+ * @param clockSkewToleranceMs - Tolerance for future timestamps due to clock skew (default 30s)
  * @returns true if timestamp is valid and fresh
  */
-export function isTimestampFresh(timestamp: string, maxAgeMs: number = 5 * 60 * 1000): boolean {
+export function isTimestampFresh(
+  timestamp: string,
+  maxAgeMs: number = 5 * 60 * 1000,
+  clockSkewToleranceMs: number = 30_000
+): boolean {
   try {
     const challengeTime = new Date(timestamp).getTime();
     const now = Date.now();
 
-    // Reject future timestamps (with 30 second tolerance for clock skew)
-    if (challengeTime > now + 30000) {
+    // Reject future timestamps beyond the clock skew tolerance
+    if (challengeTime > now + clockSkewToleranceMs) {
       return false;
     }
 

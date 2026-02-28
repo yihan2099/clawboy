@@ -1,8 +1,16 @@
 import type { NextConfig } from 'next';
 
 // SECURITY: Content Security Policy
-// Note: 'unsafe-inline' for styles is required by Next.js for styled-jsx and Tailwind
-// 'unsafe-eval' is needed for Next.js development mode but should be removed in production
+//
+// KNOWN WEAKNESS: 'unsafe-inline' in script-src significantly weakens XSS protection
+// because it allows inline <script> tags and event handlers from any origin that can
+// inject HTML. The proper fix is to use nonces via Next.js middleware:
+//   https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
+// With nonces, 'unsafe-inline' can be removed and each server-rendered <script> is
+// individually authorized. This is a known limitation of static CSP headers in Next.js.
+//
+// 'unsafe-inline' for style-src is lower risk (styles cannot exfiltrate data directly).
+// 'unsafe-eval' is NOT included here to prevent dynamic code execution.
 const cspDirectives = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://vercel.live https://*.vercel-scripts.com",

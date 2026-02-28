@@ -21,6 +21,15 @@ import {
 
 const WEBHOOK_TIMEOUT_MS = 5000;
 const MAX_ATTEMPTS = 3;
+// Overall batch timeout prevents the whole batch from blocking indefinitely.
+// Each deliverWebhook() already has a per-request 5s AbortController timeout;
+// this adds an outer guard for DNS resolution delays, TLS handshake latency,
+// and large batches where per-request timeouts compound.
+// Default: 30s (env-configurable via WEBHOOK_BATCH_TIMEOUT_MS).
+const _batchTimeoutEnv = parseInt(process.env.WEBHOOK_BATCH_TIMEOUT_MS ?? '', 10);
+const BATCH_TIMEOUT_MS = Number.isFinite(_batchTimeoutEnv) && _batchTimeoutEnv > 0
+  ? _batchTimeoutEnv
+  : 30_000;
 
 export interface WebhookPayload {
   event: string;
@@ -133,12 +142,28 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
 
 /**
  * Send webhooks to multiple agents (fire-and-forget, non-blocking)
+ *
+ * Uses Promise.race against BATCH_TIMEOUT_MS so a large batch of slow webhooks
+ * cannot block event processing indefinitely. Each individual deliverWebhook()
+ * call also has its own 5s per-request timeout.
  */
 function notifyAgents(agents: AgentWebhookInfo[], payload: WebhookPayload): void {
   if (agents.length === 0) return;
 
+  const batch = Promise.allSettled(agents.map((agent) => deliverWebhook(agent, payload)));
+
+  const timeout = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), BATCH_TIMEOUT_MS);
+  });
+
   // Fire-and-forget: don't await, just log errors
-  Promise.allSettled(agents.map((agent) => deliverWebhook(agent, payload))).then((results) => {
+  Promise.race([batch, timeout]).then((results) => {
+    if (results === null) {
+      console.warn(
+        `Webhook batch for ${payload.event} exceeded ${BATCH_TIMEOUT_MS}ms batch timeout (${agents.length} agents)`
+      );
+      return;
+    }
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
       console.warn(
