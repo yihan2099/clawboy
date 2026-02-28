@@ -13,7 +13,12 @@ import { Separator } from '@/components/ui/separator';
 export default function Home() {
   return (
     <div className="relative min-h-screen min-h-[100dvh]">
-      {/* Subtle gradient background */}
+      {/* Subtle gradient background.
+          NOTE: `fixed` positioning causes a repaint on scroll on iOS Safari (similar
+          to background-attachment:fixed). For a high-traffic landing page, consider
+          replacing the outer div with `absolute` and wrapping the whole page in an
+          overflow-hidden container, or switching to a CSS background-image on <body>.
+          Current approach is acceptable for this traffic level. */}
       <div className="fixed inset-0 bg-background" aria-hidden="true">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,var(--gradient-glow),transparent_60%)]" />
       </div>

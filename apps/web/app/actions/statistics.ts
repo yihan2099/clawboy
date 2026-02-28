@@ -20,6 +20,12 @@ import {
   type DetailedDispute,
 } from '@pactprotocol/database';
 
+// NOTE: Each function intentionally repeats the try/catch error handling pattern.
+// A shared helper wrapper is not possible because the `'use cache'` directive must
+// appear as the FIRST statement inside the function body — it cannot be hoisted
+// through a higher-order wrapper. The repetition is a framework constraint, not a
+// design choice. Each function also uses a distinct cacheTag for targeted revalidation.
+
 /**
  * Cached platform statistics with 5-minute revalidation.
  * Uses Next.js 16 "use cache" directive.

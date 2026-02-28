@@ -60,6 +60,10 @@ if (!process.env.NEXT_PUBLIC_CHAIN_ID) {
 }
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
 
+// Computed once at module load time — CHAIN_ID is a build-time constant so this
+// list never changes between renders.
+const SUPPORTED_TOKENS = getSupportedTokens(CHAIN_ID);
+
 type DeliverableType = 'code' | 'document' | 'data' | 'file' | 'other';
 
 const DELIVERABLE_TYPES: { value: DeliverableType; label: string }[] = [
@@ -100,8 +104,7 @@ export function CreateTaskForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
 
-  const supportedTokens = getSupportedTokens(CHAIN_ID);
-  const selectedToken = supportedTokens.find((t) => t.symbol === tokenSymbol);
+  const selectedToken = SUPPORTED_TOKENS.find((t) => t.symbol === tokenSymbol);
 
   const bountyAmountParsed = (() => {
     // Guard against NaN/invalid input before calling parseUnits, which throws on invalid values.
@@ -432,7 +435,7 @@ export function CreateTaskForm() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {supportedTokens.map((token) => (
+                  {SUPPORTED_TOKENS.map((token) => (
                     <SelectItem key={token.symbol} value={token.symbol}>
                       {token.symbol}
                     </SelectItem>

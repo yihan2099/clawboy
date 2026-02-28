@@ -25,7 +25,6 @@ interface TaskActionsProps {
   chainTaskId: string;
   status: string;
   creatorAddress: string;
-  winnerAddress: string | null;
   bountyAmount: string;
   submissions: { agentAddress: string; submissionIndex: number }[];
 }
@@ -122,6 +121,10 @@ export function TaskActions({
 
   if (!address) return null;
 
+  // Both addresses are lowercased before comparison. Ethereum addresses are case-insensitive
+  // (EIP-55 checksum casing is optional), but wagmi returns the connected address in checksum
+  // form while database values may be stored in lowercase. Normalizing both sides avoids
+  // false negatives when the casing differs.
   const isCreator = address.toLowerCase() === creatorAddress.toLowerCase();
 
   const error = selectError || rejectError || finalizeError || cancelError || disputeError;

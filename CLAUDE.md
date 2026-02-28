@@ -40,6 +40,8 @@ bun test src/__tests__/e2e/    # Run E2E tests (requires funded wallets + runnin
 
 Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3001.
 
+**Note on `prepare` script:** The root `package.json` `prepare` script runs `git config core.hooksPath .githooks 2>/dev/null || true`. The `2>/dev/null || true` is intentional — `git config` fails in environments without a `.git` directory (Docker image builds, CI install steps). The `|| true` prevents `bun install` from failing in those environments. This is the correct pattern; it does not hide meaningful errors.
+
 ## Architecture
 
 ```
@@ -191,6 +193,16 @@ The platform uses a two-tier caching system for performance:
 - Cache-through pattern with `cacheThrough()` helper
 - Tag-based invalidation for related data
 - Automatic memory fallback when Redis unavailable
+
+**Cache Invalidation Strategy:**
+
+Cache entries are invalidated by one of three mechanisms:
+
+1. **TTL expiry** — entries expire automatically after their domain TTL (default: 60s).
+2. **Tag-based invalidation** — call `cache.invalidateTag(tag)` to drop all entries for a logical group (e.g. `'task:123'`). Used when the indexer processes an event that modifies a specific entity.
+3. **Manual flush** — `cache.flush()` clears all entries; used only in tests or after major data migrations.
+
+Next.js server-cached functions (`'use cache'`) use `revalidateTag()` from `next/cache`. Indexer event handlers should call `revalidateTag` on relevant tags after updating the database so that the next request gets fresh data immediately rather than waiting for TTL expiry.
 
 See `packages/redis/README.md` and `packages/cache/README.md` for details.
 

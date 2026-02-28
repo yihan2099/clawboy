@@ -13,6 +13,11 @@
 
 **Deployed:** 2026-02-04 (ERC-8004 integration)
 
+> **Important:** After updating these addresses, also update `packages/contracts/src/addresses/base-sepolia.ts`
+> (and `base-mainnet.ts` for production). The addresses in this document are documentation only —
+> the runtime addresses are read from those TypeScript files. Keeping them in sync prevents silent
+> misroutes where the UI sends transactions to the old contract address.
+
 ---
 
 ## Deployment Options

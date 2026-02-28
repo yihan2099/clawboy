@@ -8,7 +8,11 @@
     },
     "build:contracts": {
       "cache": true,
-      "inputs": ["apps/contracts/src/**/*.sol", "apps/contracts/foundry.toml"],
+      "inputs": [
+        "apps/contracts/src/**/*.sol",
+        "apps/contracts/foundry.toml",
+        "packages/contracts/src/**"
+      ],
       "outputs": ["apps/contracts/out/**", "apps/contracts/abis/**"]
     },
     "dev": {

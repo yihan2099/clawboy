@@ -3,8 +3,10 @@
 import { listTasks, listAgents } from '@pactprotocol/database/queries';
 
 export async function searchTasks(query: string) {
-  // listTasks doesn't support text search, so we use tag-based filtering
-  // as a basic search mechanism
+  // NOTE: listTasks only supports filtering by exact tag match, not full-text search.
+  // A query like "smart contract" will only return tasks tagged with that exact string.
+  // To support real full-text search, add a pg_trgm GIN index on the tasks.title
+  // and tasks.description columns and expose a `search` parameter in listTasks().
   const { tasks } = await listTasks({
     tags: [query.toLowerCase()],
     limit: 5,
@@ -19,7 +21,8 @@ export async function searchTasks(query: string) {
 }
 
 export async function searchAgents(query: string) {
-  // listAgents doesn't support text search, so we use skills-based filtering
+  // NOTE: listAgents only supports filtering by exact skill tag match, not full-text search.
+  // Same limitation as searchTasks above — a pg_trgm index on agents.name would enable real search.
   const { agents } = await listAgents({
     skills: [query.toLowerCase()],
     limit: 5,

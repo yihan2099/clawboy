@@ -41,6 +41,7 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     error NoWalletLinked();
     error NotOwner();
     error NotAuthorized();
+    error ZeroAddress();
 
     // Events for adapter management
     event AdapterAuthorized(address indexed adapter);
@@ -79,7 +80,7 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
      * @param newOwner The new owner address
      */
     function transferOwnership(address newOwner) external onlyOwner {
-        if (newOwner == address(0)) revert AgentNotFound(); // reuse error for zero address
+        if (newOwner == address(0)) revert ZeroAddress();
         address oldOwner = owner;
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);

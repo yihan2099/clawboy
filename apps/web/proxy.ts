@@ -5,6 +5,16 @@ import { createWaitlistLimiter } from '@pactprotocol/rate-limit';
 // Get the cached rate limiter from the shared package
 const ratelimit = createWaitlistLimiter();
 
+// Log once at module load time if rate limiter is not configured so operators can
+// detect unprotected deployments without flooding logs on every request.
+if (!ratelimit) {
+  console.warn(
+    '[rate-limit] Rate limiter is not configured (missing UPSTASH_REDIS_REST_URL or ' +
+    'UPSTASH_REDIS_REST_TOKEN). POST / requests will be allowed without rate limiting (fail-open). ' +
+    'Set these env vars in production to enable rate limiting.'
+  );
+}
+
 // SECURITY: Whether to trust proxy headers for client IP detection
 // Only set this to true if you're behind a trusted reverse proxy (e.g., Vercel, Cloudflare)
 const TRUST_PROXY_HEADERS = process.env.TRUST_PROXY_HEADERS === 'true';
@@ -63,7 +73,8 @@ export async function proxy(request: NextRequest) {
   if (request.method === 'POST' && request.nextUrl.pathname === '/') {
     const ip = getClientIp(request);
 
-    // If rate limiter is not configured, allow the request (fail open)
+    // If rate limiter is not configured, allow the request (fail open).
+    // Warning is logged once at module load time (see above) to avoid log spam.
     if (!ratelimit) {
       return NextResponse.next();
     }

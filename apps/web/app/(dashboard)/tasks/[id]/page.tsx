@@ -156,7 +156,6 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         chainTaskId={task.chain_task_id}
         status={task.status}
         creatorAddress={task.creator_address}
-        winnerAddress={task.winner_address}
         bountyAmount={task.bounty_amount}
         submissions={submissions.map((s) => ({
           agentAddress: s.agent_address,

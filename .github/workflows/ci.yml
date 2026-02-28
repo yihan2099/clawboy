@@ -59,6 +59,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Fetch submodules so packages that import from apps/contracts/abis/ or
+          # the Foundry lib directory don't fail with missing-file errors during tests.
+          submodules: recursive
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run --filter @pactprotocol/mcp-server test

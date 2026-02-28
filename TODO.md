@@ -271,20 +271,37 @@ Total findings: 122 (from pact codebase)
 
 ## P3 — Low
 
-- [ ] #093 [Code Quality] Repeated error handling pattern in statistics `statistics.ts`
-- [ ] #094 [Code Quality] Unused `winnerAddress` parameter `task-actions.tsx:120`
-- [ ] #095 [Code Quality] QueryClient creation comment `web3-provider.tsx:12`
-- [ ] #096 [Code Quality] getSupportedTokens called every render `create-task-form.tsx:93`
-- [ ] #097 [Code Quality] Server actions minimal error handling `ipfs.ts:1-23`
-- [ ] #098 [Performance] Background gradient perf on mobile `page.tsx:17-18`
-- [ ] #099 [Code Quality] Limited tag-based search `search-actions.ts:5-9`
-- [ ] #100 [Code Quality] Address comparison documentation `task-actions.tsx:125`
-- [ ] #101 [Code Quality] Deployment addresses not validated in code `DEPLOYMENT.md:20`
-- [ ] #102 [Code Quality] Turbo cache invalidation for contracts `turbo.json:11`
-- [ ] #103 [Reliability] Submodules not checked out in TS tests `ci.yml:38`
-- [ ] #104 [Code Quality] prepare script silences errors `package.json:28`
-- [ ] #105 [Code Quality] Caching docs missing invalidation strategy `CLAUDE.md:327`
-- [ ] #106 [Dependencies] Dependabot limit too high (10) `dependabot.yml:7`
-- [ ] #107 [Code Quality] Rate limiter fail-open not logged `proxy.ts:58-60`
-- [ ] #108 [Code Quality] Silent skip of deregistered voters `PactAgentAdapter.sol:266-285`
-- [ ] #109 [Code Quality] Reused error message for different conditions `ERC8004IdentityRegistry.sol:82`
+- [x] #093 [Code Quality] Repeated error handling pattern in statistics `statistics.ts`
+  - Done: Added module-level comment explaining that the `'use cache'` directive must be the FIRST statement in each function body, making a shared higher-order wrapper impossible. The repetition is a framework constraint, not a design choice.
+- [x] #094 [Code Quality] Unused `winnerAddress` parameter `task-actions.tsx:120`
+  - Done: Removed `winnerAddress: string | null` from `TaskActionsProps` interface and removed the corresponding prop from the call site in `page.tsx`.
+- [x] #095 [Code Quality] QueryClient creation comment `web3-provider.tsx:12`
+  - Done: Added comment explaining why `useState(() => new QueryClient())` is used instead of a module-level singleton (module-level would leak state between server-rendered requests in Next.js).
+- [x] #096 [Code Quality] getSupportedTokens called every render `create-task-form.tsx:93`
+  - Done: Moved `getSupportedTokens(CHAIN_ID)` to module level as `SUPPORTED_TOKENS` constant. `CHAIN_ID` is a build-time constant so the list never changes. Updated all references in the component from `supportedTokens` to `SUPPORTED_TOKENS`.
+- [x] #097 [Code Quality] Server actions minimal error handling `ipfs.ts:1-23`
+  - Done: Wrapped all three server actions in try/catch. Logs the original error with context, then throws a user-friendly message. Callers already catch the thrown error to show UI feedback.
+- [x] #098 [Performance] Background gradient perf on mobile `page.tsx:17-18`
+  - Done: Added comment documenting the iOS Safari repaint issue with `fixed` positioned elements and suggesting the alternative (`absolute` + overflow-hidden container or CSS background-image on body). Current approach acceptable for this traffic level.
+- [x] #099 [Code Quality] Limited tag-based search `search-actions.ts:5-9`
+  - Done: Added comments in both `searchTasks` and `searchAgents` explaining the exact-tag-match limitation and documenting the path to real full-text search (pg_trgm GIN index + `search` parameter in `listTasks`/`listAgents`).
+- [x] #100 [Code Quality] Address comparison documentation `task-actions.tsx:125`
+  - Done: Added comment explaining why both addresses are lowercased — wagmi returns checksum-cased addresses while database values may be lowercase. Normalizing prevents false negatives.
+- [x] #101 [Code Quality] Deployment addresses not validated in code `DEPLOYMENT.md:20`
+  - Done: Added note in DEPLOYMENT.md reminding maintainers to sync addresses to `packages/contracts/src/addresses/base-sepolia.ts` (and `base-mainnet.ts`) after any deployment, since the runtime reads from those TypeScript files, not the markdown.
+- [x] #102 [Code Quality] Turbo cache invalidation for contracts `turbo.json:11`
+  - Done: Added `packages/contracts/src/**` to `build:contracts` inputs so changes to TypeScript ABI wrappers also invalidate the Turbo cache.
+- [x] #103 [Reliability] Submodules not checked out in TS tests `ci.yml:38`
+  - Done: Added `submodules: recursive` to the `actions/checkout` step in the `test-typescript` job so Foundry lib submodules are available during package tests.
+- [x] #104 [Code Quality] prepare script silences errors `package.json:28`
+  - Done: Added explanation to CLAUDE.md's Commands section clarifying that the `2>/dev/null || true` in the `prepare` script is intentional — `git config` fails in environments without a `.git` directory (Docker, CI install), and the `|| true` prevents `bun install` from failing in those environments.
+- [x] #105 [Code Quality] Caching docs missing invalidation strategy `CLAUDE.md:327`
+  - Done: Added **Cache Invalidation Strategy** subsection to CLAUDE.md's Caching Layer section documenting the three invalidation mechanisms: TTL expiry, tag-based invalidation (`cache.invalidateTag()`), and manual flush. Also documented the Next.js `revalidateTag()` pattern for server-cached functions.
+- [x] #106 [Dependencies] Dependabot limit too high (10) `dependabot.yml:7`
+  - Done: Reduced `open-pull-requests-limit` for the npm ecosystem from 10 to 5. Lower limit reduces PR noise; the grouped dependencies config means updates are batched anyway.
+- [x] #107 [Code Quality] Rate limiter fail-open not logged `proxy.ts:58-60`
+  - Done: Added a module-level `console.warn` that fires once at startup when `ratelimit` is null (missing Upstash env vars). The per-request code path now just silently allows through with a brief comment pointing to the startup log.
+- [x] #108 [Code Quality] Silent skip of deregistered voters `PactAgentAdapter.sol:266-285`
+  - Done (in P2): Added natspec `@dev` comment in `updateVoterReputation()` explaining that `agentId == 0` is a legitimate deregister-between-vote-and-resolution scenario, and that silently skipping is correct rather than reverting the entire batch.
+- [x] #109 [Code Quality] Reused error message for different conditions `ERC8004IdentityRegistry.sol:82`
+  - Done: Added dedicated `ZeroAddress()` error to `ERC8004IdentityRegistry`. Replaced `revert AgentNotFound()` with `revert ZeroAddress()` in `transferOwnership()`. The old comment "reuse error for zero address" is removed.
