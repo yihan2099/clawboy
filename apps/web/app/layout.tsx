@@ -94,6 +94,9 @@ export const viewport: Viewport = {
   ],
 };
 
+// TODO(#135): Add a React error boundary around {children} to catch uncaught render errors
+// at the root level and display a friendly fallback UI instead of a blank page.
+// Consider wrapping with a client component that uses React's ErrorBoundary pattern.
 export default function RootLayout({
   children,
 }: Readonly<{

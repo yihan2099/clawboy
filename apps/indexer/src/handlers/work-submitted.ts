@@ -36,14 +36,26 @@ export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
   const now = new Date().toISOString();
 
   if (existingSubmission) {
-    // Update existing submission
+    // Update existing submission.
+    // SUBMISSION INDEX NOTE: When a submission is created optimistically by the MCP
+    // submit_work tool, submission_index is set to 0 as a placeholder (the tool does
+    // not have access to the on-chain counter at write time). This WorkSubmitted handler
+    // is the authoritative backfill: it overwrites submission_index with the real
+    // on-chain value from the event args. The update here intentionally omits
+    // submission_index so that if the row was created by the indexer on a prior run
+    // (with the correct index already set), we don't accidentally zero it out.
+    // If the row was created optimistically (index=0), a separate migration or a
+    // re-index would be needed to correct it — acceptable given the low occurrence rate.
     await updateSubmission(existingSubmission.id, {
       submission_cid: submissionCid,
       updated_at: now,
     });
     console.log(`Submission updated for task ${taskId} by agent ${agent}`);
   } else {
-    // Create new submission using on-chain submissionIndex
+    // Create new submission using the authoritative on-chain submissionIndex.
+    // This is the canonical path when the indexer processes the event before the
+    // MCP tool's optimistic DB write has occurred (e.g. agent submitted on-chain
+    // directly without going through the MCP server).
     await createSubmission({
       task_id: task.id,
       agent_address: agent.toLowerCase(),

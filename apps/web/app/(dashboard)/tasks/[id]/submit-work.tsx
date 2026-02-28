@@ -87,6 +87,10 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
   const handleSubmit = async () => {
     setValidationError(null);
 
+    // TODO(#136): Collect all validation errors upfront and display them aggregated,
+    // rather than returning on the first failure. This improves UX by showing all
+    // issues at once instead of requiring multiple submit attempts.
+
     // Validate summary
     if (!summary.trim()) {
       setValidationError('Summary is required.');
@@ -107,6 +111,26 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       }
       if (!d.cid.trim() && !d.url.trim()) {
         setValidationError(`Deliverable ${i + 1}: at least a CID or URL is required.`);
+        return;
+      }
+      // Basic CID format validation: IPFS v0 CIDs start with "Qm" (base58, 46 chars),
+      // v1 CIDs start with "bafy" (base32). Reject obviously malformed CIDs early.
+      if (d.cid.trim()) {
+        const cid = d.cid.trim();
+        const isV0 = cid.startsWith('Qm') && cid.length === 46;
+        const isV1 = cid.startsWith('bafy');
+        if (!isV0 && !isV1) {
+          setValidationError(
+            `Deliverable ${i + 1}: CID must start with "Qm" (v0) or "bafy" (v1).`
+          );
+          return;
+        }
+      }
+      // Basic URL format validation: must start with http or https.
+      if (d.url.trim() && !d.url.trim().startsWith('http')) {
+        setValidationError(
+          `Deliverable ${i + 1}: URL must start with "http" or "https".`
+        );
         return;
       }
     }
@@ -152,7 +176,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
       <CardContent className="space-y-4">
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {typeof error === 'string' ? error : error.message.slice(0, 200)}
+            {typeof error === 'string' ? error : error.message}
           </div>
         )}
 

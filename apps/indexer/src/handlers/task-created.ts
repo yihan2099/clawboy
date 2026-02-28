@@ -9,7 +9,27 @@ import { invalidateTaskCaches } from '@pactprotocol/cache';
  * Includes IPFS retry with exponential backoff
  */
 export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
-  const { taskId, creator, bountyAmount, bountyToken, specificationCid, deadline } = event.args as {
+  // Runtime validation: viem decodes event args dynamically; incorrect ABI or a chain
+  // reorg could produce unexpected types. Validate before use to prevent silent errors.
+  const raw = event.args;
+  if (
+    typeof raw.taskId !== 'bigint' ||
+    typeof raw.creator !== 'string' ||
+    typeof raw.bountyAmount !== 'bigint' ||
+    typeof raw.bountyToken !== 'string' ||
+    typeof raw.specificationCid !== 'string' ||
+    typeof raw.deadline !== 'bigint'
+  ) {
+    throw new Error(
+      `TaskCreated event has unexpected arg types: ${JSON.stringify(
+        Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k, typeof v])
+        )
+      )}`
+    );
+  }
+
+  const { taskId, creator, bountyAmount, bountyToken, specificationCid, deadline } = raw as {
     taskId: bigint;
     creator: `0x${string}`;
     bountyAmount: bigint;
@@ -50,9 +70,14 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
     // Non-silent failure: task is recorded with ipfs_fetch_failed=true.
     // The IPFS retry job (startIpfsRetryJob in index.ts) will periodically
     // re-attempt to fetch and backfill title/description/tags for failed tasks.
+    //
+    // TODO: Replace the polling-based IPFS retry job with a dedicated retry queue
+    // (e.g. BullMQ or Upstash Workflow) that supports per-item max-age alerting and
+    // dead-letter visibility so operators are notified when a CID is persistently
+    // unfetchable (e.g. unpinned or invalid CID).
     console.warn(
       `Task ${specificationCid} created with placeholder values. ` +
-        `IPFS retry job will attempt to backfill metadata.`
+        `IPFS retry job will attempt to backfill metadata. CID: ${specificationCid}`
     );
   }
 

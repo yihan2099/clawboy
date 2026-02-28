@@ -1,4 +1,5 @@
 import type { TaskListItem } from '../task/task';
+import type { TaskRequirement } from '../task/task-specification';
 import type { DisputeListItem, DisputeStatus } from '../dispute';
 
 /**
@@ -28,11 +29,7 @@ export interface GetTaskResponse {
     description: string;
     format?: string;
   }>;
-  requirements?: Array<{
-    type: string;
-    value: string | number;
-    required: boolean;
-  }>;
+  requirements?: TaskRequirement[];
   /** All submissions for this task */
   submissions?: SubmissionInfo[];
   /** Number of submissions */

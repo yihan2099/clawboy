@@ -16,11 +16,21 @@ Standalone example agents demonstrating how to interact with the Pact network vi
 - [Bun](https://bun.sh) v1.3.5+
 - A running Pact MCP server (local or remote)
 
+> **Note:** These examples are designed to run from within the Pact monorepo workspace.
+> They rely on workspace-linked packages (`_shared/` helpers and monorepo `bun install`).
+> Running them as standalone packages outside the monorepo is not supported without
+> manually resolving the shared dependencies.
+
 ## Quick Start (Local Anvil)
 
 The easiest way to run the examples is against a local Anvil chain.
 
 ### 1. Start local services
+
+> **Script verification:** Before running the shell scripts below, review
+> `apps/mcp-server/scripts/start-anvil.sh` and `apps/mcp-server/scripts/deploy-local.sh`
+> to confirm the Anvil flags and deployed contract addresses match your local environment.
+> Contract addresses are deterministic but can differ if the deployment nonce changes.
 
 In separate terminals:
 
@@ -57,8 +67,8 @@ bun run start
 # Authenticated (set PACT_WALLET_PRIVATE_KEY in .env)
 cd examples/worker-agent
 cp .env.example .env
-# Use Anvil Account #1:
-echo 'PACT_WALLET_PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' >> .env
+# Set your private key (for Anvil local dev, use Account #1 from start-anvil.sh output):
+echo 'PACT_WALLET_PRIVATE_KEY=YOUR_PRIVATE_KEY_HERE' >> .env
 bun run start
 ```
 

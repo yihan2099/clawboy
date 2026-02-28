@@ -21,7 +21,14 @@ export async function handleTasksList(
   const context = getServerContext(c);
   const sessionId = getSessionIdFromContext(c);
 
-  // Require authentication to list tasks
+  // Require authentication to list tasks.
+  // ANONYMOUS SESSION LIMITATION: Unlike message/send (which assigns an ephemeral
+  // anonymous-<uuid> session for public skills), tasks/list requires a real authenticated
+  // session. This means unauthenticated callers cannot list tasks they may have initiated
+  // via public skills. This is intentional — A2A tasks are keyed by sessionId, and
+  // anonymous sessions are not persisted beyond the originating request, so there are
+  // no tasks to list without a stable session. Callers must authenticate via the
+  // wallet-signature flow to use tasks/list.
   if (!context.isAuthenticated || !sessionId) {
     return createErrorResponse(
       id,

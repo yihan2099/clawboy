@@ -89,9 +89,13 @@ export function getPublicGroupId(): string | undefined {
   // Pinata group IDs are UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(groupId)) {
-    console.warn(
-      `[pinata-client] PINATA_PUBLIC_GROUP_ID "${groupId}" does not look like a valid UUID. ` +
-      'Uploads to this group may fail with a Pinata API error.'
+    // Throw instead of warn: an invalid group ID will cause every public upload to fail
+    // with a Pinata API error. Failing fast at startup prevents confusing upload failures
+    // and makes the misconfiguration immediately visible in logs.
+    throw new Error(
+      `[pinata-client] PINATA_PUBLIC_GROUP_ID "${groupId}" is not a valid UUID ` +
+        '(expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). ' +
+        'Fix or unset PINATA_PUBLIC_GROUP_ID to proceed.'
     );
   }
 

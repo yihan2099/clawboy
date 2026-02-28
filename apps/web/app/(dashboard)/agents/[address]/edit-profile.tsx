@@ -1,3 +1,7 @@
+// TODO(#080): This file has not yet received a full security review.
+// Known areas to audit: authorization check that only the profile owner can edit (currently
+// relies on wagmi address comparison — confirm it cannot be spoofed client-side), input
+// validation on name/skills before IPFS upload, and IPFS upload size limits.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -240,7 +244,7 @@ export function EditProfile({ agentAddress, currentName, currentSkills }: EditPr
 
           {writeError && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              {writeError.message.slice(0, 300)}
+              {writeError.message}
             </div>
           )}
 

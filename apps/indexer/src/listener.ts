@@ -70,9 +70,21 @@ export function createEventListener(
       // concurrent pollEvents calls to modify lastProcessedBlock
       const fromBlock = lastProcessedBlock + 1n;
 
-      // Validate block range (handles reorgs and race conditions)
+      // Validate block range and detect potential chain reorgs.
+      // A reorg is signalled when lastProcessedBlock jumps ahead of currentBlock,
+      // which should not happen under normal operation. Step back by REORG_SAFE_DISTANCE
+      // so that re-orged blocks are re-fetched on the next poll cycle.
+      const REORG_SAFE_DISTANCE = 10n;
       if (fromBlock > currentBlock) {
-        return; // No new blocks or chain reorg
+        console.warn(
+          `[listener] Potential chain reorg detected: fromBlock=${fromBlock} > currentBlock=${currentBlock}. ` +
+          `Stepping back ${REORG_SAFE_DISTANCE} blocks to re-process from block ${currentBlock - REORG_SAFE_DISTANCE}.`
+        );
+        // Step back by REORG_SAFE_DISTANCE to ensure re-orged events are re-processed.
+        // Guard against going below block 0.
+        lastProcessedBlock =
+          currentBlock > REORG_SAFE_DISTANCE ? currentBlock - REORG_SAFE_DISTANCE - 1n : 0n;
+        return;
       }
 
       // ============ TaskManager Events ============
@@ -366,6 +378,16 @@ export function createEventListener(
         ]);
         const validCheckpoints = checkpoints.filter((c): c is bigint => c !== null);
         if (validCheckpoints.length > 0) {
+          // CHECKPOINT BEHAVIOR: We use the minimum block across all contracts as the
+          // single shared lastProcessedBlock. This is conservative — if TaskManager is
+          // at block 1000 but DisputeResolver is at block 900, we re-scan from 900 for
+          // all contracts, which may re-deliver already-processed TaskManager events
+          // (idempotency in processEventWithIdempotency handles duplicates safely).
+          //
+          // TODO: Per-contract checkpointing would avoid this re-scanning overhead.
+          // Each contract would track its own lastProcessedBlock independently, allowing
+          // faster-progressing contracts to skip already-indexed ranges. This becomes
+          // important at scale or when contracts have very different event densities.
           lastProcessedBlock = validCheckpoints.reduce((min, c) => (c < min ? c : min));
           console.log(
             `Resuming from minimum checkpoint: block ${lastProcessedBlock} (across ${validCheckpoints.length} contracts)`

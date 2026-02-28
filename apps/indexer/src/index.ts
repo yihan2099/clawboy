@@ -69,10 +69,21 @@ async function checkDlqSize(): Promise<void> {
 }
 
 /**
- * Process an event with idempotency check and DLQ support
+ * Process an event with idempotency check and DLQ support.
+ *
+ * IDEMPOTENCY: The processed check runs BEFORE the handler (line below), so duplicate
+ * live events are short-circuited before any DB writes occur. DLQ retries also check
+ * isEventProcessed at the top of processRetryableEvents() for the same reason.
+ *
+ * DLQ IDEMPOTENCY NOTE: Events that fail and land in the DLQ are re-processed by
+ * processRetryableEvents(), which checks isEventProcessed() before calling the handler.
+ * If a handler partially succeeds (e.g. inserts a row then crashes before markEventProcessed),
+ * the retry will attempt the handler again. Handlers should therefore be written to be
+ * idempotent (upsert-safe). Duplicate key errors (pg code 23505) are caught and resolved
+ * automatically in processRetryableEvents().
  */
 async function processEventWithIdempotency(event: IndexerEvent): Promise<void> {
-  // Check if already processed (idempotency)
+  // Check if already processed (idempotency) — must happen before the handler
   const alreadyProcessed = await isEventProcessed(chainId, event.transactionHash, event.logIndex);
 
   if (alreadyProcessed) {
@@ -218,10 +229,14 @@ async function processRetryableEvents(): Promise<void> {
 async function main() {
   console.log('Starting Pact Indexer...');
 
-  const pollingIntervalMs = parseInt(process.env.POLLING_INTERVAL_MS || '5000', 10);
-  const dlqRetryIntervalMs = parseInt(process.env.DLQ_RETRY_INTERVAL_MS || '60000', 10);
-  const ipfsRetryIntervalMs = parseInt(process.env.IPFS_RETRY_INTERVAL_MS || '300000', 10);
-  const webhookRetryIntervalMs = parseInt(process.env.WEBHOOK_RETRY_INTERVAL_MS || '60000', 10);
+  // Parse and validate interval env vars with minimum bounds to prevent
+  // accidental tight-loop polling from misconfigured or zero/negative values.
+  // Minimum 1000ms for polling and 5000ms for retry intervals to avoid
+  // overwhelming the RPC endpoint or database under misconfiguration.
+  const pollingIntervalMs = Math.max(1000, parseInt(process.env.POLLING_INTERVAL_MS || '5000', 10));
+  const dlqRetryIntervalMs = Math.max(5000, parseInt(process.env.DLQ_RETRY_INTERVAL_MS || '60000', 10));
+  const ipfsRetryIntervalMs = Math.max(5000, parseInt(process.env.IPFS_RETRY_INTERVAL_MS || '300000', 10));
+  const webhookRetryIntervalMs = Math.max(5000, parseInt(process.env.WEBHOOK_RETRY_INTERVAL_MS || '60000', 10));
 
   console.log(`Chain ID: ${chainId}`);
   console.log(`Polling interval: ${pollingIntervalMs}ms`);

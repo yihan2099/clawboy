@@ -28,6 +28,8 @@ export interface ListTasksOptions {
 export async function listTasks(options: ListTasksOptions = {}): Promise<{
   tasks: TaskRow[];
   total: number;
+  /** True when total is an estimate (count RPC unavailable); pagination may be inaccurate */
+  isEstimate?: boolean;
 }> {
   const supabase = getSupabaseClient();
   const {
@@ -86,8 +88,9 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
       // will report an incorrect total (e.g. page size instead of full result set count).
       // The pagination UI may show incorrect "N total results" — acceptable degradation
       // vs. failing the entire request. Deploy the count_tasks_with_bounty_filter RPC to fix.
+      // isEstimate=true signals to callers that the total may be wrong for paginated results.
       console.warn('[task-queries] count_tasks_with_bounty_filter failed:', countError.message);
-      return { tasks, total: tasks.length };
+      return { tasks, total: tasks.length, isEstimate: true };
     }
 
     return { tasks, total: (countData as number) ?? tasks.length };

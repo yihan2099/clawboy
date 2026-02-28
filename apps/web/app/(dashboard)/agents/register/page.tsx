@@ -1,3 +1,7 @@
+// TODO(#077): This file has not yet received a full security review.
+// Known areas to audit: input sanitization for name/description/skills before IPFS upload,
+// wallet connection state assumptions, error boundary coverage, and CSRF considerations
+// for the server action that uploads the profile.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -326,7 +330,7 @@ export default function RegisterAgentPage() {
         {/* Error display */}
         {writeError && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {writeError.message.slice(0, 300)}
+            {writeError.message}
           </div>
         )}
 

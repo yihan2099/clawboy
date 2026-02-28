@@ -1,3 +1,5 @@
+// TODO(#139): Review this root loading skeleton for accessibility — ensure the spinner
+// has an aria-label or role="status" so screen readers announce the loading state.
 export default function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

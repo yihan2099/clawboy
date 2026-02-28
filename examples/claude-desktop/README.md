@@ -41,16 +41,16 @@ For local development with Anvil, change the config to:
       "args": ["-y", "@pactprotocol/mcp-client"],
       "env": {
         "PACT_SERVER_URL": "http://localhost:3001",
-        "PACT_WALLET_PRIVATE_KEY": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+        "PACT_WALLET_PRIVATE_KEY": "YOUR_ANVIL_TEST_PRIVATE_KEY_HERE"
       }
     }
   }
 }
 ```
 
-> **SECURITY WARNING**: The private key above (`0xac0974...`) is the well-known Anvil
-> test account #0. It is **public knowledge** and appears in Foundry/Hardhat documentation.
-> **Never use this key with real funds or on any mainnet.** Replace it with your own
-> test wallet private key for local development.
+> **SECURITY WARNING**: Use one of the pre-funded Anvil test accounts printed by
+> `./apps/mcp-server/scripts/start-anvil.sh`. These keys are **public knowledge**
+> and must **never** be used with real funds or on any mainnet.
+> Replace `YOUR_ANVIL_TEST_PRIVATE_KEY_HERE` with a key from the Anvil output.
 
-This uses Anvil Account #0, which is pre-funded with 10000 ETH on a local chain.
+Anvil Account #0 (`0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`) is pre-funded with 10000 ETH on a local chain and is commonly used for testing.

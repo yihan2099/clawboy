@@ -77,14 +77,27 @@ export const TOOL_OPERATION_MAP: Record<string, OperationType> = {
  *
  * SECURITY: Unknown tools default to 'write' (stricter 10/min limit) rather than
  * 'read' (100/min) to prevent new tools from accidentally getting permissive limits.
- * All new tools must be explicitly added to TOOL_OPERATION_MAP with the correct type.
+ * All new tools MUST be explicitly added to TOOL_OPERATION_MAP with the correct type
+ * before deployment to avoid accidentally inheriting the default write limit.
  */
 export function getOperationType(toolName: string): OperationType {
+  if (!(toolName in TOOL_OPERATION_MAP)) {
+    // Warn loudly so operators notice missing tool registrations at runtime.
+    // This should be caught in pre-deployment review — run a check that every tool
+    // exported by the MCP server has an entry in TOOL_OPERATION_MAP.
+    console.warn(
+      `[rate-limit] Unknown tool "${toolName}" not found in TOOL_OPERATION_MAP. ` +
+        'Defaulting to "write" (10 req/min). Add it to TOOL_OPERATION_MAP in ' +
+        'packages/rate-limit/src/config/mcp-config.ts to suppress this warning.'
+    );
+  }
   return TOOL_OPERATION_MAP[toolName] ?? 'write';
 }
 
 /**
- * Rate limiter cache to avoid recreating on every request
+ * Rate limiter cache to avoid recreating on every request.
+ * Intentionally small: one entry per OperationType (global, read, write, auth = 4 entries max).
+ * This map is NOT a per-user or per-IP cache; Upstash handles per-identifier sliding windows.
  */
 const limiterCache = new Map<string, Ratelimit>();
 

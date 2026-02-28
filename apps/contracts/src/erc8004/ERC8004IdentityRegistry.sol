@@ -15,6 +15,11 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
+    // Configuration
+    /// @notice Maximum number of metadata entries allowed in a single register() call with metadata.
+    ///         This prevents gas exhaustion from unbounded loops during registration.
+    uint256 public constant MAX_METADATA_PER_REGISTRATION = 50;
+
     // State
     uint256 private _agentCounter;
 
@@ -42,11 +47,19 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     error NotOwner();
     error NotAuthorized();
     error ZeroAddress();
+    /// @notice Reverted when the metadata array passed to register(string,MetadataEntry[]) exceeds
+    ///         MAX_METADATA_PER_REGISTRATION entries, preventing gas exhaustion in the loop.
+    error TooManyMetadataEntries();
 
     // Events for adapter management
     event AdapterAuthorized(address indexed adapter);
     event AdapterRevoked(address indexed adapter);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    /// @notice Emitted when an authorized adapter updates an agent's URI via setAgentURIFor()
+    /// @param agentId   The agent whose URI was modified
+    /// @param adapter   The adapter that performed the update (msg.sender)
+    /// @param newURI    The new URI value
+    event AdapterURIUpdate(uint256 indexed agentId, address indexed adapter, string newURI);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -102,6 +115,9 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
 
     /**
      * @notice Register a new agent with URI and metadata
+     * @dev The metadata array is bounded by MAX_METADATA_PER_REGISTRATION to prevent
+     *      gas exhaustion. Callers with more metadata should register first then call
+     *      setMetadata() in subsequent transactions.
      */
     function register(
         string calldata agentURI,
@@ -110,6 +126,8 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
         external
         returns (uint256 agentId)
     {
+        if (metadata.length > MAX_METADATA_PER_REGISTRATION) revert TooManyMetadataEntries();
+
         agentId = _register(msg.sender, agentURI);
 
         for (uint256 i = 0; i < metadata.length; i++) {
@@ -144,22 +162,21 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
 
     /**
      * @dev Internal registration logic
-     * @dev RACE CONDITION NOTE: If the owner's wallet was previously linked to another agent
-     *      (e.g. via setAgentWallet()), this auto-link silently overwrites that mapping.
-     *      The previous agentId's _agentToWallet entry still points to owner, creating an
-     *      inconsistency. To prevent this, the caller should verify _walletToAgent[owner] == 0
-     *      before calling _register if wallet-to-agent uniqueness is required.
-     *      For now, registration through authorized adapters (PactAgentAdapter) enforces
-     *      uniqueness at the adapter level; direct admin registration should pass pre-validated owners.
+     * @dev Enforces one-agent-per-wallet: reverts with WalletAlreadyLinked() if the
+     *      registering address already owns an agent. This closes a race condition where
+     *      two concurrent _register() calls for the same wallet could produce two agents
+     *      both pointing to the same wallet (inconsistent _walletToAgent mapping).
      */
     function _register(address owner, string memory agentURI) private returns (uint256 agentId) {
+        // Prevent a wallet from being linked to more than one agent at a time.
+        if (_walletToAgent[owner] != 0) revert WalletAlreadyLinked();
+
         agentId = ++_agentCounter;
 
         _mint(owner, agentId);
         _agentURIs[agentId] = agentURI;
 
         // Auto-link the registering wallet to the agent.
-        // If the wallet was previously linked to a different agent, that old link is overwritten.
         _agentToWallet[agentId] = owner;
         _walletToAgent[owner] = agentId;
 
@@ -196,6 +213,12 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
         _agentURIs[agentId] = newURI;
 
         emit URIUpdated(agentId, newURI, wallet);
+
+        // Emit a distinct event when an adapter performs the update, allowing on-chain monitoring
+        // of adapter-initiated URI changes independently from owner-initiated changes.
+        if (msg.sender != wallet && authorizedAdapters[msg.sender]) {
+            emit AdapterURIUpdate(agentId, msg.sender, newURI);
+        }
     }
 
     /**
@@ -253,6 +276,16 @@ contract ERC8004IdentityRegistry is ERC721, IERC8004IdentityRegistry {
     /**
      * @notice Set an agent's wallet with signature verification
      * @dev The new wallet must sign a message authorizing the link
+     * @dev NON-STANDARD DEADLINE SEMANTICS: Unlike most EIP-712 flows where a
+     *      future deadline means "valid until this time", here the check is
+     *      `deadline > block.timestamp` which reverts when the deadline is in the
+     *      FUTURE. This means the deadline must be <= block.timestamp (i.e. the
+     *      current block or past) for the call to succeed.
+     *
+     *      Rationale: this prevents long-lived pre-signed authorizations from
+     *      accumulating as "time bombs" that could be replayed later. The intended
+     *      usage is deadline = block.timestamp so the signature is consumed
+     *      immediately at the time of signing.
      */
     function setAgentWallet(
         uint256 agentId,

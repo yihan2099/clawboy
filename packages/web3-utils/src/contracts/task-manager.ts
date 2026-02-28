@@ -115,5 +115,17 @@ export function contractStatusToTaskStatus(status: number): TaskStatus {
     5: 'cancelled' as TaskStatus,
   };
 
-  return statusMap[status] ?? ('open' as TaskStatus);
+  const mapped = statusMap[status];
+  if (mapped === undefined) {
+    // Throw rather than defaulting to 'open': an unknown status indicates a contract
+    // upgrade added a new status value that the client code doesn't know about.
+    // Silently returning 'open' would misrepresent the task state and could cause
+    // incorrect business logic (e.g. allowing submissions on a finalized task).
+    throw new Error(
+      `Unknown contract task status: ${status}. ` +
+        `Update contractStatusToTaskStatus() to handle the new status value.`
+    );
+  }
+
+  return mapped;
 }

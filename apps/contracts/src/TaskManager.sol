@@ -35,6 +35,7 @@ contract TaskManager is ITaskManager, Pausable {
     uint256 public selectionDeadline = 7 days; // Creator has 7 days after task deadline to select
 
     // Bounds for configurable time constants
+    // MIN/MAX bounds are immutable; consider making configurable via timelock in future.
     uint256 public constant MIN_CHALLENGE_WINDOW = 24 hours;
     uint256 public constant MAX_CHALLENGE_WINDOW = 7 days;
     uint256 public constant MIN_SELECTION_DEADLINE = 3 days;
@@ -48,6 +49,9 @@ contract TaskManager is ITaskManager, Pausable {
     error AgentNotRegistered();
     error InsufficientBounty();
     error InvalidDeadline();
+    /// @notice Reverted by refundExpiredTask() when a task has no deadline (deadline == 0).
+    ///         Tasks without deadlines cannot auto-expire; the creator must cancel manually.
+    error TaskHasNoDeadline();
     error OnlyOwner();
     error OnlyDisputeResolver();
     error DeadlinePassed();
@@ -83,6 +87,19 @@ contract TaskManager is ITaskManager, Pausable {
         _;
     }
 
+    /**
+     * @notice Deploy the TaskManager contract
+     * @param _escrowVault Address of the EscrowVault contract (immutable)
+     * @param _agentAdapter Address of the PactAgentAdapter contract
+     * @dev BOOTSTRAPPING REQUIREMENT: `disputeResolver` is NOT set in the constructor
+     *      because DisputeResolver requires a TaskManager address at its own construction time,
+     *      creating a circular dependency. After both contracts are deployed, the owner MUST
+     *      call one of:
+     *        - `setDisputeResolver(address)` via the TimelockController (48 h delay), OR
+     *        - `emergencySetDisputeResolver(address)` directly as owner (immediate, with audit event)
+     *      Until disputeResolver is set, `markDisputed()` and `resolveDispute()` will revert with
+     *      `OnlyDisputeResolver()`, effectively disabling the dispute flow.
+     */
     constructor(address _escrowVault, address _agentAdapter) {
         escrowVault = IEscrowVault(_escrowVault);
         agentAdapter = IPactAgentAdapter(_agentAdapter);
@@ -221,6 +238,17 @@ contract TaskManager is ITaskManager, Pausable {
      * @param bountyAmount Amount of bounty
      * @param deadline Task deadline for submissions (0 for no deadline)
      * @return taskId The ID of the created task
+     * @dev REENTRANCY: createTask() does not apply a nonReentrant modifier because
+     *      EscrowVault.deposit() is called at the end (after state is written) and
+     *      EscrowVault itself is protected by nonReentrant on its state-changing functions.
+     *      For ETH bounties, escrowVault.deposit{ value: msg.value }(...) is a trusted
+     *      internal call to our own EscrowVault contract. For ERC20 bounties, the
+     *      escrowVault.depositFrom() path uses SafeERC20.safeTransferFrom() which can
+     *      re-enter for non-standard tokens, but the task state is fully written before
+     *      the ERC20 call, so any re-entrant createTask() would create a fresh task slot
+     *      rather than corrupting the current one.
+     *      If stricter reentrancy protection is required, add nonReentrant here and ensure
+     *      TaskManager inherits ReentrancyGuard.
      */
     function createTask(
         string calldata specificationCid,
@@ -273,6 +301,13 @@ contract TaskManager is ITaskManager, Pausable {
      * @notice Submit work for a task (competitive - multiple agents can submit)
      * @param taskId The task ID
      * @param submissionCid IPFS CID of the work submission
+     * @dev DESIGN NOTE: Submissions are append-only. There is no deleteSubmission() or
+     *      withdrawSubmission() function by design. Once a submission is pushed to
+     *      `_submissions[taskId]`, the array slot is permanent and `_agentSubmissionIndex`
+     *      remains set for that agent. Agents can update the CID via `updateSubmission()`
+     *      while the task is Open and before the deadline, but cannot retract an entry.
+     *      This prevents griefing where an agent submits to block others then withdraws
+     *      to let the task expire without a valid submission.
      */
     function submitWork(uint256 taskId, string calldata submissionCid) external whenNotPaused {
         Task storage task = _tasks[taskId];
@@ -340,6 +375,17 @@ contract TaskManager is ITaskManager, Pausable {
      * @notice Select a winner from submissions (creator only)
      * @param taskId The task ID
      * @param winner The address of the winning agent
+     * @dev AGENT STATUS NOTE: There is no check that the winner is still registered at
+     *      selection time. An agent may have deregistered from PactAgentAdapter after
+     *      submitting work but before the creator calls selectWinner(). In that case:
+     *        1. selectWinner() succeeds (only checks _agentSubmissionIndex, not registration).
+     *        2. finalizeTask() will call agentAdapter.recordTaskWin(winner, taskId), which
+     *           requires agentId != 0. If the agent deregistered, recordTaskWin() reverts
+     *           with NotRegistered, blocking finalization.
+     *      This is a known design trade-off: deregistered agents can still claim bounties
+     *      if they re-register before finalization, or if the protocol adds an exception path.
+     *      The bounty itself is held in EscrowVault and is not at risk — it simply cannot
+     *      be released until the reputation recording succeeds.
      */
     function selectWinner(uint256 taskId, address winner) external whenNotPaused {
         Task storage task = _tasks[taskId];
@@ -420,8 +466,10 @@ contract TaskManager is ITaskManager, Pausable {
         if (task.id == 0) revert TaskNotFound();
         if (task.status != TaskStatus.Open) revert TaskNotOpen();
 
-        // Tasks without deadlines cannot auto-expire - creator must cancel manually
-        if (task.deadline == 0) revert InvalidDeadline();
+        // Tasks without deadlines cannot auto-expire - creator must cancel manually.
+        // Using TaskHasNoDeadline rather than InvalidDeadline for clarity: the deadline
+        // is not "invalid", it simply was not set, and a different code path is required.
+        if (task.deadline == 0) revert TaskHasNoDeadline();
 
         // Selection deadline is task deadline + selectionDeadline
         uint256 taskSelectionDeadline = task.deadline + selectionDeadline;
@@ -484,11 +532,34 @@ contract TaskManager is ITaskManager, Pausable {
      * @notice Resolve a dispute (called by DisputeResolver)
      * @param taskId The task ID
      * @param disputerWon True if the disputer won
+     * @dev STATE TRANSITION DEPENDENCY: This function is the ONLY code path that transitions
+     *      a task out of the `Disputed` status. The state machine is:
+     *
+     *        Open → InReview (selectWinner or rejectAll)
+     *          → Disputed   (markDisputed, called by DisputeResolver.startDispute)
+     *            → Completed (resolveDispute, disputerWon = true or creator had a winner)
+     *            → Refunded  (resolveDispute, creator had no winner and disputer lost)
+     *          → Completed (finalizeTask, after challenge window)
+     *          → Refunded  (finalizeTask, no winner selected)
+     *        Open → Refunded (refundExpiredTask)
+     *        Open → Cancelled (cancelTask)
+     *
+     *      The `onlyDisputeResolver` modifier ensures only the trusted DisputeResolver
+     *      contract can invoke this function. The caller (DisputeResolver.resolveDispute)
+     *      is itself protected by nonReentrant and requires the voting period to have ended.
+     *      The `TaskNotDisputed` revert is the safety net if the state machine is bypassed.
      */
     function resolveDispute(uint256 taskId, bool disputerWon) external onlyDisputeResolver {
         Task storage task = _tasks[taskId];
         if (task.id == 0) revert TaskNotFound();
         if (task.status != TaskStatus.Disputed) revert TaskNotDisputed();
+
+        // Cross-validate that the active dispute recorded in this contract matches
+        // the dispute being resolved. This guards against a scenario where a stale
+        // or mismatched disputeId is passed by DisputeResolver.
+        uint256 activeDisputeId = _activeDisputeId[taskId];
+        IDisputeResolver.Dispute memory activeDispute = disputeResolver.getDispute(activeDisputeId);
+        require(activeDispute.taskId == taskId, "Dispute/task ID mismatch");
 
         uint256 disputeId = _activeDisputeId[taskId];
 
@@ -545,6 +616,10 @@ contract TaskManager is ITaskManager, Pausable {
      * @notice Get a task by ID
      * @param taskId The task ID
      * @return The task data
+     * @dev Note: _taskCounter starts at 1 (via `++_taskCounter` in createTask), so taskId=0
+     *      is never assigned to a real task. A stored task with `task.id == 0` therefore
+     *      indicates the slot was never written, which this function treats as non-existent
+     *      (reverts with TaskNotFound). Callers must not pass taskId=0.
      */
     function getTask(uint256 taskId) external view returns (Task memory) {
         Task storage task = _tasks[taskId];

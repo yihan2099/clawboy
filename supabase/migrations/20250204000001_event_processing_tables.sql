@@ -229,6 +229,9 @@ BEGIN
     AND fe.retry_count < fe.max_retries
     -- Exponential backoff: 2^retry_count minutes, capped at 1440 min (24 hours) to prevent
     -- POWER(2, large_n) from overflowing PostgreSQL INTERVAL max (~178,000,000 years).
+    -- NOTE(#125): Without the LEAST(..., 1440) cap, POWER(2, retry_count) grows unboundedly.
+    -- At retry_count=31, POWER(2,31) = 2,147,483,648 minutes (~4,085 years), which overflows
+    -- the PostgreSQL INTERVAL type. The cap ensures the maximum backoff is 24 hours.
     AND (fe.last_retry_at IS NULL OR
          fe.last_retry_at < NOW() - (INTERVAL '1 minute' * LEAST(POWER(2, fe.retry_count), 1440)))
   ORDER BY fe.created_at ASC

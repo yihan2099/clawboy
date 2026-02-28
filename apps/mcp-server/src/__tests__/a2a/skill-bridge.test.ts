@@ -238,8 +238,8 @@ describe('Skill Bridge', () => {
       expect(skillRequiresAuth('get_my_submissions')).toBe(true);
     });
 
-    test('should return true for unknown skill', () => {
-      expect(skillRequiresAuth('unknown')).toBe(true);
+    test('should throw for unknown skill', () => {
+      expect(() => skillRequiresAuth('unknown')).toThrow('Skill not found: "unknown"');
     });
   });
 
@@ -252,8 +252,8 @@ describe('Skill Bridge', () => {
       expect(skillRequiresRegistration('list_tasks')).toBe(false);
     });
 
-    test('should return true for unknown skill', () => {
-      expect(skillRequiresRegistration('unknown')).toBe(true);
+    test('should throw for unknown skill', () => {
+      expect(() => skillRequiresRegistration('unknown')).toThrow('Skill not found: "unknown"');
     });
   });
 });

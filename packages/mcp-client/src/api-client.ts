@@ -88,10 +88,15 @@ export class PactApiClient {
       throw new Error(`Failed to list tools: ${response.statusText}`);
     }
     const data = await response.json();
-    // Defensive check: API may return { tools: [...] } or malformed response
+    // Throw on malformed response instead of silently returning [].
+    // An empty array would make callers believe the server has no tools, which is
+    // always wrong for a running Pact MCP server — it would silently hide the error
+    // and make debugging very difficult. Throwing surfaces the actual problem.
     if (!data || !Array.isArray(data.tools)) {
-      console.warn('[PactApiClient] listTools: unexpected response shape:', typeof data);
-      return [];
+      throw new Error(
+        `[PactApiClient] listTools: unexpected response shape from server ` +
+          `(expected { tools: [...] }, got ${JSON.stringify(data)?.slice(0, 200)})`
+      );
     }
     return data.tools;
   }

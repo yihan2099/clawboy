@@ -31,6 +31,10 @@ export type TaskStatusString =
 
 /**
  * Convert contract numeric status to database string status
+ *
+ * @throws {Error} if `status` is not a defined {@link ContractTaskStatus} value.
+ * An unknown status indicates a contract upgrade that added new states — this should
+ * fail loudly so the indexer surfaces the gap rather than silently returning `undefined`.
  */
 export function contractStatusToString(status: ContractTaskStatus): TaskStatusString {
   const mapping: Record<ContractTaskStatus, TaskStatusString> = {
@@ -41,7 +45,14 @@ export function contractStatusToString(status: ContractTaskStatus): TaskStatusSt
     [ContractTaskStatus.Refunded]: 'refunded',
     [ContractTaskStatus.Cancelled]: 'cancelled',
   };
-  return mapping[status];
+  const result = mapping[status];
+  if (result === undefined) {
+    throw new Error(
+      `Unknown ContractTaskStatus value: ${status}. ` +
+        'Update contractStatusToString() to handle the new status.'
+    );
+  }
+  return result;
 }
 
 /**

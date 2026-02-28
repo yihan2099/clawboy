@@ -1,5 +1,4 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 export interface PactClientConfig {
   /** Pact MCP server URL */
@@ -37,28 +36,22 @@ export class PactClient {
   }
 
   /**
-   * Connect to the Pact MCP server.
+   * @deprecated PactClient is not functional. Use PactApiClient instead.
    *
-   * INCOMPLETE: This StdioClientTransport with `args: ['--version']` is a placeholder
-   * that runs `node --version` and immediately exits — it cannot actually communicate
-   * with the MCP server. This class is not production-ready.
+   * This method throws unconditionally. The StdioClientTransport placeholder
+   * (`node --version`) cannot communicate with the MCP server. All HTTP-based
+   * tool calls should use {@link PactApiClient} from
+   * `packages/mcp-client/src/api-client.ts`.
    *
-   * Production use should either:
-   *   1. Use the HTTP transport via PactApiClient (packages/mcp-client/src/api-client.ts), or
-   *   2. Replace the StdioClientTransport args with the real MCP server command, e.g.:
-   *      new StdioClientTransport({ command: 'bun', args: ['run', '/path/to/mcp-server'] })
+   * See packages/mcp-client/README.md for migration guidance.
+   *
+   * @throws {Error} Always — directs callers to PactApiClient.
    */
   async connect(): Promise<void> {
-    console.warn(
-      '[PactMcpClient] connect() is using a placeholder transport (node --version). ' +
-      'This is not a working MCP connection. Use PactApiClient for HTTP-based tool calls.'
+    throw new Error(
+      'PactClient is deprecated and non-functional. ' +
+      'Use PactApiClient instead. See packages/mcp-client/README.md for details.'
     );
-    const transport = new StdioClientTransport({
-      command: 'node',
-      args: ['--version'], // Placeholder — replace with real server command
-    });
-
-    await this.client.connect(transport);
   }
 
   /**
@@ -102,7 +95,9 @@ export function createPactClient(): PactClient {
 
   return new PactClient({
     privateKey,
-    serverUrl: process.env.PACT_MCP_SERVER_URL,
+    // PACT_SERVER_URL is the canonical env var name (standardized from PACT_MCP_SERVER_URL).
+    // Accept both for backwards compatibility with existing configurations.
+    serverUrl: process.env.PACT_SERVER_URL ?? process.env.PACT_MCP_SERVER_URL,
     rpcUrl: process.env.PACT_RPC_URL,
   });
 }

@@ -19,7 +19,7 @@ body:
         - Indexer (apps/indexer)
         - Web App (apps/web)
         - MCP Client (packages/mcp-client)
-        - OpenClaw Skill (packages/pact-skill)
+        - Pact Skill (packages/pact-skill)
         - Database (packages/database)
         - Web3 Utils (packages/web3-utils)
         - Other

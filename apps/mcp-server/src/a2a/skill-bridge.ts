@@ -177,19 +177,28 @@ export function getSkillMetadata(skillId: string): A2ASkill | undefined {
 }
 
 /**
- * Check if a skill requires authentication
+ * Check if a skill requires authentication.
+ * Throws a specific SkillNotFoundError for unknown skill IDs rather than
+ * silently returning true — which would mask a not-found condition as an
+ * auth failure and make debugging harder for callers.
+ * Callers should check skillExists() before calling this function.
  */
 export function skillRequiresAuth(skillId: string): boolean {
   const skill = getSkillById(skillId);
-  if (!skill) return true; // Default to requiring auth for unknown skills
+  if (!skill) {
+    throw new Error(`Skill not found: "${skillId}". Call skillExists() before skillRequiresAuth().`);
+  }
   return skill.accessLevel !== 'public';
 }
 
 /**
- * Check if a skill requires registration
+ * Check if a skill requires registration.
+ * Throws a specific error for unknown skill IDs (same rationale as skillRequiresAuth).
  */
 export function skillRequiresRegistration(skillId: string): boolean {
   const skill = getSkillById(skillId);
-  if (!skill) return true; // Default to requiring registration for unknown skills
+  if (!skill) {
+    throw new Error(`Skill not found: "${skillId}". Call skillExists() before skillRequiresRegistration().`);
+  }
   return skill.accessLevel === 'registered';
 }

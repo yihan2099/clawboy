@@ -42,10 +42,20 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     error EscrowAlreadyExists();
     error InvalidAmount();
     error TransferFailed();
+    /// @notice Reverted when the protocol fee ETH transfer to the treasury fails during release().
+    ///         Distinct from NetAmountTransferFailed so callers can identify which leg of the
+    ///         transfer failed without parsing revert data.
+    error FeeTransferFailed();
+    /// @notice Reverted when the net bounty ETH transfer to the recipient fails during release().
+    ///         Distinct from FeeTransferFailed so callers can identify which leg failed.
+    error NetAmountTransferFailed();
     error FeeTooHigh();
     error InvalidTreasury();
     error OnlyTimelock();
     error ZeroAddress();
+    /// @notice Reverted when a timelock-gated function is called before setTimelock() has been called.
+    ///         Call setTimelock() (owner-only) with the TimelockController address to unlock these functions.
+    error TimelockNotConfigured();
 
     modifier onlyTaskManager() {
         if (msg.sender != taskManager) revert OnlyTaskManager();
@@ -53,7 +63,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     }
 
     modifier onlyTimelock() {
-        if (timelockController == address(0)) revert OnlyTimelock();
+        if (timelockController == address(0)) revert TimelockNotConfigured();
         if (msg.sender != timelockController) revert OnlyTimelock();
         _;
     }
@@ -77,6 +87,15 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      * @param taskId The task ID
      * @param token Token address (address(0) for ETH)
      * @param amount Amount to deposit
+     * @dev UNBOUNDED BOUNTY: There is no upper limit on the bounty amount. Any non-zero
+     *      ETH or ERC20 value is accepted. Creators are responsible for ensuring the amount
+     *      is appropriate — excessively large bounties are not rejected at the contract level.
+     *      If a MAX_BOUNTY cap is desired in the future, it should be enforced here and in
+     *      TaskManager.createTask() to provide a single, consistent check point.
+     *      SafeERC20 is used for ERC20 transfers to handle non-standard token behaviors
+     *      (e.g. tokens that return false instead of reverting on failure, or tokens that
+     *      require approval reset before re-approval). SafeERC20.safeTransferFrom() will
+     *      revert with a clear error if the transfer fails for any reason.
      */
     function deposit(
         uint256 taskId,
@@ -110,6 +129,17 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      * @param token Token address (must not be address(0))
      * @param amount Amount to deposit
      * @param from Address to transfer tokens from (must have approved this contract)
+     * @dev SAFERC20 APPROVAL HANDLING: This function uses SafeERC20.safeTransferFrom()
+     *      (OpenZeppelin) which wraps the raw ERC20.transferFrom() call to handle several
+     *      non-standard token behaviors:
+     *        1. Tokens that return false on failure instead of reverting — safeTransferFrom
+     *           will revert with a descriptive error rather than silently succeeding.
+     *        2. Tokens that don't return a boolean (e.g. USDT on mainnet) — safeTransferFrom
+     *           uses low-level call and checks the return data length.
+     *        3. Insufficient allowance or balance — the underlying token call reverts and
+     *           SafeERC20 propagates the revert, so the escrow is never created.
+     *      Callers (i.e. TaskManager) must ensure the `from` address has approved this
+     *      EscrowVault contract for at least `amount` tokens before calling depositFrom().
      */
     function depositFrom(
         uint256 taskId,
@@ -142,6 +172,12 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      *      wei goes to the recipient (net payout rounds up). This is intentional and
      *      recipient-favorable: the protocol never collects more than its stated fee.
      *      Example: 1 wei bounty with 300 bps fee → feeAmount = 0, netAmount = 1.
+     * @dev TODO (test coverage): Add edge-case tests for fee rounding at the boundaries:
+     *      - 1 wei bounty at max fee (1000 bps) → feeAmount = 0, netAmount = 1
+     *      - Bounty amounts where (amount * feeBps) is not divisible by 10_000
+     *      - Bounty amounts at the boundary where fee first rounds to > 0
+     *      These are currently untested; rounding behavior is correct by inspection but
+     *      formal coverage would guard against accidental fee-calculation changes.
      * @param taskId The task ID
      * @param recipient The address to receive the bounty
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
@@ -166,13 +202,13 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
         uint256 netAmount = totalAmount - feeAmount;
 
         if (escrow.token == address(0)) {
-            // ETH transfers
+            // ETH transfers — use specific errors to distinguish which leg failed
             if (feeAmount > 0) {
                 (bool feeSuccess,) = protocolTreasury.call{ value: feeAmount }("");
-                if (!feeSuccess) revert TransferFailed();
+                if (!feeSuccess) revert FeeTransferFailed();
             }
             (bool success,) = recipient.call{ value: netAmount }("");
-            if (!success) revert TransferFailed();
+            if (!success) revert NetAmountTransferFailed();
         } else {
             // ERC20 transfers
             if (feeAmount > 0) {
@@ -302,9 +338,8 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      * @return token The token address (address(0) for ETH; also address(0) if escrow never existed)
      * @return amount The escrowed amount (0 if released or if escrow never existed)
      * @dev LIMITATION: Callers cannot distinguish between a released escrow and one that was
-     *      never created — both return (address(0), 0) for ETH escrows. If you need to know
-     *      whether an escrow ever existed, use `hasEscrow(taskId)` instead (checks escrow.amount
-     *      was set). For released escrows, `_escrows[taskId].released` is true off-chain via events.
+     *      never created — both return (address(0), 0) for ETH escrows. Use `hasEscrow(taskId)`
+     *      to determine whether an escrow was ever created for this task.
      */
     function getBalance(uint256 taskId) external view returns (address token, uint256 amount) {
         Escrow storage escrow = _escrows[taskId];
@@ -312,5 +347,23 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
             return (escrow.token, 0);
         }
         return (escrow.token, escrow.amount);
+    }
+
+    /**
+     * @notice Check whether an escrow was ever created for a task
+     * @param taskId The task ID
+     * @return True if an escrow record exists for this task (regardless of whether it has been
+     *         released), false if no escrow was ever deposited.
+     * @dev Use this to distinguish "escrow released" from "escrow never existed" — `getBalance()`
+     *      returns (address(0), 0) for both cases when the token is ETH and the escrow has been
+     *      released.
+     */
+    function hasEscrow(uint256 taskId) external view returns (bool) {
+        // An escrow entry is created in deposit()/depositFrom() which sets escrow.amount > 0
+        // (both functions revert on amount == 0). After release/refund, escrow.released = true
+        // but the struct still exists. We detect existence by checking if the token field was
+        // written OR the released flag is set.
+        Escrow storage escrow = _escrows[taskId];
+        return escrow.amount > 0 || escrow.released;
     }
 }

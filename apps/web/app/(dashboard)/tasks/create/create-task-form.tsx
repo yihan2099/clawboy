@@ -53,6 +53,12 @@ const erc20Abi = [
 // transactions to the wrong network. The smart contract will reject cross-chain calls,
 // but the user experience will be confusing without a clear error.
 if (!process.env.NEXT_PUBLIC_CHAIN_ID) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[create-task] NEXT_PUBLIC_CHAIN_ID is not set. ' +
+      'This is required in production to prevent transactions being sent to the wrong network.'
+    );
+  }
   console.warn(
     '[create-task] NEXT_PUBLIC_CHAIN_ID is not set — defaulting to Base Sepolia testnet (84532). ' +
     'Set this env var in production.'
@@ -266,6 +272,17 @@ export function CreateTaskForm() {
 
     if (!validate()) return;
     if (!selectedToken) return;
+
+    // Guard: bountyAmountParsed is 0 if parseUnits failed or input was invalid.
+    // validate() already checks the raw text, but we re-check the parsed BigInt here
+    // as a defense-in-depth safeguard so a 0-bounty task can never reach the chain.
+    if (bountyAmountParsed === BigInt(0)) {
+      setErrors((prev) => ({
+        ...prev,
+        bountyAmount: 'Invalid bounty amount — please enter a positive number',
+      }));
+      return;
+    }
 
     const tags = parseTags(tagsInput);
     const validDeliverables = deliverables
@@ -499,7 +516,7 @@ export function CreateTaskForm() {
       {/* Error display */}
       {(writeError || approveError) && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {(writeError || approveError)!.message.slice(0, 300)}
+          {(writeError || approveError)!.message}
         </div>
       )}
 

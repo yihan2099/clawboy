@@ -97,6 +97,49 @@ export async function createSession(
 }
 
 /**
+ * Get a session by ID with rejection reason.
+ * Returns { session, expired: false } for active sessions,
+ * { session: null, expired: false } for sessions that never existed,
+ * and { session: null, expired: true } for sessions that existed but have expired.
+ *
+ * Use this in auth error paths where callers benefit from knowing whether to
+ * re-authenticate (expired) vs. verify their session ID (not found).
+ */
+export async function getSessionWithReason(sessionId: string): Promise<{
+  session: AuthSession | null;
+  expired: boolean;
+}> {
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const sessionKey = `${SESSION_PREFIX}${sessionId}`;
+      const data = await redis.get<AuthSession>(sessionKey);
+      // Redis TTL handles expiration: if the key is gone, we can't distinguish
+      // "never existed" from "expired and evicted". Return expired=false (not found)
+      // since Redis TTL already cleaned it up.
+      if (!data) {
+        return { session: null, expired: false };
+      }
+      return { session: data, expired: false };
+    } catch (error) {
+      console.warn('Redis error in getSessionWithReason, falling back to memory:', error);
+    }
+  }
+
+  // Fallback to in-memory storage — can distinguish not-found from expired
+  const session = memorySessionStore.get(sessionId);
+  if (!session) {
+    return { session: null, expired: false };
+  }
+  if (Date.now() > session.expiresAt) {
+    memorySessionStore.delete(sessionId);
+    return { session: null, expired: true };
+  }
+  return { session, expired: false };
+}
+
+/**
  * Get an active session by ID
  * Returns null if session doesn't exist or is expired
  */

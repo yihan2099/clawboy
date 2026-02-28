@@ -302,6 +302,22 @@ export const A2A_ERROR_CODES = {
 } as const;
 
 /**
+ * Union type of all valid A2A error code values.
+ * Use this type instead of `number` when constructing error responses to
+ * ensure only defined error codes are used, preventing client parsing failures.
+ */
+export type A2AErrorCode = (typeof A2A_ERROR_CODES)[keyof typeof A2A_ERROR_CODES];
+
+/**
+ * Create an A2ATaskError with a validated error code.
+ * The `code` parameter is constrained to {@link A2AErrorCode} so TypeScript
+ * will reject any code that is not in {@link A2A_ERROR_CODES}.
+ */
+export function createA2AError(code: A2AErrorCode, message: string): A2ATaskError {
+  return { code, message };
+}
+
+/**
  * Create a JSON-RPC error response
  */
 export function createErrorResponse(

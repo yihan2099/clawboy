@@ -46,7 +46,11 @@ BEGIN
 END
 $$;
 
--- Drop the functional index that used explicit ::numeric cast (no longer needed)
+-- Drop the functional index that used explicit ::numeric cast (no longer needed now that
+-- the column is native NUMERIC). IF EXISTS makes this idempotent and safe to re-run.
+-- TODO(#124): If this migration is ever rolled back, the functional index
+-- idx_tasks_bounty_amount_numeric should be recreated manually, as DOWN migrations are
+-- not currently implemented. Add a rollback script or document the restore procedure.
 DROP INDEX IF EXISTS idx_tasks_bounty_amount_numeric;
 
 -- Recreate index on the now-native NUMERIC column

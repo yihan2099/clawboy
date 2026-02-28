@@ -15,8 +15,16 @@ if (!ratelimit) {
   );
 }
 
-// SECURITY: Whether to trust proxy headers for client IP detection
-// Only set this to true if you're behind a trusted reverse proxy (e.g., Vercel, Cloudflare)
+// SECURITY: Whether to trust proxy headers for client IP detection.
+// Only set TRUST_PROXY_HEADERS=true if you are behind a trusted reverse proxy
+// (e.g., Vercel edge network, Cloudflare) that OVERWRITES (not appends) these headers.
+//
+// IP SPOOFING RISK: If TRUST_PROXY_HEADERS is set to true but the deployment is not
+// actually behind a trusted proxy, attackers can send a crafted x-forwarded-for header
+// with any IP address they choose (e.g. "1.2.3.4, real-attacker-ip"). This causes
+// getClientIp() to return the attacker-controlled value, allowing them to bypass
+// per-IP rate limiting entirely by rotating the spoofed IP. Verify your deployment
+// topology before enabling this flag.
 const TRUST_PROXY_HEADERS = process.env.TRUST_PROXY_HEADERS === 'true';
 
 // SECURITY: Simple IPv4/IPv6 validation pattern
@@ -60,11 +68,20 @@ function getClientIp(request: NextRequest): string {
   // effectively bypassing per-IP limiting. This happens when:
   //   1. TRUST_PROXY_HEADERS is false (deliberately untrusted proxy environment), or
   //   2. Proxy headers contain invalid/non-IP values.
-  // Log so operators can detect misconfigured proxy setups.
-  console.warn(
-    '[rate-limit] Unable to extract client IP — grouping under unknown-client bucket. ' +
-    'If behind a trusted proxy, set TRUST_PROXY_HEADERS=true.'
-  );
+  // Use console.error in production so this shows up in error monitoring dashboards;
+  // in development console.warn avoids noise when running without a proxy.
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '[rate-limit] Unable to extract client IP — grouping under unknown-client bucket. ' +
+      'All clients sharing this bucket can collaborate to exhaust the rate limit. ' +
+      'If behind a trusted proxy, set TRUST_PROXY_HEADERS=true.'
+    );
+  } else {
+    console.warn(
+      '[rate-limit] Unable to extract client IP — grouping under unknown-client bucket. ' +
+      'If behind a trusted proxy, set TRUST_PROXY_HEADERS=true.'
+    );
+  }
   return 'unknown-client';
 }
 

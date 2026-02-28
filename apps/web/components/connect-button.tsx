@@ -12,6 +12,7 @@ export function ConnectButton() {
 
         return (
           <div
+            suppressHydrationWarning
             {...(!ready && {
               'aria-hidden': true,
               style: {

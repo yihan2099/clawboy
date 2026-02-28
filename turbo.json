@@ -3,8 +3,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "package.json", "tsconfig.json"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "inputs": ["src/**", "package.json", "tsconfig.json", ".env.example"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+        "NEXT_PUBLIC_CHAIN_ID",
+        "NEXT_PUBLIC_IPFS_GATEWAY",
+        "NODE_ENV"
+      ]
     },
     "build:contracts": {
       "cache": true,

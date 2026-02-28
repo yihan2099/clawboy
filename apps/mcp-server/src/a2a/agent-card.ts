@@ -10,6 +10,18 @@ import { enhancedToolDefinitions } from '../tools/discovery/tool-metadata';
 import type { A2AAgentCard, A2ASkill, A2AIdentity } from './types';
 import { getChainId } from '../config/chain';
 
+// CONFIG VALIDATION: Warn at startup if A2A_BASE_URL is not configured in production.
+// Without it, the Agent Card advertises 'http://localhost:3001' as the endpoint URL,
+// which will cause external agents to fail when attempting to reach the server.
+// Set A2A_BASE_URL to the server's public HTTPS URL (e.g. https://mcp.pact.ing).
+if (process.env.NODE_ENV === 'production' && !process.env.A2A_BASE_URL && !process.env.PUBLIC_URL) {
+  console.warn(
+    '[a2a] WARNING: Neither A2A_BASE_URL nor PUBLIC_URL is set in production. ' +
+      'The Agent Card will advertise http://localhost:3001 as the A2A endpoint, ' +
+      'which is unreachable by external agents. Set A2A_BASE_URL to the public server URL.'
+  );
+}
+
 /**
  * Get the base URL for the A2A endpoint
  */

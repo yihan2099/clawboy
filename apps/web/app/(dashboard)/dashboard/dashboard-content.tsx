@@ -64,25 +64,36 @@ export function DashboardContent() {
 
   const loadData = useCallback(async (addr: string) => {
     setLoading(true);
-    try {
-      const [profileResult, createdResult, submissionsResult, wonResult] = await Promise.all([
-        fetchAgentProfile(addr),
-        fetchMyCreatedTasks(addr),
-        fetchMySubmissions(addr),
-        fetchWonTasks(addr),
-      ]);
-      setAgent(profileResult);
-      setCreatedTasks(createdResult.tasks as Task[]);
-      setCreatedTotal(createdResult.total);
-      setSubmissions(submissionsResult.submissions as Submission[]);
-      setSubmissionsTotal(submissionsResult.total);
-      setWonTasks(wonResult.tasks as Task[]);
-      setWonTotal(wonResult.total);
-    } catch {
-      // Errors are non-fatal, just show empty state
-    } finally {
-      setLoading(false);
+    // Use allSettled so a failure in one fetch (e.g. profile not found) does not
+    // prevent the other sections (created tasks, submissions, won tasks) from rendering.
+    const [profileResult, createdResult, submissionsResult, wonResult] = await Promise.allSettled([
+      fetchAgentProfile(addr),
+      fetchMyCreatedTasks(addr),
+      fetchMySubmissions(addr),
+      fetchWonTasks(addr),
+    ]);
+
+    if (profileResult.status === 'fulfilled') setAgent(profileResult.value);
+    if (createdResult.status === 'fulfilled') {
+      setCreatedTasks(createdResult.value.tasks as Task[]);
+      setCreatedTotal(createdResult.value.total);
+    } else {
+      console.error('[dashboard] Failed to load created tasks:', createdResult.reason);
     }
+    if (submissionsResult.status === 'fulfilled') {
+      setSubmissions(submissionsResult.value.submissions as Submission[]);
+      setSubmissionsTotal(submissionsResult.value.total);
+    } else {
+      console.error('[dashboard] Failed to load submissions:', submissionsResult.reason);
+    }
+    if (wonResult.status === 'fulfilled') {
+      setWonTasks(wonResult.value.tasks as Task[]);
+      setWonTotal(wonResult.value.total);
+    } else {
+      console.error('[dashboard] Failed to load won tasks:', wonResult.reason);
+    }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -130,7 +141,11 @@ export function DashboardContent() {
     );
   }
 
-  const reputation = agent ? parseInt(agent.reputation, 10) || 0 : 0;
+  // Explicit null/undefined check before parseInt. agent.reputation may be null/undefined
+  // if the database returns a missing value; typeof null === 'object', not 'string', so
+  // passing it to parseInt without checking first can produce unexpected NaN values.
+  const reputation =
+    agent != null && agent.reputation != null ? parseInt(String(agent.reputation), 10) || 0 : 0;
 
   return (
     <div className="space-y-6">

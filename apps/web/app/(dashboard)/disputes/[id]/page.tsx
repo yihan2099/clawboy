@@ -42,8 +42,14 @@ export default async function DisputeDetailPage({ params }: DisputeDetailPagePro
 
   // Use Number() with NaN guard instead of parseInt() to handle non-numeric strings safely.
   // After migration 20250228000003, these columns are NUMERIC and will be numeric values.
-  const votesFor = Math.max(0, Number(dispute.votes_for_disputer) || 0);
-  const votesAgainst = Math.max(0, Number(dispute.votes_against_disputer) || 0);
+  // Bounds check: clamp to [0, 1_000_000] to guard against corrupted DB data producing
+  // absurdly large numbers that would break the percentage bar calculation.
+  const MAX_VOTES = 1_000_000;
+  const votesFor = Math.min(Math.max(0, Number(dispute.votes_for_disputer) || 0), MAX_VOTES);
+  const votesAgainst = Math.min(
+    Math.max(0, Number(dispute.votes_against_disputer) || 0),
+    MAX_VOTES
+  );
   const totalVotes = votesFor + votesAgainst;
   const forPercent = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 50;
 

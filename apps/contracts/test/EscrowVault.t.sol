@@ -37,6 +37,11 @@ contract EscrowVaultTest is Test {
 
         escrowVault = new EscrowVault(taskManager, treasury, DEFAULT_FEE_BPS);
 
+        // Set the test contract as the timelock so timelock-gated functions work in tests.
+        // This reflects the post-#002 fix: timelockController == address(0) now reverts
+        // with TimelockNotConfigured() instead of silently falling through.
+        escrowVault.setTimelock(address(this));
+
         token = new MockERC20();
 
         // Fund taskManager for deposits
@@ -273,11 +278,11 @@ contract EscrowVaultTest is Test {
         escrowVault.setProtocolFee(500);
     }
 
-    function test_SetProtocolFee_AllowedWithoutTimelock() public {
-        // Without timelock set, anyone can call (timelockController == address(0) falls through)
-        vm.prank(address(0xDEAD));
-        escrowVault.setProtocolFee(500);
-        assertEq(escrowVault.protocolFeeBps(), 500);
+    function test_SetProtocolFee_RevertsWhenTimelockNotConfigured() public {
+        // Deploy a fresh vault with no timelock configured — calls should revert with TimelockNotConfigured
+        EscrowVault freshVault = new EscrowVault(taskManager, treasury, DEFAULT_FEE_BPS);
+        vm.expectRevert(EscrowVault.TimelockNotConfigured.selector);
+        freshVault.setProtocolFee(500);
     }
 
     function test_SetProtocolFee_EmitsEvent() public {
@@ -312,11 +317,11 @@ contract EscrowVaultTest is Test {
         escrowVault.setProtocolTreasury(address(0xDDD));
     }
 
-    function test_SetProtocolTreasury_AllowedWithoutTimelock() public {
-        // Without timelock set, anyone can call (timelockController == address(0) falls through)
-        vm.prank(address(0xDEAD));
-        escrowVault.setProtocolTreasury(address(0xDDD));
-        assertEq(escrowVault.protocolTreasury(), address(0xDDD));
+    function test_SetProtocolTreasury_RevertsWhenTimelockNotConfigured() public {
+        // Deploy a fresh vault with no timelock configured — calls should revert with TimelockNotConfigured
+        EscrowVault freshVault = new EscrowVault(taskManager, treasury, DEFAULT_FEE_BPS);
+        vm.expectRevert(EscrowVault.TimelockNotConfigured.selector);
+        freshVault.setProtocolTreasury(address(0xDDD));
     }
 
     function test_SetProtocolTreasury_EmitsEvent() public {
@@ -576,10 +581,14 @@ contract EscrowVaultTest is Test {
 
         assertEq(escrowVault.owner(), newOwner);
 
-        // New owner can set fee
+        // New owner can call owner-gated functions (e.g. pause/unpause)
         vm.prank(newOwner);
-        escrowVault.setProtocolFee(100);
-        assertEq(escrowVault.protocolFeeBps(), 100);
+        escrowVault.pause();
+        assertTrue(escrowVault.paused());
+
+        vm.prank(newOwner);
+        escrowVault.unpause();
+        assertFalse(escrowVault.paused());
     }
 
     /*//////////////////////////////////////////////////////////////

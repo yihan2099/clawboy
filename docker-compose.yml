@@ -22,6 +22,12 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-https://pact.ing}
     depends_on:
       - redis
+    # TODO(#123): Enhance healthcheck to verify application-level readiness, not just HTTP reachability.
+    # The /health endpoint currently only confirms the HTTP server is up. Consider:
+    # (1) Checking database connectivity (Supabase ping) in the health response,
+    # (2) Checking RPC connectivity (eth_blockNumber call) to detect chain node failures,
+    # (3) Returning a JSON body with { status, db, rpc, uptime } so orchestrators can
+    #     distinguish "process running but degraded" from "fully healthy".
     healthcheck:
       test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3001/health']
       interval: 30s
@@ -47,6 +53,11 @@ services:
       - SUPABASE_SECRET_KEY=${SUPABASE_SECRET_KEY}
       - PINATA_JWT=${PINATA_JWT}
       - PINATA_GATEWAY=${PINATA_GATEWAY}
+    # TODO(#146): Replace pgrep healthcheck with a specific indexer liveness probe.
+    # pgrep -f bun only confirms the process is running, not that the indexer is
+    # actually processing blocks. Consider exposing a /health HTTP endpoint from the
+    # indexer that returns the last processed block number, allowing orchestrators to
+    # detect stalled indexers (e.g. block age > 2 * POLLING_INTERVAL_MS).
     healthcheck:
       test: ['CMD', 'pgrep', '-f', 'bun']
       interval: 30s

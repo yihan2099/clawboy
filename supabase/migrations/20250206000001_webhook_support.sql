@@ -23,6 +23,11 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
 );
 
 -- Indexes for webhook_deliveries
+-- TODO(#118): Consider adding a composite index on (agent_address, status, created_at DESC) to
+-- accelerate the common query pattern of fetching recent deliveries for a specific agent by status.
+-- The current separate indexes on agent_address and status require PostgreSQL to bitmap-AND two
+-- index scans; a composite index would allow a single index-only scan for these queries.
+-- Example: CREATE INDEX idx_webhook_deliveries_agent_status ON webhook_deliveries(agent_address, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_agent ON webhook_deliveries(agent_address);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status ON webhook_deliveries(status);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_retry ON webhook_deliveries(status, next_retry_at)

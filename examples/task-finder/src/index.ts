@@ -102,6 +102,23 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('\nFatal error:', err instanceof Error ? err.message : err);
+  const message = err instanceof Error ? err.message : String(err);
+
+  // Provide actionable guidance for the most common failure modes.
+  if (message.includes('ECONNREFUSED') || message.includes('fetch failed')) {
+    console.error('\nFatal error: Cannot connect to MCP server.');
+    console.error('Make sure the server is running: cd apps/mcp-server && bun run dev');
+    console.error(`Current PACT_SERVER_URL: ${process.env.PACT_SERVER_URL || 'http://localhost:3001 (default)'}`);
+  } else if (message.includes('401') || message.includes('Unauthorized')) {
+    console.error('\nFatal error: Authentication failed.');
+    console.error('Check that PACT_WALLET_PRIVATE_KEY is set correctly in your .env file.');
+  } else if (message.includes('404') || message.includes('Not Found')) {
+    console.error('\nFatal error: Resource not found (404).');
+    console.error('The server URL may be wrong, or the requested resource does not exist.');
+    console.error(`Current PACT_SERVER_URL: ${process.env.PACT_SERVER_URL || 'http://localhost:3001 (default)'}`);
+  } else {
+    console.error('\nFatal error:', message);
+  }
+
   process.exit(1);
 });

@@ -527,8 +527,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Get server URL from environment
-  const serverUrl = process.env.PACT_MCP_SERVER_URL || 'http://localhost:3001';
+  // Get server URL from environment — PACT_SERVER_URL is the canonical name.
+  // PACT_MCP_SERVER_URL is accepted for backwards compatibility.
+  const serverUrl = process.env.PACT_SERVER_URL || process.env.PACT_MCP_SERVER_URL || 'http://localhost:3001';
   console.error(`Connecting to Pact MCP Server at ${serverUrl}...`);
 
   // Initialize API client

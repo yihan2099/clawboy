@@ -9,17 +9,22 @@ import { LOCAL_ADDRESSES, LOCAL_CHAIN_ID } from './local';
 export type ContractAddresses = typeof BASE_SEPOLIA_ADDRESSES;
 
 /**
- * Check if all contract addresses in a set are zero (placeholder).
- * Emits a runtime warning to prevent accidental use of undeployed addresses.
+ * Validate mainnet contract addresses — throws if ANY address is zero.
+ * On Base mainnet (chainId 8453), a zero address is never valid: it means
+ * the contract hasn't been deployed yet. Continuing with a zero address
+ * would silently send transactions to address(0), burning ETH/tokens.
  */
-function warnIfAllZeroAddresses(addresses: ContractAddresses, chainId: number): void {
-  const allZero = Object.values(addresses).every(
-    (addr) => addr === '0x0000000000000000000000000000000000000000'
-  );
-  if (allZero) {
-    console.warn(
-      `[pact/contracts] WARNING: All contract addresses for chain ${chainId} are zero (placeholder). ` +
-        `Transactions will silently fail or revert. Do NOT use in production until contracts are deployed.`
+function throwIfAnyZeroAddressOnMainnet(addresses: ContractAddresses, chainId: number): void {
+  const zeroAddress = '0x0000000000000000000000000000000000000000';
+  const zeroKeys = Object.entries(addresses)
+    .filter(([, addr]) => addr === zeroAddress)
+    .map(([key]) => key);
+
+  if (zeroKeys.length > 0) {
+    throw new Error(
+      `[pact/contracts] FATAL: The following contract addresses are zero on mainnet ` +
+        `(chainId ${chainId}): ${zeroKeys.join(', ')}. ` +
+        `Deploy contracts before using mainnet. Refusing to proceed to prevent fund loss.`
     );
   }
 }
@@ -34,7 +39,9 @@ export function getContractAddresses(chainId: number): ContractAddresses {
     case BASE_SEPOLIA_CHAIN_ID:
       return BASE_SEPOLIA_ADDRESSES;
     case BASE_MAINNET_CHAIN_ID:
-      warnIfAllZeroAddresses(BASE_MAINNET_ADDRESSES, chainId);
+      // On mainnet, throw on any zero address — a partial deployment is as dangerous
+      // as no deployment (transactions to address(0) burn funds silently).
+      throwIfAnyZeroAddressOnMainnet(BASE_MAINNET_ADDRESSES, chainId);
       return BASE_MAINNET_ADDRESSES;
     default:
       throw new Error(`Unsupported chain ID: ${chainId}`);

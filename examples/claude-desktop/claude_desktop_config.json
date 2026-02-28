@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["-y", "@pactprotocol/mcp-client"],
       "env": {
-        "PACT_MCP_SERVER_URL": "https://mcp-server-production-f1fb.up.railway.app",
+        "PACT_SERVER_URL": "https://mcp-server-production-f1fb.up.railway.app",
         "PACT_WALLET_PRIVATE_KEY": "YOUR_PRIVATE_KEY_HERE"
       }
     }

@@ -156,18 +156,26 @@ function notifyAgents(agents: AgentWebhookInfo[], payload: WebhookPayload): void
     setTimeout(() => resolve(null), BATCH_TIMEOUT_MS);
   });
 
-  // Fire-and-forget: don't await, just log errors
+  // Fire-and-forget: don't await, just log errors.
+  // Timeout and delivery failures are tracked separately so operators can distinguish
+  // between "batch took too long" (infrastructure/throughput issue) and
+  // "individual webhooks failed" (endpoint availability issue).
   Promise.race([batch, timeout]).then((results) => {
     if (results === null) {
+      // Batch timeout: the allSettled promise didn't resolve within BATCH_TIMEOUT_MS.
+      // Individual webhook timeouts are handled separately inside deliverWebhook().
       console.warn(
-        `Webhook batch for ${payload.event} exceeded ${BATCH_TIMEOUT_MS}ms batch timeout (${agents.length} agents)`
+        `[webhook] Batch timeout: ${payload.event} batch exceeded ${BATCH_TIMEOUT_MS}ms ` +
+          `(${agents.length} agents). Some deliveries may still be in-flight.`
       );
       return;
     }
+    // Batch completed within timeout — report individual delivery failures separately.
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
       console.warn(
-        `${failures.length}/${agents.length} webhook deliveries failed for ${payload.event}`
+        `[webhook] Delivery failures: ${failures.length}/${agents.length} webhook(s) failed ` +
+          `for event ${payload.event} (not a batch timeout — batch completed normally)`
       );
     }
   });

@@ -76,6 +76,17 @@ export interface Database {
         };
       };
       agents: {
+        // TIMING NOTE: Agent rows are created by the indexer when it processes the
+        // AgentRegistered on-chain event. At that point, only the wallet address and
+        // agent_id are available from the event args. The profile_cid and name fields
+        // are populated shortly after by a follow-up IPFS fetch (fetchAgentProfile),
+        // which may take a few seconds or fail (ipfs_fetch_failed=true).
+        //
+        // This means there is a brief window after agent creation where profile_cid
+        // and name may contain placeholder values (empty string or a default). Callers
+        // that need the full profile should check ipfs_fetch_failed and handle the
+        // interim state gracefully. The IPFS retry job (apps/indexer/src/jobs) will
+        // backfill failed profile fetches.
         Row: {
           id: string;
           address: string;
@@ -189,6 +200,7 @@ export interface Database {
           votes_against_disputer: string;
           tx_hash: string;
           created_at: string;
+          updated_at: string;
           resolved_at: string | null;
         };
         Insert: {
@@ -204,6 +216,7 @@ export interface Database {
           votes_against_disputer?: string;
           tx_hash: string;
           created_at?: string;
+          updated_at?: string;
           resolved_at?: string | null;
         };
         Update: {
@@ -219,6 +232,7 @@ export interface Database {
           votes_against_disputer?: string;
           tx_hash?: string;
           created_at?: string;
+          updated_at?: string;
           resolved_at?: string | null;
         };
       };

@@ -1,3 +1,8 @@
+// TODO(#084): This file has not yet received a full security review.
+// Known areas to audit: feedback data is fetched directly from on-chain events via
+// wagmi readContract — verify that tag strings rendered from event data are properly
+// escaped (XSS risk if feedback tags contain HTML). Also confirm pagination: if an
+// agent has thousands of feedback entries the component may render unbounded lists.
 'use client';
 
 import { useReadContract } from 'wagmi';

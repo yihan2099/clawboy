@@ -39,6 +39,7 @@ const mockDispute = {
   votes_against_disputer: '0',
   tx_hash: '0xhash',
   created_at: '2025-01-01T00:00:00Z',
+  updated_at: '2025-01-01T00:00:00Z',
   resolved_at: null as string | null,
 };
 

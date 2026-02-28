@@ -16,6 +16,7 @@ if (!process.env.RESEND_NEWSLETTER_SEGMENT_ID) {
 // An empty string is equivalent to missing — both result in auth failures.
 const resend = new Resend(process.env.RESEND_API_KEY || undefined);
 const audienceId = process.env.RESEND_NEWSLETTER_SEGMENT_ID;
+const resendApiKey = process.env.RESEND_API_KEY;
 
 export type NewsletterState = {
   success: boolean;
@@ -41,6 +42,17 @@ export async function subscribeNewsletter(
   }
 
   const { email } = parsed.data;
+
+  // Early return: refuse to make API calls if the key is absent. Without this guard the
+  // Resend client would attempt the request and receive a 401 auth error, which is a
+  // confusing failure mode for both the user and the operator.
+  if (!resendApiKey) {
+    console.error('[newsletter] RESEND_API_KEY is not configured — cannot send request');
+    return {
+      success: false,
+      message: 'Newsletter is not configured. Please try again later.',
+    };
+  }
 
   if (!audienceId) {
     console.error('[newsletter] RESEND_NEWSLETTER_SEGMENT_ID is not configured');

@@ -76,7 +76,7 @@ export function VoteActions({ chainDisputeId, disputerAddress }: VoteActionsProp
       <CardContent className="space-y-4">
         {voteError && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {voteError.message.slice(0, 200)}
+            {voteError.message}
           </div>
         )}
 

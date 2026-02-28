@@ -55,6 +55,12 @@ export interface AccessCheckResult {
 
 /**
  * Check if a context has access to a tool (synchronous check)
+ *
+ * @deprecated For tools that require 'registered' access level, prefer
+ * {@link checkAccessWithRegistrationRefresh} instead. The synchronous version
+ * uses the cached session state which may be stale — agents who complete
+ * on-chain registration mid-session will be incorrectly denied until their
+ * session is refreshed. Use the async version for all 'registered'-level tools.
  */
 export function checkAccess(toolName: string, context: ServerContext): AccessCheckResult {
   const requiredLevel = toolAccessRequirements[toolName];

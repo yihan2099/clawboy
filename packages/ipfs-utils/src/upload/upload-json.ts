@@ -38,13 +38,26 @@ export class IpfsUploadError extends Error {
 }
 
 /**
- * Check if an error is retryable (network errors, 5xx server errors)
+ * Check if an error is retryable (network errors, 5xx server errors).
+ *
+ * Non-retryable error codes (caller must fix the request or credentials):
+ * - 401 Unauthorized: invalid or missing Pinata JWT — retrying won't help
+ * - 403 Forbidden: insufficient permissions or invalid group ID — retrying won't help
+ * - 429 Too Many Requests: rate limited by Pinata — exponential backoff within the
+ *   retry loop is unlikely to help for burst limits; callers should implement
+ *   longer back-off or reduce request frequency at the call site
  */
 function isRetryableError(error: unknown): boolean {
   if (error instanceof IpfsUploadError && error.message.includes('timed out')) {
     return true;
   }
   const message = error instanceof Error ? error.message : String(error);
+
+  // Explicitly non-retryable HTTP status codes
+  if (/\b(401|403|429)\b/.test(message)) {
+    return false;
+  }
+
   // Retry on network errors and 5xx responses
   if (/fetch failed|network|ECONNRESET|ECONNREFUSED|ETIMEDOUT|socket/i.test(message)) {
     return true;

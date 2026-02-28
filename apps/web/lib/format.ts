@@ -107,6 +107,11 @@ export function getBaseScanTxUrl(txHash: string): string {
 // Falls back to the public Pinata gateway if not set.
 // NOTE: Relying on a single gateway is a single point of failure. For production, consider
 // setting up gateway fallback logic or using a dedicated gateway via Pinata/Cloudflare.
+// TODO(#059): Implement IPFS gateway fallback. If the primary gateway (NEXT_PUBLIC_IPFS_GATEWAY)
+// is unavailable, attempt secondary gateways (e.g. https://cloudflare-ipfs.com,
+// https://ipfs.io) before surfacing an error to the user. This requires making
+// getIpfsUrl() async or creating a separate fetchIpfsContent() helper that handles
+// gateway cycling with timeout-based fallover.
 const IPFS_GATEWAY =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_IPFS_GATEWAY) ||
   'https://gateway.pinata.cloud';

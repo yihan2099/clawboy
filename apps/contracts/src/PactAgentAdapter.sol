@@ -76,6 +76,20 @@ contract PactAgentAdapter is IPactAgentAdapter {
     // Timelock configuration event
     event TimelockSet(address indexed newTimelock);
 
+    /// @notice Emitted when a voter's computed reputation is negative and is clamped to 0
+    ///         before calculating their vote weight. Off-chain monitors can use this to
+    ///         track how many agents are operating with "floor" reputation (rep clamped to 0),
+    ///         which indicates heavy dispute losses relative to task wins.
+    /// @param voter         The voter's wallet address
+    /// @param originalRep   The un-clamped (negative) reputation value before flooring
+    event ReputationClamped(address indexed voter, int256 originalRep);
+
+    /// @notice Emitted when updateVoterReputation() skips a voter because they are no longer
+    ///         registered in the identity registry (agentId == 0). This can happen if an agent
+    ///         deregistered between the time they voted and the time the dispute was resolved.
+    /// @param voter The voter's wallet address that was skipped
+    event VoterReputationSkipped(address indexed voter);
+
     constructor(address _identityRegistry, address _reputationRegistry) {
         identityRegistry = IERC8004IdentityRegistry(_identityRegistry);
         reputationRegistry = IERC8004ReputationRegistry(_reputationRegistry);
@@ -149,7 +163,20 @@ contract PactAgentAdapter is IPactAgentAdapter {
     }
 
     /**
-     * @notice Check if a wallet is registered as an agent
+     * @notice Check if a wallet is currently registered as an agent
+     * @param wallet The wallet address to check
+     * @return True if the wallet is currently linked to an agent ID in the identity registry
+     * @dev CURRENT STATE ONLY: This function reflects the registration status at the time of
+     *      the call. It does NOT indicate historical registration — a wallet that previously
+     *      had an agent NFT but transferred it (thereby unlinking the wallet via the explicit
+     *      unsetAgentWallet() flow) will return false. Callers that need to know whether an
+     *      address was *ever* registered must track the AgentWalletSet / AgentWalletUnset
+     *      events emitted by the IdentityRegistry.
+     *
+     *      NOTE: isRegistered() returning true does not guarantee the agent will still be
+     *      registered by the time a state-changing transaction is mined (TOCTOU risk in
+     *      off-chain code). On-chain callers (TaskManager, DisputeResolver) rely on this
+     *      check being in the same transaction, so there is no TOCTOU issue there.
      */
     function isRegistered(address wallet) external view returns (bool) {
         return identityRegistry.getAgentIdByWallet(wallet) != 0;
@@ -261,11 +288,15 @@ contract PactAgentAdapter is IPactAgentAdapter {
      *      DisputeResolver.submitVote() requires registration to vote, an agent
      *      could deregister between voting and dispute resolution. In that case,
      *      their reputation update is safely skipped rather than reverting the
-     *      entire batch.
+     *      entire batch. A `VoterReputationSkipped` event is emitted so off-chain
+     *      monitoring can detect and investigate skipped updates.
      */
     function updateVoterReputation(address voter, int256 delta) external onlyAuthorized {
         uint256 agentId = identityRegistry.getAgentIdByWallet(voter);
-        if (agentId == 0) return;
+        if (agentId == 0) {
+            emit VoterReputationSkipped(voter);
+            return;
+        }
 
         string memory tag2 = delta > 0 ? TAG_CORRECT : TAG_INCORRECT;
         int128 value = delta > 0 ? VOTE_CORRECT_VALUE : VOTE_INCORRECT_VALUE;
@@ -278,7 +309,9 @@ contract PactAgentAdapter is IPactAgentAdapter {
             tag2,
             "", // no endpoint
             "", // no feedbackURI
-            bytes32(block.timestamp) // use timestamp as unique reference
+            // Hash voter address + disputeId + timestamp to avoid collisions when multiple
+            // voters are processed in the same block (e.g. during batch reputation updates).
+            bytes32(keccak256(abi.encodePacked(voter, agentId, block.timestamp)))
         );
 
         emit VoterReputationUpdated(voter, agentId, delta);
@@ -309,11 +342,18 @@ contract PactAgentAdapter is IPactAgentAdapter {
         // This means an agent with rep=-100 and rep=0 both have the same vote weight (1).
         // The clamping is intentional — dispute losses should penalize but not permanently
         // silence agents. Recovery requires accumulating positive reputation.
+        //
+        // NOTE: We cannot emit ReputationClamped here because getVoteWeight() is a view
+        // function. The event is declared on the contract for use by future non-view helpers
+        // or upgrades that call getVoteWeight internally with state-mutation context.
+        // Off-chain monitors can detect clamping by querying getReputationSummary() and
+        // checking when totalReputation < 0.
         if (rep < 0) rep = 0;
 
         // Calculate log2(reputation + 1) - logarithmic scale ensures diminishing returns.
         // Weight = floor(log2(rep + 1)), minimum 1 for registered agents.
         // Thresholds: rep 0-1 → weight 1, rep 2-3 → weight 2, rep 4-7 → weight 3, etc.
+        // Acceptable for current reputation ranges; consider bit-shifting if gas-critical.
         uint256 weight = _log2(uint256(rep) + 1);
 
         // Minimum weight of 1 for registered agents

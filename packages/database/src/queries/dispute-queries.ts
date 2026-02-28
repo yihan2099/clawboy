@@ -140,14 +140,15 @@ export async function createDispute(dispute: DisputeInsert): Promise<DisputeRow>
 }
 
 /**
- * Update a dispute
+ * Update a dispute.
+ * Automatically sets updated_at to the current time if not provided by the caller.
  */
 export async function updateDispute(id: string, updates: DisputeUpdate): Promise<DisputeRow> {
   const supabase = getWriteClient();
 
   const { data, error } = await supabase
     .from('disputes')
-    .update(updates)
+    .update({ updated_at: new Date().toISOString(), ...updates })
     .eq('id', id)
     .select()
     .single();

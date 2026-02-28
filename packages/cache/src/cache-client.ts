@@ -23,7 +23,15 @@ interface MemoryCacheEntry<T> {
 const memoryCache = new Map<string, MemoryCacheEntry<unknown>>();
 const memoryTagIndex = new Map<string, Set<string>>();
 
-// Cleanup interval for expired entries (every 5 minutes)
+// Cleanup interval for expired entries (every 5 minutes).
+// This interval runs indefinitely once started — it is intentionally never cleared.
+// Rationale: the in-memory cache is a process-lifetime singleton used only when Redis
+// is unavailable. At current scale (single server instance, short-lived processes),
+// the interval overhead is negligible (<1ms per sweep) and the memory savings from
+// proactive eviction outweigh the cost of clearing and restarting the interval.
+// If the service is shut down, the process exits and the interval is reclaimed by the OS.
+// For long-running servers with very large in-memory caches, consider adding a
+// clearCleanupInterval() export for graceful shutdown.
 let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
@@ -96,7 +104,21 @@ class CacheClient implements ICache {
           pipeline.expire(tagKey, ttl);
         }
 
-        await pipeline.exec();
+        const results = await pipeline.exec();
+
+        // Check per-command results: Upstash pipeline.exec() returns an array of results
+        // where each entry may be an Error if that individual command failed. A pipeline
+        // exec() itself doesn't throw on per-command errors, so we inspect each result.
+        if (Array.isArray(results)) {
+          for (const result of results) {
+            if (result instanceof Error) {
+              console.warn('Redis pipeline command failed in cache set:', result.message);
+              // Fall through to memory fallback below
+              throw result;
+            }
+          }
+        }
+
         return;
       } catch (error) {
         console.warn('Redis set error, falling back to memory:', error);

@@ -43,6 +43,11 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     error = e instanceof Error ? e.message : 'Failed to load tasks';
   }
 
+  // NOTE(#071): totalPages is derived from the COUNT(*) returned by listTasks(). If new
+  // tasks are inserted between the COUNT query and the data-fetch query (MVCC gap), the
+  // displayed total may be 1 higher than the number of tasks actually returned on the last
+  // page. This is an accepted eventual-consistency trade-off; no functional bug results
+  // because the pagination component only uses totalPages for link rendering, not data access.
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (

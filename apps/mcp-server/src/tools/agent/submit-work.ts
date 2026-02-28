@@ -136,12 +136,21 @@ export const submitWorkTool = {
       });
       isUpdate = true;
     } else {
-      // Create new submission
+      // Create new submission with a temporary submission_index=0 placeholder.
+      // TEMPORARY DESYNC: The on-chain submissionIndex is assigned by TaskManager.submitWork()
+      // at transaction execution time, which happens after this DB write. We cannot know
+      // the correct index here without simulating the transaction. The indexer's
+      // WorkSubmitted handler (apps/indexer/src/handlers/work-submitted.ts) is the
+      // authoritative backfill: it will update this row with the real on-chain index
+      // when it processes the WorkSubmitted event. Until the event is indexed (typically
+      // a few seconds), submission_index may show 0 incorrectly. This is cosmetic only —
+      // business logic (winner selection, dispute resolution) uses the on-chain state
+      // directly and is not affected by the temporary desync.
       await createSubmission({
         task_id: input.taskId,
         agent_address: context.callerAddress,
         submission_cid: uploadResult.cid,
-        submission_index: 0, // Will be updated by indexer from chain event
+        submission_index: 0, // Temporary placeholder; corrected by indexer on WorkSubmitted event
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });

@@ -155,6 +155,16 @@ export async function updateSubmission(
 /**
  * Mark a submission as winner (atomic operation)
  * Uses a single UPDATE with CASE to avoid race conditions
+ *
+ * @remarks
+ * The primary path calls the `mark_submission_winner` RPC function which is atomic.
+ * If the RPC function is absent (error code 42883) a two-step UPDATE fallback is used.
+ *
+ * @deprecated **Fallback path only** — the two-step UPDATE fallback inside this function
+ * has a TOCTOU race window: two concurrent calls can both clear existing winners and then
+ * both set their own winner, leaving the task in an inconsistent state. Deploy migration
+ * `20250228000002_mark_submission_winner_atomic.sql` to eliminate the fallback entirely.
+ * Once the RPC function exists in all environments, the fallback block can be removed.
  */
 export async function markSubmissionAsWinner(
   taskId: string,

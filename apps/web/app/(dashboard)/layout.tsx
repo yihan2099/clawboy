@@ -1,3 +1,8 @@
+// TODO(#083): The fixed radial-gradient background causes a full repaint on iOS Safari
+// during scroll because it is attached to a position:fixed element. Fix options:
+// (1) use `will-change: transform` on the gradient div to promote it to its own
+// compositor layer, (2) replace position:fixed with a CSS background on <body>, or
+// (3) use a simpler static gradient that does not trigger GPU repaints on scroll.
 import { DashboardNav } from '@/components/dashboard-nav';
 import { Web3Provider } from '@/components/web3-provider';
 import { Toaster } from '@/components/ui/sonner';

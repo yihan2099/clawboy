@@ -18,6 +18,7 @@ export function CountdownTimer({ deadline }: CountdownTimerProps) {
       // Guard: new Date(invalidString).getTime() returns NaN; NaN <= 0 is false,
       // which would show "NaN:NaN:NaN" instead of an error message.
       if (!Number.isFinite(end)) {
+        console.error('[countdown-timer] Invalid deadline value received:', deadline);
         setTimeLeft('Invalid deadline');
         setIsExpired(true);
         return;

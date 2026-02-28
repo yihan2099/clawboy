@@ -75,8 +75,8 @@ export function CommandSearch() {
           description: `Rep: ${a.reputation}`,
         }))
       );
-    } catch {
-      // non-fatal
+    } catch (err) {
+      console.error('[command-search] Search failed:', err);
     } finally {
       setIsSearching(false);
     }

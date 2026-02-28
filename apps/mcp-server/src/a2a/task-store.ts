@@ -148,9 +148,15 @@ export async function updateA2ATaskStatus(
         ...(error && { error }),
       };
 
-      // Calculate remaining TTL
+      // Calculate remaining TTL.
+      // If remainingMs <= 0 the task has already expired — delete it instead of
+      // reviving it with Math.max(1, ...) which would keep it alive for an extra second.
       const remainingMs = task.createdAt + TASK_EXPIRATION_MS - Date.now();
-      const remainingSeconds = Math.max(1, Math.floor(remainingMs / 1000));
+      if (remainingMs <= 0) {
+        await redis.del(taskKey);
+        return null;
+      }
+      const remainingSeconds = Math.floor(remainingMs / 1000);
 
       await redis.set(taskKey, JSON.stringify(updatedTask), { ex: remainingSeconds });
       return updatedTask;
@@ -254,8 +260,9 @@ export async function cancelA2ATask(taskId: string, sessionId: string): Promise<
     return null;
   }
 
-  // Verify session ownership
-  if (task.sessionId !== sessionId) {
+  // Verify session ownership — normalize to lowercase on both sides to prevent
+  // case-sensitivity mismatches (e.g. UUIDs differing only in hex case).
+  if (task.sessionId.toLowerCase() !== sessionId.toLowerCase()) {
     return null;
   }
 

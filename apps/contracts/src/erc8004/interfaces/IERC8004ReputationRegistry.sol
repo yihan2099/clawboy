@@ -8,6 +8,20 @@ pragma solidity ^0.8.24;
  */
 interface IERC8004ReputationRegistry {
     /// @notice Emitted when new feedback is given
+    /// @param agentId       The agent receiving feedback (indexed)
+    /// @param clientAddress The address giving feedback (indexed)
+    /// @param feedbackIndex The feedback slot index within this client-agent pair
+    /// @param value         The signed feedback value
+    /// @param valueDecimals Decimal precision for `value`
+    /// @param indexedTag1   Primary tag — INDEXED. Solidity hashes indexed strings with
+    ///                      keccak256 before storing them as a topic. This means the event
+    ///                      topic contains keccak256(tag1), NOT the raw string. Use the
+    ///                      non-indexed `tag1` parameter below to recover the original string.
+    /// @param tag1          Raw primary tag string — NOT indexed; use for off-chain decoding
+    /// @param tag2          Raw secondary tag string — NOT indexed
+    /// @param endpoint      Endpoint URI (unused, always empty string in this implementation)
+    /// @param feedbackURI   Feedback URI (unused, always empty string in this implementation)
+    /// @param feedbackHash  Unique hash identifying this feedback entry (collision-resistant)
     event NewFeedback(
         uint256 indexed agentId,
         address indexed clientAddress,

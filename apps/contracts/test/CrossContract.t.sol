@@ -203,6 +203,11 @@ contract CrossContractTest is Test {
         IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
         assertTrue(dispute.disputerWon);
 
+        // Stake is in pending withdrawals — agent2 must claim it (pull-over-push pattern)
+        assertEq(disputeResolver.pendingWithdrawals(agent2), stake);
+        vm.prank(agent2);
+        disputeResolver.claimStake();
+
         // Verify agent2 got bounty + stake back
         uint256 fee = (BOUNTY_AMOUNT * 300) / 10_000;
         assertEq(agent2.balance, agent2Before - stake + stake + BOUNTY_AMOUNT - fee);
@@ -506,6 +511,11 @@ contract CrossContractTest is Test {
         // agent1 (disputer) wins - gets bounty
         IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
         assertTrue(dispute.disputerWon);
+
+        // Stake is in pending withdrawals — agent1 must claim it (pull-over-push pattern)
+        assertEq(disputeResolver.pendingWithdrawals(agent1), stake);
+        vm.prank(agent1);
+        disputeResolver.claimStake();
 
         uint256 fee = (BOUNTY_AMOUNT * 300) / 10_000;
         assertEq(agent1.balance, agent1Before + stake + BOUNTY_AMOUNT - fee);

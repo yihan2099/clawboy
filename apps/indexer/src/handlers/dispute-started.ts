@@ -35,7 +35,16 @@ export async function handleDisputeCreated(event: IndexerEvent): Promise<void> {
       `DisputeCreated event has unreasonable votingDeadline: ${votingDeadlineSeconds}`
     );
   }
-  const votingDeadlineMs = Number(votingDeadlineSeconds) * 1000;
+  const votingDeadlineNum = Number(votingDeadlineSeconds);
+  // Explicit Number.isSafeInteger() check: even though the BigInt guard above ensures
+  // the value fits in Number range, floating-point precision could still produce a
+  // non-integer result for very large values.
+  if (!Number.isSafeInteger(votingDeadlineNum)) {
+    throw new Error(
+      `votingDeadline ${votingDeadlineSeconds} cannot be safely represented as a JS integer`
+    );
+  }
+  const votingDeadlineMs = votingDeadlineNum * 1000;
   if (!Number.isFinite(votingDeadlineMs) || votingDeadlineMs < 0) {
     throw new Error(`Invalid votingDeadline timestamp: ${votingDeadlineSeconds}`);
   }

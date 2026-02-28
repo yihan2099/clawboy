@@ -39,15 +39,24 @@ async function main() {
   const enableStdio = process.env.ENABLE_STDIO !== 'false';
 
   try {
-    // Start HTTP server for remote clients
+    // Start HTTP server for remote clients.
+    // startHttpServer() is synchronous (wraps Bun.serve) but any thrown error
+    // (e.g. port in use) must be caught here so the process exits cleanly
+    // rather than crashing with an unhandled exception.
     startHttpServer(httpPort);
+    console.error(`HTTP server started on port ${httpPort}`);
+  } catch (error) {
+    console.error('Failed to start HTTP server:', error);
+    process.exit(1);
+  }
 
+  try {
     // Also start stdio server for local development (unless disabled)
     if (enableStdio) {
       await startServer();
     }
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Failed to start stdio server:', error);
     process.exit(1);
   }
 }

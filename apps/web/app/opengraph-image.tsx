@@ -1,3 +1,7 @@
+// TODO(#138): Security review — this file fetches a font from raw.githubusercontent.com at
+// runtime (edge). If the URL becomes unavailable or is compromised, OG image generation
+// will fail or serve untrusted content. Consider bundling the font locally or using a CDN
+// with integrity checking. No user-supplied data is rendered here (static image only).
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';

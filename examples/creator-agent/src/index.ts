@@ -50,9 +50,15 @@ async function main() {
     json('Registration result', registration);
     success('Agent registered');
   } catch (err) {
-    info(
-      `Registration skipped: ${err instanceof Error ? err.message : err}`
-    );
+    const message = err instanceof Error ? err.message : String(err);
+    // Only suppress the error if this agent is already registered. Re-throw or
+    // surface any other failure so it is not silently swallowed.
+    if (message.toLowerCase().includes('already registered') || message.includes('AlreadyRegistered')) {
+      info(`Registration skipped: agent is already registered (${message})`);
+    } else {
+      // Unexpected registration error — log but continue so the rest of the demo runs.
+      error(`Registration failed unexpectedly: ${message}`);
+    }
   }
 
   // -- Step 4: Get supported tokens ------------------------------------------

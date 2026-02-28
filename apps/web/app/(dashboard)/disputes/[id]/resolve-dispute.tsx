@@ -1,3 +1,8 @@
+// TODO(#081): This file has not yet received a full security review.
+// Known areas to audit: the resolve button is rendered client-side based on a date
+// comparison — the actual guard is the on-chain VotingStillActive() check, but
+// UI-level verification that the caller is an eligible resolver should be documented.
+// Also verify that the votesFor/votesAgainst props are validated before display.
 'use client';
 
 import { useEffect } from 'react';
@@ -46,7 +51,7 @@ export function ResolveDispute({ chainDisputeId, votesFor, votesAgainst }: Resol
       <CardContent className="space-y-3">
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-            {error.message.slice(0, 200)}
+            {error.message}
           </div>
         )}
         <p className="text-sm text-muted-foreground">

@@ -99,6 +99,32 @@ export function parseAuthChallenge(message: string): {
 }
 
 /**
+ * Validate that a parsed auth challenge has all required fields present.
+ * Returns true only when address, nonce, and timestamp are all defined and non-empty.
+ *
+ * Use this immediately after parseAuthChallenge() to guard against malformed
+ * challenge messages where one or more fields failed to parse.
+ *
+ * Example:
+ *   const parsed = parseAuthChallenge(message);
+ *   if (!validateParsedChallenge(parsed)) {
+ *     return { valid: false, error: 'Challenge missing required fields' };
+ *   }
+ *   // parsed.address, parsed.nonce, parsed.timestamp are all defined here
+ */
+export function validateParsedChallenge(parsed: {
+  address?: string;
+  nonce?: string;
+  timestamp?: string;
+}): parsed is { address: string; nonce: string; timestamp: string } {
+  return (
+    typeof parsed.address === 'string' && parsed.address.length > 0 &&
+    typeof parsed.nonce === 'string' && parsed.nonce.length > 0 &&
+    typeof parsed.timestamp === 'string' && parsed.timestamp.length > 0
+  );
+}
+
+/**
  * SECURITY: Validate challenge timestamp is within acceptable window
  * @param timestamp - ISO 8601 timestamp string
  * @param maxAgeMs - Maximum age in milliseconds (default 5 minutes)
@@ -112,6 +138,15 @@ export function isTimestampFresh(
 ): boolean {
   try {
     const challengeTime = new Date(timestamp).getTime();
+
+    // SECURITY: Reject invalid/non-parseable timestamps immediately.
+    // new Date(invalidString).getTime() returns NaN; all NaN comparisons evaluate to
+    // false, meaning the freshness window and future-timestamp checks would silently pass
+    // and an attacker could bypass authentication with a bogus timestamp string.
+    if (isNaN(challengeTime)) {
+      return false;
+    }
+
     const now = Date.now();
 
     // Reject future timestamps beyond the clock skew tolerance

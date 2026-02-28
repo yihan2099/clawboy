@@ -324,7 +324,7 @@ contract DisputeResolverTest is Test {
 
         // Disputer tries to vote
         vm.prank(agent1);
-        vm.expectRevert(DisputeResolver.AlreadyVoted.selector);
+        vm.expectRevert(DisputeResolver.DisputerCannotVote.selector);
         disputeResolver.submitVote(disputeId, true);
     }
 
@@ -344,7 +344,7 @@ contract DisputeResolverTest is Test {
 
         // Creator tries to vote
         vm.prank(creator);
-        vm.expectRevert(DisputeResolver.AlreadyVoted.selector);
+        vm.expectRevert(DisputeResolver.CreatorCannotVote.selector);
         disputeResolver.submitVote(disputeId, false);
     }
 
@@ -402,6 +402,11 @@ contract DisputeResolverTest is Test {
         IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
         assertEq(uint256(dispute.status), uint256(IDisputeResolver.DisputeStatus.Resolved));
         assertTrue(dispute.disputerWon);
+
+        // Stake is now in pending withdrawals — disputer must claim it (pull-over-push pattern)
+        assertEq(disputeResolver.pendingWithdrawals(agent1), stake);
+        vm.prank(agent1);
+        disputeResolver.claimStake();
 
         // Verify stake returned to disputer + bounty (minus 3% protocol fee)
         uint256 expectedFee = (BOUNTY_AMOUNT * 300) / 10_000;
@@ -686,6 +691,11 @@ contract DisputeResolverTest is Test {
 
         disputeResolver.resolveDispute(disputeId);
 
+        // Stake is now in pending withdrawals — disputer must claim it (pull-over-push pattern)
+        assertEq(disputeResolver.pendingWithdrawals(agent2), stake);
+        vm.prank(agent2);
+        disputeResolver.claimStake();
+
         // agent2 should get the bounty (overriding agent1 selection, minus 3% protocol fee)
         uint256 expectedFee = (BOUNTY_AMOUNT * 300) / 10_000;
         assertEq(agent2.balance, agent2BalanceBefore + stake + BOUNTY_AMOUNT - expectedFee);
@@ -854,6 +864,11 @@ contract DisputeResolverTest is Test {
         // Verify dispute is cancelled
         IDisputeResolver.Dispute memory dispute = disputeResolver.getDispute(disputeId);
         assertEq(uint256(dispute.status), uint256(IDisputeResolver.DisputeStatus.Cancelled));
+
+        // Stake is now in pending withdrawals — disputer must claim it (pull-over-push pattern)
+        assertEq(disputeResolver.pendingWithdrawals(agent1), stake);
+        vm.prank(agent1);
+        disputeResolver.claimStake();
 
         // Verify stake was refunded
         assertEq(agent1.balance, agent1BalanceBefore);

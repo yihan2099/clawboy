@@ -61,7 +61,11 @@ export async function handleMessageSend(
   // Execute the skill
   const result = await executeSkill(skillId, input, context);
 
-  // Update task with result
+  // Update task with result.
+  // ERROR CATEGORIZATION: Errors are separated into transient (retryable) and permanent
+  // so callers can decide whether to retry or surface a hard failure to the user.
+  // - Permanent: access denied, skill not found, invalid params (caller must fix the request)
+  // - Transient: internal errors, network failures (caller may retry)
   let finalTask: A2ATask;
   if (result.success) {
     finalTask = (await updateA2ATaskStatus(task.id, 'completed', {
@@ -69,7 +73,19 @@ export async function handleMessageSend(
       data: result.data,
     }))!;
   } else {
-    finalTask = (await updateA2ATaskStatus(task.id, 'failed', undefined, result.error))!;
+    const isPermanentError =
+      result.error?.code === A2A_ERROR_CODES.ACCESS_DENIED ||
+      result.error?.code === A2A_ERROR_CODES.SKILL_NOT_FOUND ||
+      result.error?.code === A2A_ERROR_CODES.INVALID_PARAMS;
+
+    finalTask = (await updateA2ATaskStatus(task.id, 'failed', undefined, {
+      ...result.error,
+      // Attach retryable hint for callers to distinguish transient vs permanent failures
+      data: {
+        ...(result.error?.data as Record<string, unknown> | undefined),
+        retryable: !isPermanentError,
+      },
+    }))!;
   }
 
   return createSuccessResponse(id, finalTask);

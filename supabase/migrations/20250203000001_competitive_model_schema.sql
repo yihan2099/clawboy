@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   -- updating the existing row (submission_cid, updated_at) via updateSubmission().
   -- The constraint prevents accidental duplicate inserts; the MCP submit-work tool
   -- calls getSubmissionByTaskAndAgent() first to decide between insert and update.
+  -- NOTE: Identical CID re-submission (same agent, same CID) is intentionally allowed
+  -- by this schema and is handled at the application level (submit-work tool) rather
+  -- than at the database level, to avoid overly strict constraints that would prevent
+  -- legitimate idempotent retries after network failures.
   UNIQUE(task_id, agent_address)
 );
 

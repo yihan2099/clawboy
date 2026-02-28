@@ -245,6 +245,16 @@ export async function resolveFailedEvent(eventId: string, notes?: string): Promi
 
 /**
  * Update retry count and status for a failed event
+ *
+ * @remarks
+ * The primary path calls the `increment_failed_event_retry` RPC function which atomically
+ * increments retry_count in a single round-trip, preventing race conditions.
+ *
+ * @deprecated **Fallback path only** — the SELECT-then-UPDATE fallback inside this function
+ * has a TOCTOU race window: two concurrent indexer workers can both read the same retry_count,
+ * then both write back count+1 instead of count+2. Deploy migration
+ * `20250228000004_increment_failed_event_retry.sql` to eliminate this fallback. Once the RPC
+ * function exists in all environments, the fallback block can be removed.
  */
 export async function updateFailedEventRetry(
   eventId: string,

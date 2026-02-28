@@ -151,9 +151,7 @@ export function TaskActions({
           <CardContent className="space-y-4">
             {error && (
               <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                {/* Truncate at 500 chars to show enough context for debugging wallet/contract errors
-                    while keeping the UI readable. The full error is available in browser devtools. */}
-                {error.message.slice(0, 500)}
+                {error.message}
               </div>
             )}
 
@@ -326,7 +324,7 @@ export function TaskActions({
           <CardContent className="space-y-3">
             {disputeError && (
               <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                {disputeError.message.slice(0, 200)}
+                {disputeError.message}
               </div>
             )}
             <p className="text-sm text-muted-foreground">

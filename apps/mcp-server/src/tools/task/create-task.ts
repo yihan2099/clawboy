@@ -22,7 +22,12 @@ export const createTaskSchema = z.object({
     )
     .min(1)
     .max(20), // SECURITY: Limit number of deliverables
-  // SECURITY: Validate bounty is a positive number with upper bound
+  // SECURITY: Validate bounty is a positive number with upper bound.
+  // The regex /^\d+\.?\d*$/ ensures the string is a non-negative decimal literal before
+  // parseFloat or parseTokenAmount touches it. This MUST remain consistent with
+  // parseTokenAmount (packages/web3-utils/src/utils/token.ts) which calls viem's
+  // parseUnits internally — both expect a non-negative decimal string. If the regex or
+  // refine rules change, update parseTokenAmount (and its tests) in lockstep.
   bountyAmount: z
     .string()
     .max(20, 'Bounty amount string too long')
@@ -128,7 +133,14 @@ export const createTaskTool = {
     // Get contract addresses
     const addresses = getContractAddresses(chainId);
 
-    // For ERC20 tokens, check allowance
+    // For ERC20 tokens, check allowance.
+    // TOKEN APPROVAL RESPONSIBILITY: This tool only checks and reports the allowance state —
+    // it does NOT perform the approval on behalf of the caller. When requiresApproval=true,
+    // the response includes an `approvalStep` describing the ERC20.approve() call the caller
+    // must execute themselves (via their wallet or agent) before calling TaskManager.createTask().
+    // The on-chain createTask() will revert with an insufficient-allowance error if approval
+    // is skipped. Enforcing the approval at this layer would require holding the caller's
+    // private key, which is outside the scope of this MCP tool.
     let requiresApproval = false;
     let currentAllowance: bigint | undefined;
     if (!isNativeToken(tokenConfig.address)) {

@@ -39,17 +39,22 @@ export interface Agent extends OnChainAgent {
 /**
  * Agent list item for display (populated from database, not directly from on-chain).
  *
- * NOTE: reputation is typed as string here because the database stores it as TEXT
- * (being migrated to NUMERIC by migration 20250228000003). After the migration, the
- * Supabase client will return numbers. Keep this as string | number or narrow to number
- * once the NUMERIC migration is applied and all query results are confirmed numeric.
- * Do NOT compare these string values numerically without converting first.
+ * NOTE: reputation is typed as `string | number` here because the database column is
+ * being migrated from TEXT to NUMERIC (migration 20250228000003). Before the migration
+ * the Supabase client returns a string; after migration it will return a number. Consumers
+ * must handle both until the migration is confirmed on all environments and all query
+ * results are known to be numeric.
+ *
+ * Migration path:
+ *   1. Once 20250228000003 is applied everywhere, narrow this to `number`.
+ *   2. Remove all `toString()` / `Number()` coercion at call sites.
+ *   3. Do NOT compare string values numerically without converting first.
  */
 export interface AgentListItem {
   address: `0x${string}`;
   name: string;
-  /** Reputation score from DB — see type note above about string vs number. */
-  reputation: string;
+  /** Reputation score from DB — see type note above about string | number migration. */
+  reputation: string | number;
   tasksWon: number;
   disputesWon: number;
   disputesLost: number;

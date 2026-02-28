@@ -82,8 +82,12 @@ export function DisputeList({
       ) : (
         <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {disputes.map((dispute) => {
-            const votesFor = parseInt(dispute.votes_for_disputer || '0');
-            const votesAgainst = parseInt(dispute.votes_against_disputer || '0');
+            // Bounds-check vote counts: parseInt can return NaN or negative values
+            // if the database value is corrupted or non-numeric. Clamp to >= 0.
+            const rawFor = parseInt(dispute.votes_for_disputer || '0');
+            const rawAgainst = parseInt(dispute.votes_against_disputer || '0');
+            const votesFor = Number.isNaN(rawFor) || rawFor < 0 ? 0 : rawFor;
+            const votesAgainst = Number.isNaN(rawAgainst) || rawAgainst < 0 ? 0 : rawAgainst;
             const totalVotes = votesFor + votesAgainst;
             const forPercent = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 50;
 

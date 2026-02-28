@@ -21,6 +21,15 @@ interface IERC8004IdentityRegistry {
     event URIUpdated(uint256 indexed agentId, string newURI, address indexed updatedBy);
 
     /// @notice Emitted when agent metadata is set
+    /// @notice Emitted when metadata is set for an agent
+    /// @param agentId            The agent whose metadata was set (indexed)
+    /// @param indexedMetadataKey The metadata key — INDEXED. Solidity hashes indexed strings
+    ///                           with keccak256 before storing them as a topic. The raw string
+    ///                           is NOT stored in the topic; use `metadataKey` for the raw value.
+    /// @param metadataKey        Raw metadata key string — NOT indexed; use for off-chain decoding.
+    ///                           The same string is emitted in both `indexedMetadataKey` and
+    ///                           `metadataKey` — this is intentional and correct.
+    /// @param metadataValue      The raw metadata value bytes
     event MetadataSet(
         uint256 indexed agentId,
         string indexed indexedMetadataKey,

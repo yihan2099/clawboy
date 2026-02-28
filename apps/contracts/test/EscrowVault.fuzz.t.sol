@@ -29,6 +29,9 @@ contract EscrowVaultFuzzTest is Test {
         taskManager = address(0x7777);
         escrowVault = new EscrowVault(taskManager, treasury, DEFAULT_FEE_BPS);
 
+        // Set the test contract as the timelock so timelock-gated functions work in tests.
+        escrowVault.setTimelock(address(this));
+
         token = new MockERC20EscrowFuzz();
 
         vm.deal(taskManager, 10_000 ether);

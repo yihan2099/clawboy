@@ -55,6 +55,19 @@ function getClientIp(c: Context): string {
     if (realIp && isIP(realIp) !== 0) {
       return realIp;
     }
+  } else {
+    // SECURITY: Warn when proxy headers are present but not trusted.
+    // This indicates the server may be behind a proxy without TRUST_PROXY_HEADERS=true,
+    // which means IP-based rate limiting uses 'unknown-client' instead of the real IP.
+    // Set TRUST_PROXY_HEADERS=true only when behind a trusted reverse proxy (e.g. Railway, nginx).
+    const forwarded = c.req.header('x-forwarded-for');
+    if (forwarded) {
+      console.warn(
+        '[a2a] X-Forwarded-For header detected but TRUST_PROXY_HEADERS is false. ' +
+          'IP-based rate limiting will use "unknown-client". ' +
+          'Set TRUST_PROXY_HEADERS=true if this server is behind a trusted reverse proxy.'
+      );
+    }
   }
 
   return 'unknown-client';

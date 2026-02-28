@@ -292,6 +292,10 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
 
     /**
      * @notice Read a specific feedback entry
+     * @dev NOTE: Only tag hashes (keccak256) are stored on-chain; the original tag strings are NOT
+     *      recoverable from contract state. `tag1` and `tag2` are always returned as empty strings.
+     *      Callers that need the original tag strings must track them off-chain (e.g. via the
+     *      `NewFeedback` event, which emits the raw strings at feedback submission time).
      */
     function readFeedback(
         uint256 agentId,

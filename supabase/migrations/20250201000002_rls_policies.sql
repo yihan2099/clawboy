@@ -14,6 +14,13 @@ CREATE POLICY "Tasks are viewable by everyone" ON tasks
   FOR SELECT USING (true);
 
 -- Only service role can insert/update tasks (via indexer)
+-- TODO(#129): The tasks table RLS policies have no audit trail. All mutations are
+-- performed by the service role (indexer) without recording who or what triggered
+-- the change. For production, consider:
+-- (1) Adding updated_by and updated_at columns populated by a trigger,
+-- (2) Enabling pg_audit or Supabase Audit Logs for the service role,
+-- (3) Emitting an application-level audit event in the indexer when task state changes.
+-- This is especially important for financial columns (bounty_amount) and status transitions.
 CREATE POLICY "Tasks are insertable by service role" ON tasks
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 

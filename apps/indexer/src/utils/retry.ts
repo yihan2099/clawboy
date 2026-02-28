@@ -11,13 +11,38 @@ export interface RetryOptions {
   /**
    * Optional predicate to determine if an error is retryable.
    * Return true to retry, false to throw immediately without further attempts.
-   * Defaults to retrying all errors (current behavior — may waste retries on permanent failures
-   * like 404 Not Found or invalid IPFS CIDs).
+   * Defaults to {@link isTransientError} which only retries on network/timeout/5xx/ECONNRESET
+   * errors. Pass `() => true` to restore the old "retry everything" behavior.
    *
-   * Example — only retry network/timeout errors:
-   *   shouldRetry: (err) => err.message.includes('timeout') || err.message.includes('ECONNRESET')
+   * Example — only retry on a specific status code:
+   *   shouldRetry: (err) => err.message.includes('503')
    */
   shouldRetry?: (error: Error) => boolean;
+}
+
+/**
+ * Default transient-error predicate.
+ *
+ * Only retries on errors that are likely transient (network blips, server-side
+ * 5xx, connection resets, and timeouts). Permanent failures such as 404 Not Found
+ * or invalid IPFS CIDs are NOT retried, preventing wasted retries and masking
+ * of logic bugs.
+ *
+ * Pass a custom `shouldRetry` to `withRetry` / `withRetryResult` to override.
+ */
+export function isTransientError(error: Error): boolean {
+  const msg = error.message.toLowerCase();
+  return (
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('econnreset') ||
+    msg.includes('econnrefused') ||
+    msg.includes('enotfound') ||
+    msg.includes('socket') ||
+    msg.includes('fetch failed') ||
+    // HTTP 5xx status codes
+    /\b5\d{2}\b/.test(msg)
+  );
 }
 
 const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'shouldRetry'>> = {
@@ -71,9 +96,11 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
 
-      // If shouldRetry is provided and returns false, abort immediately.
-      // This prevents wasting retries on permanent failures (404, invalid CID, etc.)
-      if (shouldRetry && !shouldRetry(lastError)) {
+      // Use the caller-supplied shouldRetry predicate, falling back to the default
+      // transient-error predicate. This prevents wasting retries on permanent failures
+      // (404, invalid CID, etc.) while still retrying on network/timeout/5xx errors.
+      const retryPredicate = shouldRetry ?? isTransientError;
+      if (!retryPredicate(lastError)) {
         throw lastError;
       }
 

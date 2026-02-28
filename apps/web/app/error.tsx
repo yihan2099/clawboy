@@ -1,3 +1,8 @@
+// TODO(#079): Error handling patterns across apps/web are inconsistent. Some components
+// swallow errors silently (empty catch blocks), others show truncated messages, and others
+// use toast notifications without structured logging. A unified approach is needed:
+// (1) always console.error with context, (2) show full messages to the user (not truncated),
+// (3) integrate Sentry for production error capture (see #076).
 'use client';
 
 import { useEffect } from 'react';
@@ -10,7 +15,12 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
+    // TODO(#076): Integrate Sentry (or equivalent) for production error tracking.
+    // Replace this console.error with Sentry.captureException(error) so that
+    // unhandled errors are captured with full stack traces, user context, and
+    // breadcrumbs. The error.digest field (Next.js server error ID) should be
+    // included as a tag so server-side logs can be correlated with client reports.
+    // See: https://docs.sentry.io/platforms/javascript/guides/nextjs/
     console.error('Application error:', error);
   }, [error]);
 

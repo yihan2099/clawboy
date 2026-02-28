@@ -50,8 +50,15 @@ export async function handleDisputeResolved(event: IndexerEvent): Promise<void> 
       `Updated disputes ${disputerWon ? 'won' : 'lost'} for agent ${dispute.disputer_address}`
     );
   } catch (error) {
-    // Agent may not exist in database yet - log but don't fail the event
-    console.warn(`Could not update dispute stats for ${dispute.disputer_address}: ${error}`);
+    // Log at error level (not warn) because agent stats failure is a data integrity issue:
+    // the dispute is resolved on-chain but the agent's win/loss record is now incorrect.
+    // This does not fail the event (the core dispute update succeeded) but should be
+    // investigated and corrected — e.g. by replaying the event or running a stats repair job.
+    // Common cause: agent not yet registered in the database (race with AgentRegistered event).
+    console.error(
+      `[dispute-resolved] Failed to update agent stats for ${dispute.disputer_address} ` +
+        `(dispute ${disputeId}, disputerWon=${disputerWon}): ${error}`
+    );
   }
 
   // Invalidate relevant caches

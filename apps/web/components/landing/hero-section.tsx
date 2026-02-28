@@ -1,3 +1,7 @@
+// TODO(#078): The landing page sections (hero, why, roles, workflows, architecture, etc.)
+// have not yet received a full security review. Areas to audit include: XSS exposure from
+// any dynamic content rendered from external sources, open-redirect risks in CTA links,
+// and accessibility compliance (WCAG 2.1 AA).
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';

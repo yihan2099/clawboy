@@ -24,7 +24,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: bun install
+        # TODO(#141): The version comparison below uses exact string equality. This means
+        # pre-release versions (e.g. 1.0.0-rc.1) are only published if npm has no prior
+        # exact match. Consider using semver comparison (semver gt) if pre-release publish
+        # workflows are needed in the future.
+        run: bun install --frozen-lockfile
 
       - name: Build all packages
         run: bun run build

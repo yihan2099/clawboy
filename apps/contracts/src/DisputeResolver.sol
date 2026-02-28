@@ -18,13 +18,22 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     uint256 public constant MIN_DISPUTE_STAKE = 0.01 ether;
     uint256 public constant DISPUTE_STAKE_PERCENT = 1; // 1% of bounty
     uint256 public constant MAJORITY_THRESHOLD_BPS = 6000; // 60% in basis points (10000 = 100%)
-    uint256 public constant MAX_VOTERS_PER_DISPUTE = 500; // Prevent gas exhaustion in resolution
     uint256 public constant VOTER_REP_BATCH_SIZE = 50; // Max voters processed per batch call
+
+    // Configurable voter cap (settable by timelock)
+    uint256 public constant MIN_MAX_VOTERS = 10; // Lower bound for voter cap
+    uint256 public constant ABS_MAX_VOTERS = 1000; // Upper bound for voter cap (gas safety ceiling)
+    /// @notice Maximum number of voters allowed per dispute.
+    ///         Prevents unbounded gas in resolveDispute() and processVoterReputationBatch().
+    ///         Settable by the timelock via setMaxVotersPerDispute(); bounded by
+    ///         [MIN_MAX_VOTERS, ABS_MAX_VOTERS].
+    uint256 public maxVotersPerDispute = 500;
     /// @dev VOTE_CORRECT_DELTA and VOTE_INCORRECT_DELTA are passed to
     ///      PactAgentAdapter.updateVoterReputation(), which only uses the *sign*
     ///      of the delta (positive → reward, negative → penalty). The actual reputation
     ///      values written on-chain are VOTE_CORRECT_VALUE / VOTE_INCORRECT_VALUE
     ///      defined in PactAgentAdapter. Keep both pairs in sync if you change them.
+    ///      DisputeResolver uses same deltas as PactAgentAdapter: +3 correct, -2 incorrect.
     int256 constant VOTE_CORRECT_DELTA = 3; // Reputation reward for voting with majority
     int256 constant VOTE_INCORRECT_DELTA = -2; // Reputation penalty for voting against majority
 
@@ -54,6 +63,11 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     uint256 public totalSlashedStakes;
     uint256 public totalWithdrawnStakes;
 
+    // Withdrawal pattern: pending stake refunds for dispute winners / cancelled disputes.
+    // Using pull-over-push to prevent a contract-wallet disputer from blocking resolveDispute()
+    // by rejecting the ETH transfer (DoS via revert in receive/fallback).
+    mapping(address => uint256) public pendingWithdrawals;
+
     // Errors
     error DisputeNotFound();
     error NotSubmitter();
@@ -62,6 +76,10 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     error TaskNotInReview();
     error VotingNotActive();
     error AlreadyVoted();
+    /// @notice Reverted when the disputer tries to vote on their own dispute
+    error DisputerCannotVote();
+    /// @notice Reverted when the task creator tries to vote on a dispute for their own task
+    error CreatorCannotVote();
     error NotRegistered();
     error VotingStillActive();
     error DisputeAlreadyResolved();
@@ -76,9 +94,14 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     error VoterRepAlreadyComplete();
     error DisputeNotResolved();
     error ValueOutOfBounds();
+    error NoPendingWithdrawal();
 
     /// @notice Emitted when a dispute is cancelled
     event DisputeCancelled(uint256 indexed disputeId, uint256 indexed taskId, address cancelledBy);
+
+    /// @notice Emitted when a dispute stake is credited to the disputer's pending withdrawal balance.
+    ///         The disputer must call claimStake() to receive the funds.
+    event StakeReadyToWithdraw(uint256 indexed disputeId, address indexed disputer, uint256 amount);
 
     // Ownership events
     event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
@@ -98,6 +121,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
 
     // Time configuration event
     event VotingPeriodUpdated(uint256 oldPeriod, uint256 newPeriod);
+
+    // Voter cap configuration event
+    event MaxVotersPerDisputeUpdated(uint256 oldMax, uint256 newMax);
 
     // Timelock configuration event
     event TimelockSet(address indexed newTimelock);
@@ -129,6 +155,22 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         uint256 oldPeriod = votingPeriod;
         votingPeriod = newPeriod;
         emit VotingPeriodUpdated(oldPeriod, newPeriod);
+    }
+
+    /**
+     * @notice Set the maximum number of voters allowed per dispute (requires timelock)
+     * @param newMax The new maximum voter count (min MIN_MAX_VOTERS, max ABS_MAX_VOTERS)
+     * @dev The timelock delay (48h) ensures governance review before the cap is changed.
+     *      Setting a lower cap does NOT retroactively affect disputes that already have more
+     *      voters than the new cap — it only applies to future submitVote() calls.
+     */
+    function setMaxVotersPerDispute(uint256 newMax) external onlyTimelock {
+        if (newMax < MIN_MAX_VOTERS || newMax > ABS_MAX_VOTERS) {
+            revert ValueOutOfBounds();
+        }
+        uint256 oldMax = maxVotersPerDispute;
+        maxVotersPerDispute = newMax;
+        emit MaxVotersPerDisputeUpdated(oldMax, newMax);
     }
 
     /**
@@ -219,6 +261,12 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
      * @notice Submit a vote on a dispute
      * @param disputeId The dispute ID
      * @param supportsDisputer True to support disputer, false to support creator
+     * @dev VOTE WEIGHT TIMING: The voter's weight is captured at the moment submitVote()
+     *      is called (via agentAdapter.getVoteWeight(msg.sender)) and stored in the Vote
+     *      struct. This is intentional — it locks in the weight at voting time, preventing
+     *      a voter from accumulating more reputation after voting to retroactively increase
+     *      their influence on an ongoing dispute. Any reputation changes after submitVote()
+     *      (e.g., winning another task) do NOT affect this vote's weight.
      */
     function submitVote(uint256 disputeId, bool supportsDisputer) external whenNotPaused {
         Dispute storage dispute = _disputes[disputeId];
@@ -228,14 +276,19 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         if (!agentAdapter.isRegistered(msg.sender)) revert NotRegistered();
         if (_votes[disputeId][msg.sender].timestamp != 0) revert AlreadyVoted();
 
-        // Voters cannot be the disputer or the task creator
+        // Voters cannot be the disputer or the task creator.
+        // NOTE: taskManager.getTask() will revert with TaskNotFound if dispute.taskId is
+        // invalid. In practice this cannot happen because startDispute() verifies the task
+        // exists via the same call before creating the dispute record, so dispute.taskId is
+        // always a valid, previously-existing task ID.
         ITaskManager.Task memory task = taskManager.getTask(dispute.taskId);
-        if (msg.sender == dispute.disputer || msg.sender == task.creator) revert AlreadyVoted();
+        if (msg.sender == dispute.disputer) revert DisputerCannotVote();
+        if (msg.sender == task.creator) revert CreatorCannotVote();
 
         uint256 weight = agentAdapter.getVoteWeight(msg.sender);
 
         // Enforce voter limit to prevent gas exhaustion during resolution
-        if (_voters[disputeId].length >= MAX_VOTERS_PER_DISPUTE) revert MaxVotersReached();
+        if (_voters[disputeId].length >= maxVotersPerDispute) revert MaxVotersReached();
 
         _votes[disputeId][msg.sender] = Vote({
             voter: msg.sender,
@@ -270,7 +323,10 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         bool disputerWon;
 
         if (totalVotes == 0) {
-            // No votes - default to creator wins (status quo)
+            // No votes: tie breaks in favor of creator (status quo wins).
+            // Rationale: if no community members voted, there is no signal to overturn
+            // the creator's decision. The disputer's stake is slashed — no-vote disputes
+            // are disincentivized because the disputer loses their stake without a quorum.
             disputerWon = false;
         } else {
             // Check if disputer got 60%+ of votes (basis points for precision)
@@ -307,11 +363,15 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
      */
     function _processDisputeOutcome(Dispute storage dispute, bool disputerWon) private {
         if (disputerWon) {
-            // Disputer wins - return stake
-            (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
-            if (!success) revert TransferFailed();
+            // Disputer wins - credit stake to their pending withdrawal balance (pull-over-push pattern).
+            // A direct ETH send is intentionally avoided here: if the disputer is a contract that
+            // rejects ETH (no receive/fallback or a reverting one), a direct send would cause the
+            // entire resolveDispute() call to revert, permanently bricking dispute resolution (DoS).
+            // The disputer must call claimStake() to pull funds out.
+            pendingWithdrawals[dispute.disputer] += dispute.disputeStake;
 
             emit DisputeStakeReturned(dispute.id, dispute.disputer, dispute.disputeStake);
+            emit StakeReadyToWithdraw(dispute.id, dispute.disputer, dispute.disputeStake);
 
             // Reputation handled by TaskManager.resolveDispute()
         } else {
@@ -329,14 +389,34 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @dev Apply the reputation update for a single voter based on whether they voted
+     *      with the majority outcome.
+     *      Extracted from the inline loops in _updateVoterReputation() and
+     *      processVoterReputationBatch() to eliminate code duplication.
+     * @param voter       The voter's wallet address
+     * @param vote        The voter's recorded Vote (storage reference)
+     * @param disputerWon The final dispute outcome
+     */
+    function _applyVoterRepUpdate(
+        address voter,
+        Vote storage vote,
+        bool disputerWon
+    )
+        private
+    {
+        // Ternary/if-else is clearer than alternative formulations; no gas savings from change.
+        bool votedWithMajority = (vote.supportsDisputer == disputerWon);
+        if (votedWithMajority) {
+            agentAdapter.updateVoterReputation(voter, VOTE_CORRECT_DELTA);
+        } else {
+            agentAdapter.updateVoterReputation(voter, VOTE_INCORRECT_DELTA);
+        }
+    }
+
+    /**
      * @dev Update reputation for voters based on whether they voted with majority.
      *      Processes up to VOTER_REP_BATCH_SIZE voters inline. If more voters remain,
      *      they must be processed via processVoterReputationBatch().
-     *
-     * CODE QUALITY NOTE: The per-voter update logic (comparing supportsDisputer vs disputerWon
-     * and calling updateVoterReputation) is duplicated in processVoterReputationBatch().
-     * A future refactor could extract it to a private helper `_applyVoterRepUpdate(address voter, bool disputerWon)`.
-     * Avoided here to minimize change risk on production contract code.
      */
     function _updateVoterReputation(uint256 disputeId, bool disputerWon) private {
         address[] storage voters = _voters[disputeId];
@@ -344,14 +424,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         uint256 batchEnd = total < VOTER_REP_BATCH_SIZE ? total : VOTER_REP_BATCH_SIZE;
 
         for (uint256 i = 0; i < batchEnd; i++) {
-            Vote storage vote = _votes[disputeId][voters[i]];
-            bool votedWithMajority = (vote.supportsDisputer == disputerWon);
-
-            if (votedWithMajority) {
-                agentAdapter.updateVoterReputation(voters[i], VOTE_CORRECT_DELTA);
-            } else {
-                agentAdapter.updateVoterReputation(voters[i], VOTE_INCORRECT_DELTA);
-            }
+            _applyVoterRepUpdate(voters[i], _votes[disputeId][voters[i]], disputerWon);
         }
 
         _voterRepProcessedIndex[disputeId] = batchEnd;
@@ -384,14 +457,7 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         bool disputerWon = dispute.disputerWon;
 
         for (uint256 i = startIndex; i < batchEnd; i++) {
-            Vote storage vote = _votes[disputeId][voters[i]];
-            bool votedWithMajority = (vote.supportsDisputer == disputerWon);
-
-            if (votedWithMajority) {
-                agentAdapter.updateVoterReputation(voters[i], VOTE_CORRECT_DELTA);
-            } else {
-                agentAdapter.updateVoterReputation(voters[i], VOTE_INCORRECT_DELTA);
-            }
+            _applyVoterRepUpdate(voters[i], _votes[disputeId][voters[i]], disputerWon);
         }
 
         _voterRepProcessedIndex[disputeId] = batchEnd;
@@ -408,6 +474,24 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         uint256 total = _voters[disputeId].length;
         uint256 processed = _voterRepProcessedIndex[disputeId];
         remaining = total > processed ? total - processed : 0;
+    }
+
+    /**
+     * @notice Claim a pending stake refund after winning a dispute or after dispute cancellation
+     * @dev Implements the pull-over-push withdrawal pattern to prevent DoS by a disputer whose
+     *      contract wallet rejects ETH. The disputer's stake is credited here and must be
+     *      explicitly claimed via this function.
+     * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
+     */
+    function claimStake() external nonReentrant {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        if (amount == 0) revert NoPendingWithdrawal();
+
+        // Zero the balance before the transfer (checks-effects-interactions)
+        pendingWithdrawals[msg.sender] = 0;
+
+        (bool success,) = msg.sender.call{ value: amount }("");
+        if (!success) revert TransferFailed();
     }
 
     /**
@@ -472,6 +556,9 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
      * @notice Get all voters for a dispute
      * @param disputeId The dispute ID
      * @return Array of voter addresses
+     * @dev WARNING: Gas cost scales linearly with the number of voters. For disputes near
+     *      maxVotersPerDispute (up to 1000), this call may be expensive in off-chain simulation
+     *      or fail in on-chain contexts. Prefer pendingVoterRepUpdates() for counts only.
      */
     function getVoters(uint256 disputeId) external view returns (address[] memory) {
         return _voters[disputeId];
@@ -518,6 +605,24 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
      * @dev This refunds the dispute stake to the disputer and marks the dispute as cancelled.
      *      The task reverts to InReview status with a new challenge deadline.
      *      Can only cancel active disputes that haven't been resolved yet.
+     *
+     * @dev DUAL CANCELLATION PATHS — Security profile comparison:
+     *
+     *   Path A — `cancelDispute()` (this function, `onlyTimelock`):
+     *     - Requires a 48-hour TimelockController queuing delay before execution.
+     *     - Provides transparency: the community can observe the pending cancellation
+     *       and object (or dispute resolution completes) during the delay.
+     *     - Appropriate for routine governance (e.g. clearly invalid disputes discovered
+     *       after careful review).
+     *
+     *   Path B — `emergencyCancelDispute()` (`onlyOwner`):
+     *     - Executable immediately by the owner; no time delay.
+     *     - Emits `EmergencyBypassUsed` for audit trail visibility.
+     *     - Appropriate for critical situations where waiting 48 h would cause harm
+     *       (e.g. a bug-triggered dispute that would irreversibly lock funds).
+     *     - Higher centralization risk: a compromised owner key can bypass governance.
+     *
+     *   Both paths refund the disputer's stake and revert the task to InReview status.
      */
     function cancelDispute(uint256 disputeId) external onlyTimelock nonReentrant {
         Dispute storage dispute = _disputes[disputeId];
@@ -530,13 +635,14 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         // Clear the task dispute mapping
         _taskDispute[dispute.taskId] = 0;
 
-        // Return stake to disputer
-        (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
-        if (!success) revert TransferFailed();
+        // Credit stake to disputer's pending withdrawal — use pull-over-push to avoid DoS
+        // (same rationale as in _processDisputeOutcome).
+        pendingWithdrawals[dispute.disputer] += dispute.disputeStake;
 
         // Revert task to InReview status so it can be finalized normally or disputed again
         taskManager.revertDisputedTask(dispute.taskId);
 
+        emit StakeReadyToWithdraw(disputeId, dispute.disputer, dispute.disputeStake);
         emit DisputeCancelled(disputeId, dispute.taskId, msg.sender);
     }
 
@@ -565,14 +671,15 @@ contract DisputeResolver is IDisputeResolver, ReentrancyGuard, Pausable {
         // Clear the task dispute mapping
         _taskDispute[dispute.taskId] = 0;
 
-        // Return stake to disputer
-        (bool success,) = dispute.disputer.call{ value: dispute.disputeStake }("");
-        if (!success) revert TransferFailed();
+        // Credit stake to disputer's pending withdrawal — use pull-over-push to avoid DoS
+        // (same rationale as in _processDisputeOutcome).
+        pendingWithdrawals[dispute.disputer] += dispute.disputeStake;
 
         // Revert task to InReview status so it can be finalized normally or disputed again
         taskManager.revertDisputedTask(dispute.taskId);
 
         emit EmergencyBypassUsed(msg.sender, this.cancelDispute.selector);
+        emit StakeReadyToWithdraw(disputeId, dispute.disputer, dispute.disputeStake);
         emit DisputeCancelled(disputeId, dispute.taskId, msg.sender);
     }
 
