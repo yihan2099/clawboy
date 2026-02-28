@@ -20,7 +20,7 @@ export interface RetryOptions {
   shouldRetry?: (error: Error) => boolean;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry'>> = {
+const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'shouldRetry'>> = {
   maxAttempts: 3,
   initialDelayMs: 1000,
   maxDelayMs: 30000,

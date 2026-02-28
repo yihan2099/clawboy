@@ -21,17 +21,3 @@ export const BASE_MAINNET_ADDRESSES = {
 } as const;
 
 export const BASE_MAINNET_CHAIN_ID = 8453;
-
-// Guard: warn loudly if mainnet addresses are accessed at runtime, since they are
-// all zero and cannot function correctly until mainnet deployment.
-if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'test') {
-  const allZero = Object.values(BASE_MAINNET_ADDRESSES).every(
-    (addr) => addr === '0x0000000000000000000000000000000000000000'
-  );
-  if (allZero) {
-    console.warn(
-      '[base-mainnet] BASE_MAINNET_ADDRESSES are all zero — contracts not yet deployed to Base mainnet. ' +
-      'Do not use these addresses in production.'
-    );
-  }
-}

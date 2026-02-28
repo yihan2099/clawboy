@@ -45,7 +45,7 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
   } else {
     ipfsFetchFailed = true;
     console.error(
-      `Failed to fetch task spec for CID ${specificationCid} after ${fetchResult.attempts} attempts: ${fetchResult.error?.message ?? fetchResult.error}`
+      `Failed to fetch task spec for CID ${specificationCid} after ${fetchResult.attempts} attempts: ${fetchResult.error ?? 'unknown error'}`
     );
     // Non-silent failure: task is recorded with ipfs_fetch_failed=true.
     // The IPFS retry job (startIpfsRetryJob in index.ts) will periodically
