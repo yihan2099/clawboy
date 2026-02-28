@@ -8,8 +8,6 @@
     ".": "./src/index.ts",
     "./task": "./src/task/index.ts",
     "./agent": "./src/agent/index.ts",
-    "./claim": "./src/claim/index.ts",
-    "./verification": "./src/verification/index.ts",
     "./mcp": "./src/mcp/index.ts"
   },
   "scripts": {

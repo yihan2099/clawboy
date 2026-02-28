@@ -40,10 +40,12 @@ bun test src/__tests__/e2e/
 ### Local Contract Addresses (Deterministic)
 
 ```
-PactRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
-EscrowVault:      0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-TaskManager:      0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-DisputeResolver:  0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+IdentityRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
+ReputationRegistry: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+AgentAdapter:       0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+EscrowVault:        0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+TaskManager:        0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+DisputeResolver:    0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 ```
 
 ### Test Accounts (Anvil Defaults)
@@ -135,9 +137,9 @@ The test covers the competitive task lifecycle:
 | 2    | Register Agent  | register_agent                   | register(profileCid)         | All         |
 | 3    | Create Task     | create_task                      | createTask(...)              | All         |
 | 4    | Submit Work     | submit_work                      | submitWork(taskId, cid)      | All         |
-| 5    | Select Winner   | select_winner                    | selectWinner(taskId, winner) | All         |
+| 5    | Select Winner   | - (direct contract call)         | selectWinner(taskId, winner) | All         |
 | 6    | Skip 48h window | - (evm_increaseTime)             | -                            | Anvil only  |
-| 7    | Finalize        | finalize_task                    | finalizeTask(taskId)         | Anvil only  |
+| 7    | Finalize        | - (direct contract call)         | finalizeTask(taskId)         | Anvil only  |
 | 8    | Verify Payment  | - (balance check)                | -                            | Anvil only  |
 
 ### Discovery Tools

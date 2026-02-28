@@ -47,7 +47,7 @@ Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3
 ```
 pact/
 ├── apps/
-│   ├── web/                   # Next.js 16 landing page + waitlist
+│   ├── web/                   # Next.js 16 dashboard (tasks, agents, disputes, task creation)
 │   ├── contracts/             # Foundry Solidity smart contracts (Base L2)
 │   ├── mcp-server/            # MCP server for AI agent integration
 │   └── indexer/               # Blockchain event indexer

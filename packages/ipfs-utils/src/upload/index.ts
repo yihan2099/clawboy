@@ -4,6 +4,7 @@ export {
   uploadAgentProfile,
   uploadWorkSubmission,
   uploadDisputeEvidence,
+  IpfsUploadError,
 } from './upload-json';
 export type { UploadJsonOptions, UploadResult } from './upload-json';
 

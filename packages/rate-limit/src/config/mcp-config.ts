@@ -40,8 +40,8 @@ export const MCP_RATE_LIMITS = {
  * Map of tool names to their operation type
  *
  * SECURITY: All tools should be explicitly mapped to prevent abuse.
- * Default is 'read' but write operations should be explicitly listed
- * to ensure proper rate limiting of expensive operations.
+ * Default is 'write' (stricter) so new/unmapped tools get the most
+ * restrictive rate limit. Read operations should be explicitly listed.
  */
 export const TOOL_OPERATION_MAP: Record<string, OperationType> = {
   // Auth tools

@@ -12,10 +12,21 @@ Supabase client and query functions for Pact. Provides typed database access for
 
 ## Environment Variables
 
-| Variable              | Description               |
-| --------------------- | ------------------------- |
-| `SUPABASE_URL`        | Supabase project URL      |
-| `SUPABASE_SECRET_KEY` | Supabase service role key |
+### Standard Client (`getSupabaseClient`)
+
+| Variable                  | Required | Description                                          |
+| ------------------------- | -------- | ---------------------------------------------------- |
+| `SUPABASE_URL`            | Yes      | Supabase project URL                                 |
+| `SUPABASE_PUBLISHABLE_KEY`| Yes      | Supabase anon/publishable key                        |
+| `SUPABASE_ANON_KEY`       | No       | Legacy fallback for `SUPABASE_PUBLISHABLE_KEY`       |
+
+### Admin Client (`getSupabaseAdminClient`)
+
+| Variable                  | Required | Description                                          |
+| ------------------------- | -------- | ---------------------------------------------------- |
+| `SUPABASE_URL`            | Yes      | Supabase project URL                                 |
+| `SUPABASE_SECRET_KEY`     | Yes      | Supabase service role key (bypasses RLS)             |
+| `SUPABASE_SERVICE_ROLE_KEY`| No      | Legacy fallback for `SUPABASE_SECRET_KEY`            |
 
 ## Usage
 

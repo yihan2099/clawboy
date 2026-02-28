@@ -54,8 +54,8 @@ The following are known limitations:
 2. **Owner privileges** - Contract owners can replace critical contract addresses
    - Mitigation: Implemented — TimelockController deployed with 48-hour delays for critical admin operations
 
-3. **Hardcoded time constants** - Challenge window and voting periods cannot be adjusted without redeployment
-   - Impact: Limited operational flexibility
+3. **Configurable time constants** - Challenge window and voting period are owner-adjustable via `setChallengeWindow()` (TaskManager) and `setVotingPeriod()` (DisputeResolver), bounded to 24 hours min / 7 days max
+   - Impact: Owner can tune timing within safe bounds; values outside bounds revert with `ValueOutOfBounds()`
 
 4. ~~**No SafeERC20**~~ - **Resolved**: EscrowVault.sol uses SafeERC20 for all token transfers
 

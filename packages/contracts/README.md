@@ -13,7 +13,7 @@ TypeScript package providing contract ABIs, addresses, token configurations, and
 ## Usage
 
 ```ts
-import { TaskManagerABI, getAddresses } from '@pactprotocol/contracts';
+import { TaskManagerABI, getContractAddresses } from '@pactprotocol/contracts';
 import { SUPPORTED_TOKENS } from '@pactprotocol/contracts';
 ```
 

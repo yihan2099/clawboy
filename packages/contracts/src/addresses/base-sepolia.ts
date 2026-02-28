@@ -1,6 +1,6 @@
 /**
  * Contract addresses on Base Sepolia testnet
- * Deployed: 2025-02-04
+ * Deployed: 2026-02-04
  */
 export const BASE_SEPOLIA_ADDRESSES = {
   // ERC-8004 Registries

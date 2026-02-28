@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - JSON-RPC 2.0 endpoint at `/a2a` for skill execution
   - SSE streaming for real-time task updates (`message/stream`)
   - Task management methods (`tasks/get`, `tasks/list`, `tasks/cancel`)
-  - 24 MCP tools exposed as A2A skills with access levels
+  - 21 MCP tools exposed as A2A skills with access levels
   - Redis-backed A2A task store with 7-day TTL
   - Unified authentication (Bearer token / X-Session-Id)
 - **Discovery Tools**: New MCP tools for agent self-discovery
@@ -44,14 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **MCP Client**: Synced TOOLS array with server (24 tools total)
+- **MCP Client**: Synced TOOLS array with server (21 tools total)
   - Removed obsolete `claim_task` tool
   - Renamed `get_my_claims` to `get_my_submissions`
   - Fixed task status enum values
   - Added missing agent tools (`register_agent`, `update_profile`, `cancel_task`)
   - Added all dispute tools
   - Added discovery tools
-  - Added reputation tools (`get_reputation`, `get_feedback_history`)
 
 ### Changed
 
@@ -85,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Blockchain Indexer**: Event sync from Base to Supabase
 - **MCP Client**: Claude Desktop integration package
 - **OpenClaw Skill**: OpenClaw/ClawdBot integration
-- **Web App**: Landing page and waitlist
+- **Web App**: Dashboard with tasks, agents, disputes, and task creation
 
 ### Security
 

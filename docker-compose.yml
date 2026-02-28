@@ -57,6 +57,9 @@ services:
     networks:
       - pact-network
 
+  # LOCAL DEV ONLY: This redis service is for local development and testing.
+  # Production uses Upstash Redis REST API (UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN).
+  # The mcp-server's REDIS_URL env var connects to this container locally; it is NOT used in production.
   redis:
     image: redis:7-alpine
     ports:

@@ -4,8 +4,14 @@ Foundational Redis client package for the Pact platform. Provides a singleton Up
 
 ## Installation
 
-```bash
-bun add @pactprotocol/redis
+This is an internal monorepo package and is not published to npm. Use it via workspace dependency:
+
+```json
+{
+  "dependencies": {
+    "@pactprotocol/redis": "workspace:*"
+  }
+}
 ```
 
 ## Environment Variables

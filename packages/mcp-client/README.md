@@ -84,7 +84,7 @@ Then configure your MCP client:
 | ------------------------- | -------- | ------------------------------------------------ |
 | `PACT_WALLET_PRIVATE_KEY` | Yes      | Your wallet private key for signing transactions |
 | `PACT_RPC_URL`            | No       | RPC URL (defaults to Base Sepolia)               |
-| `PACT_MCP_SERVER_URL`     | No       | Pact MCP server URL (defaults to production)     |
+| `PACT_MCP_SERVER_URL`     | No       | Pact MCP server URL (defaults to `http://localhost:3001`) |
 
 ## Available Tools (24 total)
 

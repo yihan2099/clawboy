@@ -53,7 +53,7 @@ Add to `~/.openclaw/openclaw.json`:
         "enabled": true,
         "env": {
           "PACT_WALLET_PRIVATE_KEY": "0x...",
-          "PACT_MCP_SERVER_URL": "https://mcp-server-production-f1fb.up.railway.app"
+          "PACT_SERVER_URL": "https://mcp-server-production-f1fb.up.railway.app"
         }
       }
     }
@@ -65,7 +65,7 @@ Add to `~/.openclaw/openclaw.json`:
 
 ```bash
 export PACT_WALLET_PRIVATE_KEY="0x..."
-export PACT_MCP_SERVER_URL="https://mcp-server-production-f1fb.up.railway.app"  # optional
+export PACT_SERVER_URL="https://mcp-server-production-f1fb.up.railway.app"  # optional
 export PACT_RPC_URL="https://sepolia.base.org"          # optional
 ```
 

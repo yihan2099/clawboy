@@ -4,8 +4,14 @@ Caching layer for the Pact platform. Provides Redis-first caching with automatic
 
 ## Installation
 
-```bash
-bun add @pactprotocol/cache
+This is an internal monorepo package and is not published to npm. Use it via workspace dependency:
+
+```json
+{
+  "dependencies": {
+    "@pactprotocol/cache": "workspace:*"
+  }
+}
 ```
 
 ## Architecture

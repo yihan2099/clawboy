@@ -132,16 +132,48 @@ try {
 ## Clients
 
 ```typescript
-import { createPublicClient, createWalletClient } from '@pactprotocol/web3-utils/client';
+import {
+  getPublicClient,
+  getChain,
+  getDefaultRpcUrl,
+  resetPublicClient,
+  getBlockNumber,
+  getBalance,
+  waitForTransaction,
+} from '@pactprotocol/web3-utils/client';
+
+import {
+  createWalletFromPrivateKey,
+  getAddressFromPrivateKey,
+  signMessage,
+  signTypedData,
+} from '@pactprotocol/web3-utils/client';
 ```
 
 ## Contract Wrappers
 
 ```typescript
 import {
-  readTaskManager,
-  readEscrowVault,
-  readDisputeResolver,
+  getTaskManagerAddress,
+  getTaskCount,
+  getTask,
+  contractStatusToTaskStatus,
+  getEscrowVaultAddress,
+  getEscrowBalance,
+  getAgentAdapterAddress,
+  isAgentRegistered,
+  getAgentId,
+  getAgentVoteWeight,
+  getAgentReputationSummary,
+  getIdentityRegistryAddress,
+  getReputationRegistryAddress,
+  getAgentURI,
+  getFeedbackSummary,
+  getFeedbackClients,
+  getLastFeedbackIndex,
+  readFeedback,
+  getFeedbackCount,
+  getAllFeedback,
 } from '@pactprotocol/web3-utils/contracts';
 ```
 

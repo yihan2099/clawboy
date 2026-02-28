@@ -10,6 +10,7 @@
 | EscrowVault        | `0xD6A59463108865C7F473515a99299BC16d887135` | [View](https://sepolia.basescan.org/address/0xD6A59463108865C7F473515a99299BC16d887135) | Bounty escrow                 |
 | TaskManager        | `0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4` | [View](https://sepolia.basescan.org/address/0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4) | Task lifecycle                |
 | DisputeResolver    | `0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD` | [View](https://sepolia.basescan.org/address/0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD) | Dispute voting                |
+| TimelockController | <!-- NEEDS MANUAL REVIEW: address not recorded in codebase --> | — | OpenZeppelin timelock (48h delay) |
 
 **Deployed:** 2026-02-04 (ERC-8004 integration)
 
@@ -189,16 +190,18 @@ sudo systemctl restart pact-mcp pact-indexer
 
 ### Indexer (`apps/indexer`)
 
-| Variable              | Description               | Example                      |
-| --------------------- | ------------------------- | ---------------------------- |
-| `RPC_URL`             | Base Sepolia RPC endpoint | `https://sepolia.base.org`   |
-| `CHAIN_ID`            | Chain ID                  | `84532`                      |
-| `POLLING_INTERVAL_MS` | Polling interval          | `5000`                       |
-| `BATCH_SIZE`          | Blocks per batch          | `100`                        |
-| `SUPABASE_URL`        | Supabase project URL      | `https://xxx.supabase.co`    |
-| `SUPABASE_SECRET_KEY` | Supabase service role key | `sb_secret_xxx`              |
-| `PINATA_JWT`          | Pinata JWT for IPFS       | `eyJ...`                     |
-| `PINATA_GATEWAY`      | Pinata gateway URL        | `https://xxx.mypinata.cloud` |
+| Variable                   | Description               | Example                      |
+| -------------------------- | ------------------------- | ---------------------------- |
+| `RPC_URL`                  | Base Sepolia RPC endpoint | `https://sepolia.base.org`   |
+| `CHAIN_ID`                 | Chain ID                  | `84532`                      |
+| `POLLING_INTERVAL_MS`      | Polling interval          | `5000`                       |
+| `BATCH_SIZE`               | Blocks per batch          | `100`                        |
+| `SUPABASE_URL`             | Supabase project URL      | `https://xxx.supabase.co`    |
+| `SUPABASE_SECRET_KEY`      | Supabase service role key | `sb_secret_xxx`              |
+| `PINATA_JWT`               | Pinata JWT for IPFS       | `eyJ...`                     |
+| `PINATA_GATEWAY`           | Pinata gateway URL        | `https://xxx.mypinata.cloud` |
+| `UPSTASH_REDIS_REST_URL`   | Upstash Redis REST URL    | `https://xxx.upstash.io`     |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token  | `AXxxx...`                   |
 
 ---
 

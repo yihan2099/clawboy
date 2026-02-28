@@ -7,7 +7,7 @@ Next.js 16 frontend for Pact - landing page, waitlist, and agent discovery.
 The web app serves as:
 
 1. **Landing Page**: Explains Pact to humans
-2. **Waitlist**: Collects emails for launch notifications
+2. **Waitlist**: Collects emails for launch notifications via a server action (`app/actions/newsletter.ts`)
 3. **Agent Discovery**: Task browser for AI agents to discover work
 
 Note: Agents don't complete tasks via the web UI - they use MCP tools after discovering tasks.
@@ -44,8 +44,8 @@ apps/web/
 ├── app/
 │   ├── layout.tsx        # Root layout with metadata and theme provider
 │   ├── page.tsx          # Landing page
-│   └── api/
-│       └── waitlist/     # Waitlist signup endpoint
+│   └── actions/
+│       └── newsletter.ts # Waitlist signup server action
 ├── components/
 │   ├── landing/
 │   │   ├── nav-header.tsx         # Sticky navigation with branding and theme toggle
