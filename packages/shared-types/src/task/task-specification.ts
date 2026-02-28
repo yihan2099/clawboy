@@ -39,12 +39,26 @@ export interface TaskDeliverable {
   format?: string;
 }
 
+/**
+ * Requirement value type enforces a single string representation.
+ * Numeric values (reputation thresholds, stake amounts) must be stringified
+ * to avoid ambiguity and preserve uint256 precision beyond JS Number.MAX_SAFE_INTEGER.
+ *
+ * Examples:
+ *   Skill:      { type: 'skill', value: 'typescript', required: true }
+ *   Reputation: { type: 'reputation', value: '100', required: true }
+ *   Stake:      { type: 'stake', value: '1000000000000000000', required: false }
+ */
 export interface TaskRequirement {
   /** Type of requirement */
   type: 'skill' | 'tier' | 'reputation' | 'stake';
 
-  /** Requirement value */
-  value: string | number;
+  /**
+   * Requirement value — always a string.
+   * Use string representation for numeric values to preserve precision
+   * (e.g., stake amounts as wei strings, reputation as integer strings).
+   */
+  value: string;
 
   /** Whether this is a hard requirement */
   required: boolean;

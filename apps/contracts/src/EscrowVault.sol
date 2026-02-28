@@ -39,6 +39,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     error OnlyTaskManager();
     error EscrowNotFound();
     error EscrowAlreadyReleased();
+    error EscrowAlreadyExists();
     error InvalidAmount();
     error TransferFailed();
     error FeeTooHigh();
@@ -52,9 +53,8 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     }
 
     modifier onlyTimelock() {
-        if (timelockController != address(0) && msg.sender != timelockController) {
-            revert OnlyTimelock();
-        }
+        if (timelockController == address(0)) revert OnlyTimelock();
+        if (msg.sender != timelockController) revert OnlyTimelock();
         _;
     }
 
@@ -89,6 +89,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
     {
         if (amount == 0) revert InvalidAmount();
+        if (_escrows[taskId].amount != 0) revert EscrowAlreadyExists();
 
         if (token == address(0)) {
             // ETH deposit
@@ -121,6 +122,7 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     {
         if (amount == 0) revert InvalidAmount();
         if (token == address(0)) revert InvalidAmount(); // Use deposit() for ETH
+        if (_escrows[taskId].amount != 0) revert EscrowAlreadyExists();
 
         // ERC20 deposit from specified address
         IERC20(token).safeTransferFrom(from, address(this), amount);
@@ -136,6 +138,10 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
      *         Net payout = totalAmount - feeAmount. Fee is sent to protocolTreasury.
      *         protocolFeeBps is capped at MAX_FEE_BPS (1000 = 10%), and Solidity 0.8
      *         overflow checks prevent any arithmetic overflow.
+     * @dev ROUNDING: Integer division truncates feeAmount toward zero, so any remainder
+     *      wei goes to the recipient (net payout rounds up). This is intentional and
+     *      recipient-favorable: the protocol never collects more than its stated fee.
+     *      Example: 1 wei bounty with 300 bps fee → feeAmount = 0, netAmount = 1.
      * @param taskId The task ID
      * @param recipient The address to receive the bounty
      * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
@@ -175,6 +181,9 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
             IERC20(escrow.token).safeTransfer(recipient, netAmount);
         }
 
+        // INVARIANT: accumulatedFees is only updated after all transfers succeed.
+        // Both ETH and ERC20 branches above revert on failure (via revert TransferFailed()
+        // or safeTransfer), so this line is only reached when fees were actually transferred.
         if (feeAmount > 0) {
             accumulatedFees[escrow.token] += feeAmount;
             emit ProtocolFeeCollected(taskId, escrow.token, feeAmount, protocolTreasury);

@@ -38,9 +38,20 @@ jobs:
           NPM_VERSION=$(npm view @pactprotocol/mcp-client version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
             echo "Publishing mcp-client@$CURRENT_VERSION (npm has $NPM_VERSION)"
-            # Safety net: remove any remaining workspace:* references from package.json
-            # (tsup bundles @pactprotocol/contracts, so it should already be in devDependencies only)
-            sed -i 's/"workspace:\*"/"*"/g' package.json
+            # Use Node.js JSON manipulation instead of sed to avoid shell injection risk
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              // Replace workspace:* references with * in dependencies
+              for (const section of ['dependencies', 'devDependencies', 'peerDependencies']) {
+                if (pkg[section]) {
+                  for (const [dep, ver] of Object.entries(pkg[section])) {
+                    if (ver === 'workspace:*') pkg[section][dep] = '*';
+                  }
+                }
+              }
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
             npm publish --access public
             # Restore original package.json
             git checkout package.json
@@ -58,9 +69,18 @@ jobs:
           NPM_VERSION=$(npm view @pactprotocol/pact-skill version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
             echo "Publishing pact-skill@$CURRENT_VERSION (npm has $NPM_VERSION)"
-            # Replace workspace:* with actual mcp-client version
+            # Use Node.js JSON manipulation instead of sed to avoid shell injection risk
             MCP_VERSION=$(node -p "require('../mcp-client/package.json').version")
-            sed -i "s|\"@pactprotocol/mcp-client\": \"workspace:\*\"|\"@pactprotocol/mcp-client\": \"^$MCP_VERSION\"|" package.json
+            export MCP_VERSION
+            node -e "
+              const fs = require('fs');
+              const mcpVersion = process.env.MCP_VERSION;
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              if (pkg.dependencies && pkg.dependencies['@pactprotocol/mcp-client'] === 'workspace:*') {
+                pkg.dependencies['@pactprotocol/mcp-client'] = '^' + mcpVersion;
+              }
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
             npm publish --access public
             # Restore original package.json
             git checkout package.json

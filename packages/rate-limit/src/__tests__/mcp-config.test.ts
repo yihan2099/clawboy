@@ -41,10 +41,12 @@ describe('MCP Config', () => {
       expect(getOperationType('auth_session')).toBe('auth');
     });
 
-    test('unknown tools default to read', () => {
-      expect(getOperationType('unknown_tool')).toBe('read');
-      expect(getOperationType('nonexistent')).toBe('read');
-      expect(getOperationType('')).toBe('read');
+    test('unknown tools default to write (stricter rate limit for unlisted tools)', () => {
+      // SECURITY: Unknown tools default to 'write' (10/min) not 'read' (100/min)
+      // to prevent new tools from accidentally getting permissive rate limits.
+      expect(getOperationType('unknown_tool')).toBe('write');
+      expect(getOperationType('nonexistent')).toBe('write');
+      expect(getOperationType('')).toBe('write');
     });
   });
 

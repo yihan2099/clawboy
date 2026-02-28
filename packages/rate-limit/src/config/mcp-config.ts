@@ -73,10 +73,14 @@ export const TOOL_OPERATION_MAP: Record<string, OperationType> = {
 };
 
 /**
- * Get the operation type for a tool
+ * Get the operation type for a tool.
+ *
+ * SECURITY: Unknown tools default to 'write' (stricter 10/min limit) rather than
+ * 'read' (100/min) to prevent new tools from accidentally getting permissive limits.
+ * All new tools must be explicitly added to TOOL_OPERATION_MAP with the correct type.
  */
 export function getOperationType(toolName: string): OperationType {
-  return TOOL_OPERATION_MAP[toolName] || 'read';
+  return TOOL_OPERATION_MAP[toolName] ?? 'write';
 }
 
 /**

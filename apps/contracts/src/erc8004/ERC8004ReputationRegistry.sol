@@ -114,17 +114,23 @@ contract ERC8004ReputationRegistry is IERC8004ReputationRegistry {
         // Increment last index
         _lastIndex[agentId][msg.sender] = feedbackIndex + 1;
 
+        // NOTE on event parameters:
+        // - param 6 (indexedTag1): emitting `tag1` here is correct — Solidity automatically
+        //   hashes indexed string parameters (keccak256) for the event topic, enabling
+        //   efficient filter-by-tag queries. The raw string is NOT stored in the topic.
+        // - param 7 (tag1): the raw tag1 string for off-chain decoding.
+        // - param 8 (tag2): the raw tag2 string.
         emit NewFeedback(
             agentId,
             msg.sender,
             feedbackIndex,
             value,
             valueDecimals,
-            tag1,
-            tag1,
-            tag2,
-            "",
-            "",
+            tag1, // indexedTag1 — Solidity hashes this for the topic filter
+            tag1, // tag1 string — raw value for off-chain consumption
+            tag2, // tag2 string
+            "",   // endpoint (unused)
+            "",   // feedbackURI (unused)
             feedbackHash
         );
     }

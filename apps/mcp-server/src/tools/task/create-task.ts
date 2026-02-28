@@ -108,6 +108,20 @@ export const createTaskTool = {
       );
     }
 
+    // Validate decimal places before parsing to prevent silent precision loss.
+    // If the input has more decimal places than the token supports (e.g., "1.0000001"
+    // for a 6-decimal token like USDC), viem's parseUnits truncates silently.
+    const decimalPart = input.bountyAmount.includes('.')
+      ? input.bountyAmount.split('.')[1]?.replace(/0+$/, '') ?? ''
+      : '';
+    if (decimalPart.length > tokenConfig.decimals) {
+      throw new Error(
+        `Invalid bountyAmount: "${input.bountyAmount}" has ${decimalPart.length} decimal places ` +
+          `but ${tokenConfig.symbol} only supports ${tokenConfig.decimals}. ` +
+          `Round to ${tokenConfig.decimals} decimal places.`
+      );
+    }
+
     // Parse amount using token's decimals
     const bountyAmountWei = parseTokenAmount(input.bountyAmount, tokenConfig.decimals);
 

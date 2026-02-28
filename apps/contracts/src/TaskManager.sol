@@ -488,7 +488,7 @@ contract TaskManager is ITaskManager, Pausable {
     function resolveDispute(uint256 taskId, bool disputerWon) external onlyDisputeResolver {
         Task storage task = _tasks[taskId];
         if (task.id == 0) revert TaskNotFound();
-        if (task.status != TaskStatus.Disputed) revert NotInReviewOrDisputed();
+        if (task.status != TaskStatus.Disputed) revert TaskNotDisputed();
 
         uint256 disputeId = _activeDisputeId[taskId];
 

@@ -23,6 +23,30 @@ export class PactApiClient {
   private sessionId: string | null = null;
 
   constructor(options: ApiClientOptions) {
+    // Validate baseUrl using the URL constructor to catch malformed URLs early.
+    // In production environments (non-localhost), only https:// is permitted.
+    let parsed: URL;
+    try {
+      parsed = new URL(options.baseUrl);
+    } catch {
+      throw new Error(`Invalid baseUrl: "${options.baseUrl}" is not a valid URL`);
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error(`Invalid baseUrl: protocol must be http or https, got "${parsed.protocol}"`);
+    }
+
+    const isLocalhost =
+      parsed.hostname === 'localhost' ||
+      parsed.hostname === '127.0.0.1' ||
+      parsed.hostname === '::1';
+
+    if (!isLocalhost && parsed.protocol !== 'https:') {
+      throw new Error(
+        `Invalid baseUrl: production URLs must use https, got "${parsed.protocol}" for host "${parsed.hostname}"`
+      );
+    }
+
     // Remove trailing slash from baseUrl
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.timeout = options.timeout ?? 30000;

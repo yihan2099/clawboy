@@ -169,7 +169,8 @@ export async function markSubmissionAsWinner(
     p_agent_address: normalizedAddress,
   });
 
-  // If RPC doesn't exist, fall back to two-step (less ideal but functional)
+  // If RPC doesn't exist, fall back to two-step (less ideal: has a race window between
+  // the two UPDATE statements). Deploy migration 20250228000002 to eliminate this race.
   if (rpcError && rpcError.code === '42883') {
     // Function doesn't exist, use fallback
     // Clear existing winners and set new winner in sequence

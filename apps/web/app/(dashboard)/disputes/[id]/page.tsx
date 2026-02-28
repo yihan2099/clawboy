@@ -173,7 +173,12 @@ export default async function DisputeDetailPage({ params }: DisputeDetailPagePro
         />
       )}
 
-      {/* Resolve Dispute (when voting deadline passed) */}
+      {/* Resolve Dispute (when voting deadline passed)
+          NOTE: This client-side date check is a UI-only gate. The on-chain
+          enforcer is DisputeResolver.resolveDispute() which reverts with
+          VotingStillActive() if block.timestamp < votingDeadline. A user
+          manipulating their local clock can see this button but the contract
+          call will still revert. Server-side enforcement is at the contract level. */}
       {dispute.status === 'active' && new Date(dispute.voting_deadline) < new Date() && (
         <ResolveDispute
           chainDisputeId={dispute.chain_dispute_id}

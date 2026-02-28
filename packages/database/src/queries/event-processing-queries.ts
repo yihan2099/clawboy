@@ -25,11 +25,14 @@ export async function isEventProcessed(
   txHash: string,
   logIndex: number
 ): Promise<boolean> {
+  // Normalize hash to lowercase at function entry to ensure consistency
+  // regardless of which code path (RPC or fallback) is taken.
+  const normalizedTxHash = txHash.toLowerCase();
   const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase.rpc('is_event_processed', {
     p_chain_id: chainId,
-    p_tx_hash: txHash.toLowerCase(),
+    p_tx_hash: normalizedTxHash,
     p_log_index: logIndex,
   });
 
@@ -39,7 +42,7 @@ export async function isEventProcessed(
       .from('processed_events')
       .select('id')
       .eq('chain_id', chainId)
-      .eq('tx_hash', txHash.toLowerCase())
+      .eq('tx_hash', normalizedTxHash)
       .eq('log_index', logIndex)
       .single();
 
@@ -58,12 +61,14 @@ export async function isEventProcessed(
  * Returns true if newly inserted, false if already existed
  */
 export async function markEventProcessed(event: EventIdentifier): Promise<boolean> {
+  // Normalize hash to lowercase at function entry
+  const normalizedTxHash = event.txHash.toLowerCase();
   const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase.rpc('mark_event_processed', {
     p_chain_id: event.chainId,
     p_block_number: event.blockNumber,
-    p_tx_hash: event.txHash.toLowerCase(),
+    p_tx_hash: normalizedTxHash,
     p_log_index: event.logIndex,
     p_event_name: event.eventName,
   });
@@ -73,7 +78,7 @@ export async function markEventProcessed(event: EventIdentifier): Promise<boolea
     const { error: insertError } = await supabase.from('processed_events').insert({
       chain_id: event.chainId,
       block_number: event.blockNumber,
-      tx_hash: event.txHash.toLowerCase(),
+      tx_hash: normalizedTxHash,
       log_index: event.logIndex,
       event_name: event.eventName,
     });
@@ -96,12 +101,14 @@ export async function markEventProcessed(event: EventIdentifier): Promise<boolea
  * Add a failed event to the dead-letter queue
  */
 export async function addFailedEvent(event: FailedEventData): Promise<string> {
+  // Normalize hash to lowercase at function entry
+  const normalizedTxHash = event.txHash.toLowerCase();
   const supabase = getSupabaseAdminClient();
 
   const { data, error } = await supabase.rpc('add_failed_event', {
     p_chain_id: event.chainId,
     p_block_number: event.blockNumber,
-    p_tx_hash: event.txHash.toLowerCase(),
+    p_tx_hash: normalizedTxHash,
     p_log_index: event.logIndex,
     p_event_name: event.eventName,
     p_event_data: event.eventData,
@@ -117,7 +124,7 @@ export async function addFailedEvent(event: FailedEventData): Promise<string> {
         {
           chain_id: event.chainId,
           block_number: event.blockNumber,
-          tx_hash: event.txHash.toLowerCase(),
+          tx_hash: normalizedTxHash,
           log_index: event.logIndex,
           event_name: event.eventName,
           event_data: event.eventData,

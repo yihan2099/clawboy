@@ -301,12 +301,32 @@ export async function getDetailedDisputes(limit = 3): Promise<DetailedDispute[]>
 /**
  * Get tag statistics - count of tasks per tag for category breakdown.
  * Returns top N tags by task count.
+ *
+ * Uses the `get_tag_statistics` PostgreSQL RPC function which performs
+ * unnest() aggregation in the database to avoid fetching all tasks into memory.
+ * Falls back to in-memory aggregation if the RPC function is not available.
  */
 export async function getTagStatistics(limit = 6): Promise<TagStatistic[]> {
   const supabase = getSupabaseClient();
 
-  // Fetch all tasks with tags (we'll aggregate in memory since Supabase
-  // doesn't support array unnesting in a simple query)
+  // Prefer database-level aggregation via RPC to avoid OOM on large datasets
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_tag_statistics', {
+    p_limit: limit,
+  });
+
+  if (!rpcError && rpcData) {
+    return (rpcData as Array<{ tag: string; count: number }>).map((row) => ({
+      tag: row.tag,
+      count: Number(row.count),
+    }));
+  }
+
+  // Fallback: in-memory aggregation (less efficient, use only if RPC unavailable)
+  if (rpcError && rpcError.code !== '42883') {
+    // Non-PGRST116 error: unexpected failure
+    throw new Error(`Failed to get tag statistics: ${rpcError.message}`);
+  }
+
   const { data, error } = await supabase.from('tasks').select('tags').not('tags', 'is', null);
 
   if (error) {
@@ -354,12 +374,36 @@ export async function getFeaturedCompletedTasks(limit = 3): Promise<FeaturedTask
 
 /**
  * Get bounty distribution statistics (min, max, avg).
+ *
+ * Uses the `get_bounty_statistics` PostgreSQL RPC function which performs
+ * MIN/MAX/AVG aggregation in the database to avoid fetching all bounty amounts
+ * into memory for BigInt conversion (OOM risk with large datasets).
+ * Falls back to in-memory calculation if the RPC function is not available.
  */
 export async function getBountyStatistics(): Promise<BountyStatistics> {
   const supabase = getSupabaseClient();
 
-  // Get all bounty amounts to calculate statistics
-  // Note: Using individual queries since Supabase doesn't have built-in aggregation functions
+  // Prefer database-level aggregation via RPC to avoid OOM on large datasets
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_bounty_statistics');
+
+  if (!rpcError && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+    const row = rpcData[0] as {
+      min_bounty: string | null;
+      max_bounty: string | null;
+      avg_bounty: string | null;
+    };
+    return {
+      minBounty: row.min_bounty ? BigInt(row.min_bounty).toString() : '0',
+      maxBounty: row.max_bounty ? BigInt(row.max_bounty).toString() : '0',
+      avgBounty: row.avg_bounty ? BigInt(row.avg_bounty).toString() : '0',
+    };
+  }
+
+  // Fallback: in-memory aggregation (less efficient, use only if RPC unavailable)
+  if (rpcError && rpcError.code !== '42883') {
+    throw new Error(`Failed to get bounty statistics: ${rpcError.message}`);
+  }
+
   const { data, error } = await supabase.from('tasks').select('bounty_amount');
 
   if (error) {
@@ -376,8 +420,8 @@ export async function getBountyStatistics(): Promise<BountyStatistics> {
 
   // Convert to BigInt for precision
   const amounts = data.map((row) => BigInt(row.bounty_amount));
-  const min = amounts.reduce((a, b) => (a < b ? a : b), amounts[0]);
-  const max = amounts.reduce((a, b) => (a > b ? a : b), amounts[0]);
+  const min = amounts.reduce((a, b) => (a < b ? a : b), amounts[0]!);
+  const max = amounts.reduce((a, b) => (a > b ? a : b), amounts[0]!);
   const sum = amounts.reduce((a, b) => a + b, BigInt(0));
   const avg = sum / BigInt(amounts.length);
 

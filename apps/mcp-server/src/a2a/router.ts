@@ -6,6 +6,7 @@
  * - POST /a2a - JSON-RPC endpoint for A2A methods
  */
 
+import { isIP } from 'net';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { generateAgentCard } from './agent-card';
@@ -32,24 +33,26 @@ import {
 // SECURITY: Whether to trust proxy headers for client IP detection
 const TRUST_PROXY_HEADERS = process.env.TRUST_PROXY_HEADERS === 'true';
 
-// SECURITY: Simple IPv4/IPv6 validation pattern
-const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}|(?:[a-fA-F0-9:]+:+)+[a-fA-F0-9]+)$/;
+// SECURITY: IP validation using Node.js net.isIP() which correctly validates
+// IPv4 octets (0-255) and full IPv6 address formats. The previous regex allowed
+// invalid octets like 999.999.999.999 and was overly permissive for IPv6.
 
 /**
- * SECURITY: Get client IP address with validation
+ * SECURITY: Get client IP address with validation.
+ * Uses net.isIP() for proper IPv4 octet range and IPv6 format validation.
  */
 function getClientIp(c: Context): string {
   if (TRUST_PROXY_HEADERS) {
     const forwarded = c.req.header('x-forwarded-for');
     if (forwarded) {
       const clientIp = forwarded.split(',')[0]?.trim();
-      if (clientIp && IP_PATTERN.test(clientIp)) {
+      if (clientIp && isIP(clientIp) !== 0) {
         return clientIp;
       }
     }
 
     const realIp = c.req.header('x-real-ip');
-    if (realIp && IP_PATTERN.test(realIp)) {
+    if (realIp && isIP(realIp) !== 0) {
       return realIp;
     }
   }

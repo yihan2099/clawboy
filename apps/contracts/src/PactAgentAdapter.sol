@@ -305,9 +305,15 @@ contract PactAgentAdapter is IPactAgentAdapter {
         int256 rep = int256(uint256(taskWins)) * 10 + int256(uint256(disputeWins)) * 15
             - int256(uint256(disputeLosses)) * 20;
 
+        // DESIGN NOTE: Negative reputation is clamped to 0, not carried as negative.
+        // This means an agent with rep=-100 and rep=0 both have the same vote weight (1).
+        // The clamping is intentional — dispute losses should penalize but not permanently
+        // silence agents. Recovery requires accumulating positive reputation.
         if (rep < 0) rep = 0;
 
-        // Calculate log2(reputation + 1) - same formula as original
+        // Calculate log2(reputation + 1) - logarithmic scale ensures diminishing returns.
+        // Weight = floor(log2(rep + 1)), minimum 1 for registered agents.
+        // Thresholds: rep 0-1 → weight 1, rep 2-3 → weight 2, rep 4-7 → weight 3, etc.
         uint256 weight = _log2(uint256(rep) + 1);
 
         // Minimum weight of 1 for registered agents

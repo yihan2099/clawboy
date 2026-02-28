@@ -79,7 +79,26 @@ export async function listTasksHandler(
   const offset = input.offset || 0;
   const status = input.status || '';
   const tags = input.tags;
-  const cacheKey = `tasks:s:${status}t:${tags?.join(',') || ''}bt:${bountyTokenAddress || ''}min:${minBountyWei || ''}max:${maxBountyWei || ''}l:${limit}o:${offset}sb:${sortBy || ''}so:${input.sortOrder || ''}`;
+
+  // Use JSON.stringify + hash to avoid cache key collisions when filter values
+  // contain the ':' character used as a separator in the old string-concat approach.
+  const cacheParams = JSON.stringify({
+    status,
+    tags: tags?.slice().sort() ?? [],
+    bountyToken: bountyTokenAddress ?? '',
+    minBounty: minBountyWei ?? '',
+    maxBounty: maxBountyWei ?? '',
+    limit,
+    offset,
+    sortBy: sortBy ?? '',
+    sortOrder: input.sortOrder ?? '',
+  });
+  // Use a simple djb2-style hash for a compact, collision-resistant key
+  let hash = 5381;
+  for (let i = 0; i < cacheParams.length; i++) {
+    hash = ((hash << 5) + hash + cacheParams.charCodeAt(i)) >>> 0;
+  }
+  const cacheKey = `tasks:v2:${hash.toString(16)}`;
 
   const { data } = await cacheThrough(
     cacheKey,

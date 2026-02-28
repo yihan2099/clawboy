@@ -47,6 +47,27 @@ function serializeBigInts(obj: unknown): unknown {
   return obj;
 }
 
+/** Maximum number of events in the dead-letter queue before alerting */
+const DLQ_SIZE_LIMIT = parseInt(process.env.DLQ_SIZE_LIMIT || '1000', 10);
+
+/**
+ * Check if the DLQ has grown too large and emit a warning.
+ * Operators should be alerted when the DLQ grows beyond DLQ_SIZE_LIMIT.
+ */
+async function checkDlqSize(): Promise<void> {
+  try {
+    const retryable = await getRetryableFailedEvents(DLQ_SIZE_LIMIT + 1);
+    if (retryable.length > DLQ_SIZE_LIMIT) {
+      console.error(
+        `[ALERT] DLQ size exceeded limit: ${retryable.length} events pending (limit: ${DLQ_SIZE_LIMIT}). ` +
+          `Investigate failed events to prevent unbounded queue growth.`
+      );
+    }
+  } catch {
+    // Non-fatal: DLQ size check should not interrupt processing
+  }
+}
+
 /**
  * Process an event with idempotency check and DLQ support
  */
@@ -158,11 +179,13 @@ async function processRetryableEvents(): Promise<void> {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorStack = error instanceof Error ? error.stack : undefined;
 
-      // Check for duplicate key error (PostgreSQL error code 23505)
-      // This indicates the record already exists - resolve as success
-      const isDuplicateKeyError = errorMessage.includes(
-        'duplicate key value violates unique constraint'
-      );
+      // Check for duplicate key error using PostgreSQL error code 23505.
+      // Supabase errors may expose `code` on the error object; fall back to
+      // message matching for errors that have been re-wrapped as plain Error instances.
+      const pgCode = (error as { code?: string })?.code;
+      const isDuplicateKeyError =
+        pgCode === '23505' ||
+        errorMessage.includes('duplicate key value violates unique constraint');
 
       if (isDuplicateKeyError) {
         console.log(
@@ -220,6 +243,8 @@ async function main() {
   const dlqRetryInterval = setInterval(async () => {
     try {
       await processRetryableEvents();
+      // Alert if DLQ has grown too large (prevents unbounded growth)
+      await checkDlqSize();
     } catch (error) {
       console.error('Error processing DLQ:', error);
     }

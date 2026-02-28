@@ -43,6 +43,9 @@ export async function listAgents(options: ListAgentsOptions = {}): Promise<{
   }
 
   if (minReputation !== undefined) {
+    // NOTE: After migration 20250228000003, reputation is a NUMERIC column and
+    // this comparison is numeric. If running against an older schema (TEXT column),
+    // use the get_agents_by_reputation RPC function for correct numeric filtering.
     query = query.gte('reputation', minReputation.toString());
   }
 

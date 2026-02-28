@@ -17,7 +17,7 @@ services:
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
       - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
-      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://pact.ing}
     depends_on:
       - redis
     healthcheck:
