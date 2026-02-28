@@ -1,23 +1,20 @@
-FROM oven/bun:1.3.5-alpine
-
+FROM oven/bun:1.3.5-alpine AS pruner
 WORKDIR /app
-
-# Copy the entire monorepo
 COPY . .
+RUN bunx turbo prune @pactprotocol/indexer --docker
 
-# Install dependencies
-RUN bun install
+FROM oven/bun:1.3.5-alpine AS builder
+WORKDIR /app
+COPY --from=pruner /app/out/json/ .
+RUN bun install --frozen-lockfile
+COPY --from=pruner /app/out/full/ .
+RUN cd apps/indexer && bun run build
 
-# Build the indexer
-WORKDIR /app/apps/indexer
-RUN bun run build
-
-# Install procps for healthcheck (pgrep)
+FROM oven/bun:1.3.5-alpine
+WORKDIR /app
+COPY --from=builder /app/ .
 RUN apk add --no-cache procps
-
-# Health check - verify the bun process is running
+WORKDIR /app/apps/indexer
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD pgrep -f "bun" > /dev/null || exit 1
-
-# Start the indexer
 CMD ["bun", "run", "start"]
