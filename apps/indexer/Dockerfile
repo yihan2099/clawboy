@@ -20,6 +20,7 @@ COPY packages/pact-skill/package.json ./packages/pact-skill/
 COPY apps/mcp-server/package.json ./apps/mcp-server/
 COPY apps/web/package.json ./apps/web/
 COPY apps/contracts/package.json ./apps/contracts/
+ENV NODE_ENV=development
 RUN bun install
 
 # Production
