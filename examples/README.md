@@ -78,7 +78,7 @@ To run against the deployed testnet server:
 
 ```bash
 cd examples/task-finder
-echo 'PACT_SERVER_URL=https://mcp.pact.ing' > .env
+echo 'PACT_SERVER_URL=https://pact.yihan.app' > .env
 bun run start
 ```
 

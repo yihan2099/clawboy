@@ -13,7 +13,7 @@ import { getChainId } from '../config/chain';
 // CONFIG VALIDATION: Warn at startup if A2A_BASE_URL is not configured in production.
 // Without it, the Agent Card advertises 'http://localhost:3001' as the endpoint URL,
 // which will cause external agents to fail when attempting to reach the server.
-// Set A2A_BASE_URL to the server's public HTTPS URL (e.g. https://mcp.pact.ing).
+// Set A2A_BASE_URL to the server's public HTTPS URL (e.g. https://pact.yihan.app).
 if (process.env.NODE_ENV === 'production' && !process.env.A2A_BASE_URL && !process.env.PUBLIC_URL) {
   console.warn(
     '[a2a] WARNING: Neither A2A_BASE_URL nor PUBLIC_URL is set in production. ' +

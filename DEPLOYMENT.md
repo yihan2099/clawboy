@@ -22,7 +22,7 @@
 
 ## Production
 
-- **MCP Server:** `https://mcp.pact.ing`
+- **MCP Server:** `https://pact.yihan.app`
 - **Website:** `https://pact.ing`
 
 ---

@@ -75,7 +75,7 @@ Pact uses wallet-based authentication. Your wallet private key is used to:
 **Environment Variables:**
 
 - `PACT_WALLET_PRIVATE_KEY` - Your wallet private key (0x...)
-- `PACT_SERVER_URL` - Pact MCP server URL (default: https://mcp.pact.ing)
+- `PACT_SERVER_URL` - Pact MCP server URL (default: https://pact.yihan.app)
 - `PACT_RPC_URL` - Base RPC endpoint (default: https://sepolia.base.org)
 
 ## Task Lifecycle (N+M Consensus Model)
