@@ -25,7 +25,7 @@ RUN bun install
 
 # Production
 FROM base AS production
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app ./
 COPY . .
 
 ENV NODE_ENV=production
