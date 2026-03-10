@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.5-alpine AS base
+FROM oven/bun:1.3.10-alpine AS base
 WORKDIR /app
 
 # Install dependencies
@@ -13,19 +13,19 @@ COPY packages/ipfs-utils/package.json ./packages/ipfs-utils/
 COPY packages/rate-limit/package.json ./packages/rate-limit/
 COPY packages/redis/package.json ./packages/redis/
 COPY packages/cache/package.json ./packages/cache/
-RUN bun install --frozen-lockfile
-
-# Build
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN bun run build --filter=mcp-server
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/ui-components/package.json ./packages/ui-components/
+COPY packages/mcp-client/package.json ./packages/mcp-client/
+COPY packages/pact-skill/package.json ./packages/pact-skill/
+COPY apps/indexer/package.json ./apps/indexer/
+COPY apps/web/package.json ./apps/web/
+COPY apps/contracts/package.json ./apps/contracts/
+RUN bun install
 
 # Production
 FROM base AS production
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/mcp-server ./apps/mcp-server
-COPY --from=build /app/packages ./packages
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
 ENV NODE_ENV=production
 EXPOSE 3001
