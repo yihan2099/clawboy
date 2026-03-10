@@ -79,7 +79,8 @@ export async function handleMessageSend(
       result.error?.code === A2A_ERROR_CODES.INVALID_PARAMS;
 
     finalTask = (await updateA2ATaskStatus(task.id, 'failed', undefined, {
-      ...result.error,
+      code: result.error?.code ?? A2A_ERROR_CODES.INTERNAL_ERROR,
+      message: result.error?.message ?? 'Unknown error',
       // Attach retryable hint for callers to distinguish transient vs permanent failures
       data: {
         ...(result.error?.data as Record<string, unknown> | undefined),

@@ -8,8 +8,6 @@ import {
   agentListKey,
   submissionKey,
   submissionListKey,
-  disputeKey,
-  disputeListKey,
   platformStatsKey,
   topAgentsKey,
   tagIndexKey,
@@ -30,8 +28,6 @@ describe('Key Builder', () => {
       expect(KEY_PREFIX.AGENT_LIST).toBe('agents:');
       expect(KEY_PREFIX.SUBMISSION).toBe('submission:');
       expect(KEY_PREFIX.SUBMISSION_LIST).toBe('submissions:');
-      expect(KEY_PREFIX.DISPUTE).toBe('dispute:');
-      expect(KEY_PREFIX.DISPUTE_LIST).toBe('disputes:');
       expect(KEY_PREFIX.STATS).toBe('stats:');
       expect(KEY_PREFIX.TAG_INDEX).toBe('tag:');
     });
@@ -54,8 +50,8 @@ describe('Key Builder', () => {
       expect(taskListKey({})).toBe('tasks:');
     });
 
-    test('includes status filter in key', () => {
-      expect(taskListKey({ status: 'open' })).toBe('tasks:s:open');
+    test('includes phase filter in key', () => {
+      expect(taskListKey({ phase: 'open' })).toBe('tasks:p:open');
     });
 
     test('includes creator address normalized to lowercase', () => {
@@ -74,14 +70,14 @@ describe('Key Builder', () => {
 
     test('combines all params correctly', () => {
       const key = taskListKey({
-        status: 'completed',
+        phase: 'completed',
         creatorAddress: '0xDEF456',
         limit: 50,
         offset: 100,
         sortBy: 'bounty',
         sortOrder: 'asc',
       });
-      expect(key).toBe('tasks:s:completedc:0xdef456l:50o:100sb:bountyso:asc');
+      expect(key).toBe('tasks:p:completedc:0xdef456l:50o:100sb:bountyso:asc');
     });
   });
 
@@ -154,30 +150,6 @@ describe('Key Builder', () => {
         offset: 10,
       });
       expect(key).toBe('submissions:t:task-1a:0xagentl:20o:10');
-    });
-  });
-
-  describe('disputeKey', () => {
-    test('generates correct key for dispute ID', () => {
-      expect(disputeKey('dispute-123')).toBe('dispute:dispute-123');
-    });
-  });
-
-  describe('disputeListKey', () => {
-    test('generates base key with no params', () => {
-      expect(disputeListKey()).toBe('disputes:');
-    });
-
-    test('includes task ID', () => {
-      expect(disputeListKey({ taskId: 'task-789' })).toBe('disputes:t:task-789');
-    });
-
-    test('includes status', () => {
-      expect(disputeListKey({ status: 'pending' })).toBe('disputes:s:pending');
-    });
-
-    test('includes pagination params', () => {
-      expect(disputeListKey({ limit: 15, offset: 30 })).toBe('disputes:l:15o:30');
     });
   });
 

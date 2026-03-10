@@ -8,31 +8,33 @@
 -- strings to avoid JS number precision issues, but the DB column type enables
 -- proper comparison operators and aggregate functions.
 
--- Convert tasks.bounty_amount from TEXT to NUMERIC
-ALTER TABLE tasks ALTER COLUMN bounty_amount TYPE NUMERIC
-  USING bounty_amount::NUMERIC;
-
-ALTER TABLE tasks ALTER COLUMN bounty_amount SET DEFAULT 0;
+-- NOTE: bounty_amount is intentionally kept as TEXT (not converted to NUMERIC).
+-- Wei values (e.g. 1 ETH = 1e18) exceed JavaScript's Number.MAX_SAFE_INTEGER,
+-- and storing as NUMERIC would cause the generated TypeScript types to use `number`,
+-- leading to silent precision loss in the application layer. The RPC functions
+-- already cast bounty_amount::NUMERIC for comparison and aggregation, so keeping
+-- the column as TEXT preserves full precision while still enabling proper queries.
 
 -- Convert agents.reputation from TEXT to NUMERIC
+ALTER TABLE agents ALTER COLUMN reputation DROP DEFAULT;
 ALTER TABLE agents ALTER COLUMN reputation TYPE NUMERIC
   USING reputation::NUMERIC;
-
 ALTER TABLE agents ALTER COLUMN reputation SET DEFAULT 0;
 
 -- Convert disputes.dispute_stake from TEXT to NUMERIC
+ALTER TABLE disputes ALTER COLUMN dispute_stake DROP DEFAULT;
 ALTER TABLE disputes ALTER COLUMN dispute_stake TYPE NUMERIC
   USING dispute_stake::NUMERIC;
 
 -- Convert disputes.votes_for_disputer and votes_against_disputer from TEXT to NUMERIC
+ALTER TABLE disputes ALTER COLUMN votes_for_disputer DROP DEFAULT;
 ALTER TABLE disputes ALTER COLUMN votes_for_disputer TYPE NUMERIC
   USING votes_for_disputer::NUMERIC;
-
 ALTER TABLE disputes ALTER COLUMN votes_for_disputer SET DEFAULT 0;
 
+ALTER TABLE disputes ALTER COLUMN votes_against_disputer DROP DEFAULT;
 ALTER TABLE disputes ALTER COLUMN votes_against_disputer TYPE NUMERIC
   USING votes_against_disputer::NUMERIC;
-
 ALTER TABLE disputes ALTER COLUMN votes_against_disputer SET DEFAULT 0;
 
 -- Convert votes.vote_weight from TEXT to NUMERIC (if votes table exists)
@@ -46,13 +48,6 @@ BEGIN
 END
 $$;
 
--- Drop the functional index that used explicit ::numeric cast (no longer needed now that
--- the column is native NUMERIC). IF EXISTS makes this idempotent and safe to re-run.
--- TODO(#124): If this migration is ever rolled back, the functional index
--- idx_tasks_bounty_amount_numeric should be recreated manually, as DOWN migrations are
--- not currently implemented. Add a rollback script or document the restore procedure.
-DROP INDEX IF EXISTS idx_tasks_bounty_amount_numeric;
-
--- Recreate index on the now-native NUMERIC column
-CREATE INDEX IF NOT EXISTS idx_tasks_bounty_amount ON tasks(bounty_amount DESC);
+-- bounty_amount stays TEXT so keep the functional index for numeric comparisons
+-- (created in 20250201000003_bounty_numeric_comparison.sql as idx_tasks_bounty_numeric)
 CREATE INDEX IF NOT EXISTS idx_agents_reputation ON agents(reputation DESC);

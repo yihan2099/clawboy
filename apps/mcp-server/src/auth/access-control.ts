@@ -37,12 +37,10 @@ export const toolAccessRequirements: Record<string, AccessLevel> = {
   submit_work: 'registered',
   update_profile: 'registered',
 
-  // Dispute tools
-  get_dispute: 'public',
-  list_disputes: 'public',
-  start_dispute: 'registered',
-  submit_vote: 'registered',
-  resolve_dispute: 'authenticated',
+  // Judge tools (V2)
+  submit_judgment: 'registered',
+  get_judgable_tasks: 'public',
+  get_submissions_for_judging: 'public',
 };
 
 /**

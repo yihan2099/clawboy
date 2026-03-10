@@ -23,11 +23,6 @@ export const createTaskSchema = z.object({
     .min(1)
     .max(20), // SECURITY: Limit number of deliverables
   // SECURITY: Validate bounty is a positive number with upper bound.
-  // The regex /^\d+\.?\d*$/ ensures the string is a non-negative decimal literal before
-  // parseFloat or parseTokenAmount touches it. This MUST remain consistent with
-  // parseTokenAmount (packages/web3-utils/src/utils/token.ts) which calls viem's
-  // parseUnits internally — both expect a non-negative decimal string. If the regex or
-  // refine rules change, update parseTokenAmount (and its tests) in lockstep.
   bountyAmount: z
     .string()
     .max(20, 'Bounty amount string too long')
@@ -41,7 +36,12 @@ export const createTaskSchema = z.object({
       return !isNaN(num) && num <= 1_000_000;
     }, 'Bounty amount must not exceed 1,000,000 tokens'),
   bountyToken: z.string().optional().default('ETH'),
-  deadline: z.string().datetime().optional(),
+  // V2: separate work and judge deadlines
+  workDeadline: z.string().datetime().optional(),
+  judgeDeadline: z.string().datetime().optional(),
+  // V2: required workers and judges
+  requiredWorkers: z.number().int().min(1).max(255).optional().default(3),
+  requiredJudges: z.number().int().min(1).max(255).optional().default(3),
   tags: z.array(z.string().max(50)).max(10).optional(), // SECURITY: Limit tags
 });
 
@@ -50,7 +50,7 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export const createTaskTool = {
   name: 'create_task',
   description:
-    'Create a new task with a bounty. Supports ETH and stablecoins (USDC, USDT, DAI). Returns specification CID for on-chain creation.',
+    'Create a new task with a bounty. Specify required workers (N) and judges (M) for consensus. Supports ETH and stablecoins (USDC, USDT, DAI). Returns specification CID for on-chain creation.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -87,9 +87,21 @@ export const createTaskTool = {
         description:
           'Token for bounty. Use symbol ("USDC", "ETH", "DAI", "USDT") or address. Defaults to "ETH"',
       },
-      deadline: {
+      workDeadline: {
         type: 'string',
-        description: 'Optional deadline (ISO 8601 format)',
+        description: 'Deadline for workers to submit (ISO 8601 format)',
+      },
+      judgeDeadline: {
+        type: 'string',
+        description: 'Deadline for judges to submit rankings (ISO 8601 format)',
+      },
+      requiredWorkers: {
+        type: 'number',
+        description: 'Number of workers required (N). Default: 3',
+      },
+      requiredJudges: {
+        type: 'number',
+        description: 'Number of judges required (M). Default: 3',
       },
       tags: {
         type: 'array',
@@ -114,8 +126,6 @@ export const createTaskTool = {
     }
 
     // Validate decimal places before parsing to prevent silent precision loss.
-    // If the input has more decimal places than the token supports (e.g., "1.0000001"
-    // for a 6-decimal token like USDC), viem's parseUnits truncates silently.
     const decimalPart = input.bountyAmount.includes('.')
       ? input.bountyAmount.split('.')[1]?.replace(/0+$/, '') ?? ''
       : '';
@@ -134,13 +144,6 @@ export const createTaskTool = {
     const addresses = getContractAddresses(chainId);
 
     // For ERC20 tokens, check allowance.
-    // TOKEN APPROVAL RESPONSIBILITY: This tool only checks and reports the allowance state —
-    // it does NOT perform the approval on behalf of the caller. When requiresApproval=true,
-    // the response includes an `approvalStep` describing the ERC20.approve() call the caller
-    // must execute themselves (via their wallet or agent) before calling TaskManager.createTask().
-    // The on-chain createTask() will revert with an insufficient-allowance error if approval
-    // is skipped. Enforcing the approval at this layer would require holding the caller's
-    // private key, which is outside the scope of this MCP tool.
     let requiresApproval = false;
     let currentAllowance: bigint | undefined;
     if (!isNativeToken(tokenConfig.address)) {
@@ -155,7 +158,6 @@ export const createTaskTool = {
       requiresApproval = !hasAllowance;
 
       if (requiresApproval) {
-        // Import here to avoid circular deps
         const { getTokenAllowance } = await import('@pactprotocol/web3-utils');
         currentAllowance = await getTokenAllowance(
           publicClient,
@@ -182,6 +184,8 @@ export const createTaskTool = {
       },
       bountyAmount: input.bountyAmount,
       bountyAmountWei: bountyAmountWei.toString(),
+      requiredWorkers: input.requiredWorkers,
+      requiredJudges: input.requiredJudges,
     };
 
     if (requiresApproval) {
@@ -197,19 +201,27 @@ export const createTaskTool = {
         },
       };
       response.nextStep =
-        'First approve the token, then call TaskManager.createTask with the CID and bounty details';
+        'First approve the token, then call TaskManagerV2.createTask with the CID and bounty details';
     } else {
-      response.nextStep = 'Call the TaskManager contract to create the task on-chain with this CID';
+      response.nextStep = 'Call the TaskManagerV2 contract to create the task on-chain with this CID';
     }
 
-    // Add contract call details
+    // Add contract call details (V2 signature)
     response.contractCall = {
       contract: addresses.taskManager,
-      function: 'createTask(string specCid, uint256 bountyAmount, address bountyToken)',
+      function: 'createTask(string specCid, uint256 bountyAmount, address bountyToken, uint8 requiredWorkers, uint8 requiredJudges, uint256 workDeadline, uint256 judgeDeadline)',
       args: {
         specCid: result.specificationCid,
         bountyAmount: bountyAmountWei.toString(),
         bountyToken: tokenConfig.address,
+        requiredWorkers: input.requiredWorkers,
+        requiredJudges: input.requiredJudges,
+        workDeadline: input.workDeadline
+          ? Math.floor(new Date(input.workDeadline).getTime() / 1000).toString()
+          : '0',
+        judgeDeadline: input.judgeDeadline
+          ? Math.floor(new Date(input.judgeDeadline).getTime() / 1000).toString()
+          : '0',
       },
       value: isNativeToken(tokenConfig.address) ? bountyAmountWei.toString() : '0',
     };

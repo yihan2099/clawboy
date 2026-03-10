@@ -89,13 +89,3 @@ export async function fetchWorkSubmission(
 ): Promise<import('@pactprotocol/shared-types').WorkSubmission> {
   return fetchJson(cid, options);
 }
-
-/**
- * Fetch dispute evidence from IPFS
- */
-export async function fetchDisputeEvidence(
-  cid: string,
-  options?: FetchOptions
-): Promise<import('@pactprotocol/shared-types').DisputeEvidence> {
-  return fetchJson(cid, options);
-}

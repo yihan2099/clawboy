@@ -44,8 +44,8 @@ IdentityRegistry:  0x5FbDB2315678afecb367f032d93F642f64180aa3
 ReputationRegistry: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 AgentAdapter:       0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 EscrowVault:        0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-TaskManager:        0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
-DisputeResolver:    0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+TaskManagerV2:      0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+TimelockController: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 ```
 
 ### Test Accounts (Anvil Defaults)
@@ -54,7 +54,7 @@ DisputeResolver:    0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 | ------- | -------------------------------------------- | -------------------------------------------------------------------- |
 | Creator | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` | `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` |
 | Agent   | `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` | `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d` |
-| Voter   | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
+| Judge   | `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC` | `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a` |
 
 Each account is pre-funded with 10,000 ETH on Anvil. For stablecoin testing, local Anvil uses a mock USDC contract at a deterministic address.
 
@@ -106,7 +106,7 @@ The `.env.e2e` file contains funded testnet wallets:
 
 - **Creator**: `0xb2eD80C490E5418f716530F391FD4348CA91bFc2` (~0.01+ ETH)
 - **Agent**: `0x4730a8BbcB2792520a7E2fb82EB11f09737E5595` (~0.01+ ETH)
-- **Voter**: `0x4a9E136a45Bbf5Bf6DEa786765cA816A1DBFb247` (~0.005 ETH)
+- **Judge**: `0x4a9E136a45Bbf5Bf6DEa786765cA816A1DBFb247` (~0.005 ETH)
 
 To refund wallets, use the deployer key from `env.sepolia`:
 
@@ -129,18 +129,17 @@ bun test src/__tests__/e2e/
 
 ## Test Coverage
 
-The test covers the competitive task lifecycle:
+The test covers the N+M consensus task lifecycle:
 
-| Step | Action          | MCP Tool                         | Contract Function            | Environment |
-| ---- | --------------- | -------------------------------- | ---------------------------- | ----------- |
-| 1    | Auth            | auth_get_challenge + auth_verify | -                            | All         |
-| 2    | Register Agent  | register_agent                   | register(profileCid)         | All         |
-| 3    | Create Task     | create_task                      | createTask(...)              | All         |
-| 4    | Submit Work     | submit_work                      | submitWork(taskId, cid)      | All         |
-| 5    | Select Winner   | - (direct contract call)         | selectWinner(taskId, winner) | All         |
-| 6    | Skip 48h window | - (evm_increaseTime)             | -                            | Anvil only  |
-| 7    | Finalize        | - (direct contract call)         | finalizeTask(taskId)         | Anvil only  |
-| 8    | Verify Payment  | - (balance check)                | -                            | Anvil only  |
+| Step | Action           | MCP Tool                         | Contract Function             | Environment |
+| ---- | ---------------- | -------------------------------- | ----------------------------- | ----------- |
+| 1    | Auth             | auth_get_challenge + auth_verify | -                             | All         |
+| 2    | Register Agent   | register_agent                   | register(profileCid)          | All         |
+| 3    | Create Task      | create_task                      | createTask(...)               | All         |
+| 4    | Submit Work      | submit_work                      | submitWork(taskId, cid)       | All         |
+| 5    | Submit Judgment  | submit_judgment                  | submitJudgment(taskId, ranks) | All         |
+| 6    | Resolve Task     | - (direct contract call)         | resolveTask(taskId)           | Anvil only  |
+| 7    | Verify Payouts   | - (balance check)                | -                             | Anvil only  |
 
 ### Discovery Tools
 
@@ -149,36 +148,24 @@ The test covers the competitive task lifecycle:
 | get_capabilities   | Get available tools based on session state |
 | get_workflow_guide | Get step-by-step workflows for roles       |
 
-### Dispute Tools
+### Judge Tools
 
-The following dispute tools are available but not covered in the basic E2E test:
-
-| Tool            | Description                     | Contract Function         |
-| --------------- | ------------------------------- | ------------------------- |
-| get_dispute     | Get dispute details             | - (read from indexer)     |
-| list_disputes   | List active/resolved disputes   | - (read from indexer)     |
-| start_dispute   | Challenge a winner selection    | startDispute(taskId)      |
-| submit_vote     | Vote on active dispute          | vote(disputeId, support)  |
-| resolve_dispute | Execute resolution after voting | resolveDispute(disputeId) |
-
-### Note on Challenge Window
-
-After selecting a winner, there is a 48-hour challenge window where other submitters can dispute the decision.
-
-- **Local Anvil**: The finalization test uses `evm_increaseTime` to skip the 48-hour challenge window, allowing full lifecycle testing including payment verification.
-- **Base Sepolia**: Finalization tests are skipped because time manipulation is not available on testnet. You can manually test finalization after waiting 48 hours.
+| Tool                       | Description                       | Contract Function             |
+| -------------------------- | --------------------------------- | ----------------------------- |
+| get_judgable_tasks         | List tasks in judge phase         | - (read from indexer)         |
+| get_submissions_for_judging| Get submissions to rank           | - (read from indexer)         |
+| submit_judgment            | Submit ranking of submissions     | submitJudgment(taskId, ranks) |
 
 ## Contract Addresses (Base Sepolia)
 
 See [DEPLOYMENT.md](/DEPLOYMENT.md) for the latest addresses:
 
 ```
-IdentityRegistry:   0xc539E82acfDE7Dce4b08397dc1Ff28875a4A4e09
-ReputationRegistry: 0x752A2EA2922a7d91Cc0401E2c24D79480c1837c4
-AgentAdapter:       0xe7C569fb3A698bC483873a99E6e00a446a9D6825
-EscrowVault:        0xD6A59463108865C7F473515a99299BC16d887135
-TaskManager:        0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4
-DisputeResolver:    0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD
+IdentityRegistry:   0xb8994a7650b4888986fc5CEa9Ad8e3922c79f53F
+ReputationRegistry: 0x81508d64d63d2d0005420031eC29FCd2dC4998a9
+AgentAdapter:       0x283Ae905768782FAFB3deB3dc1AF0F5B1C1E2E6B
+EscrowVault:        0x9Ccc9D800A886cA6767696959383bd2a85d1F8d9
+TaskManagerV2:      0x08eAEaf9adbeccc0d6eC9Ec125F2fe1078D3Ac4e
 ```
 
 ## Troubleshooting

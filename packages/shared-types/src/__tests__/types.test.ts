@@ -1,23 +1,18 @@
 import { describe, test, expect } from 'bun:test';
 
 import {
-  // Task status exports
-  TaskStatus,
-  TaskStatusNumber,
-  TERMINAL_STATUSES,
-  VALID_STATUS_TRANSITIONS,
-  numberToTaskStatus,
-  isValidStatusTransition,
-  isTerminalStatus,
-  stringToTaskStatus,
-  InvalidStatusTransitionError,
-  assertValidStatusTransition,
-  getStatusDescription,
-
-  // Dispute exports
-  DisputeStatus,
-  DisputeStatusNumber,
-  calculateDisputeStake,
+  // Task phase exports
+  TaskPhase,
+  TaskPhaseNumber,
+  TERMINAL_PHASES,
+  VALID_PHASE_TRANSITIONS,
+  numberToTaskPhase,
+  isValidPhaseTransition,
+  isTerminalPhase,
+  stringToTaskPhase,
+  InvalidPhaseTransitionError,
+  assertValidPhaseTransition,
+  getPhaseDescription,
 
   // Address utility exports
   normalizeAddress,
@@ -30,235 +25,191 @@ import {
   isZeroAddress,
 } from '../index.js';
 
-describe('TaskStatus enum', () => {
-  test('should define all expected status values', () => {
-    expect(TaskStatus.Open).toBe('open');
-    expect(TaskStatus.InReview).toBe('in_review');
-    expect(TaskStatus.Completed).toBe('completed');
-    expect(TaskStatus.Disputed).toBe('disputed');
-    expect(TaskStatus.Refunded).toBe('refunded');
-    expect(TaskStatus.Cancelled).toBe('cancelled');
+describe('TaskPhase enum', () => {
+  test('should define all expected phase values', () => {
+    expect(TaskPhase.Open).toBe('open');
+    expect(TaskPhase.WorkPhase).toBe('work_phase');
+    expect(TaskPhase.JudgePhase).toBe('judge_phase');
+    expect(TaskPhase.Resolved).toBe('resolved');
+    expect(TaskPhase.Cancelled).toBe('cancelled');
+    expect(TaskPhase.Failed).toBe('failed');
   });
 
-  test('should have exactly 6 statuses', () => {
-    const values = Object.values(TaskStatus);
+  test('should have exactly 6 phases', () => {
+    const values = Object.values(TaskPhase);
     expect(values).toHaveLength(6);
   });
 });
 
-describe('TaskStatusNumber', () => {
-  test('should map each status to a unique number', () => {
-    expect(TaskStatusNumber[TaskStatus.Open]).toBe(0);
-    expect(TaskStatusNumber[TaskStatus.InReview]).toBe(1);
-    expect(TaskStatusNumber[TaskStatus.Completed]).toBe(2);
-    expect(TaskStatusNumber[TaskStatus.Disputed]).toBe(3);
-    expect(TaskStatusNumber[TaskStatus.Refunded]).toBe(4);
-    expect(TaskStatusNumber[TaskStatus.Cancelled]).toBe(5);
+describe('TaskPhaseNumber', () => {
+  test('should map each phase to a unique number', () => {
+    expect(TaskPhaseNumber[TaskPhase.Open]).toBe(0);
+    expect(TaskPhaseNumber[TaskPhase.WorkPhase]).toBe(1);
+    expect(TaskPhaseNumber[TaskPhase.JudgePhase]).toBe(2);
+    expect(TaskPhaseNumber[TaskPhase.Resolved]).toBe(3);
+    expect(TaskPhaseNumber[TaskPhase.Cancelled]).toBe(4);
+    expect(TaskPhaseNumber[TaskPhase.Failed]).toBe(5);
   });
 });
 
-describe('TERMINAL_STATUSES', () => {
-  test('should include completed, refunded, and cancelled', () => {
-    expect(TERMINAL_STATUSES).toContain(TaskStatus.Completed);
-    expect(TERMINAL_STATUSES).toContain(TaskStatus.Refunded);
-    expect(TERMINAL_STATUSES).toContain(TaskStatus.Cancelled);
+describe('TERMINAL_PHASES', () => {
+  test('should include resolved, cancelled, and failed', () => {
+    expect(TERMINAL_PHASES).toContain(TaskPhase.Resolved);
+    expect(TERMINAL_PHASES).toContain(TaskPhase.Cancelled);
+    expect(TERMINAL_PHASES).toContain(TaskPhase.Failed);
   });
 
-  test('should not include non-terminal statuses', () => {
-    expect(TERMINAL_STATUSES).not.toContain(TaskStatus.Open);
-    expect(TERMINAL_STATUSES).not.toContain(TaskStatus.InReview);
-    expect(TERMINAL_STATUSES).not.toContain(TaskStatus.Disputed);
-  });
-});
-
-describe('numberToTaskStatus', () => {
-  test('should convert valid numbers to TaskStatus', () => {
-    expect(numberToTaskStatus(0)).toBe(TaskStatus.Open);
-    expect(numberToTaskStatus(1)).toBe(TaskStatus.InReview);
-    expect(numberToTaskStatus(2)).toBe(TaskStatus.Completed);
-    expect(numberToTaskStatus(3)).toBe(TaskStatus.Disputed);
-    expect(numberToTaskStatus(4)).toBe(TaskStatus.Refunded);
-    expect(numberToTaskStatus(5)).toBe(TaskStatus.Cancelled);
-  });
-
-  test('should throw for unknown status number', () => {
-    expect(() => numberToTaskStatus(99)).toThrow('Unknown task status number: 99');
+  test('should not include non-terminal phases', () => {
+    expect(TERMINAL_PHASES).not.toContain(TaskPhase.Open);
+    expect(TERMINAL_PHASES).not.toContain(TaskPhase.WorkPhase);
+    expect(TERMINAL_PHASES).not.toContain(TaskPhase.JudgePhase);
   });
 });
 
-describe('stringToTaskStatus', () => {
-  test('should convert valid strings to TaskStatus', () => {
-    expect(stringToTaskStatus('open')).toBe(TaskStatus.Open);
-    expect(stringToTaskStatus('in_review')).toBe(TaskStatus.InReview);
-    expect(stringToTaskStatus('completed')).toBe(TaskStatus.Completed);
-    expect(stringToTaskStatus('disputed')).toBe(TaskStatus.Disputed);
-    expect(stringToTaskStatus('refunded')).toBe(TaskStatus.Refunded);
-    expect(stringToTaskStatus('cancelled')).toBe(TaskStatus.Cancelled);
+describe('numberToTaskPhase', () => {
+  test('should convert valid numbers to TaskPhase', () => {
+    expect(numberToTaskPhase(0)).toBe(TaskPhase.Open);
+    expect(numberToTaskPhase(1)).toBe(TaskPhase.WorkPhase);
+    expect(numberToTaskPhase(2)).toBe(TaskPhase.JudgePhase);
+    expect(numberToTaskPhase(3)).toBe(TaskPhase.Resolved);
+    expect(numberToTaskPhase(4)).toBe(TaskPhase.Cancelled);
+    expect(numberToTaskPhase(5)).toBe(TaskPhase.Failed);
   });
 
-  test('should throw for unknown status string', () => {
-    expect(() => stringToTaskStatus('invalid')).toThrow('Unknown task status: invalid');
+  test('should throw for unknown phase number', () => {
+    expect(() => numberToTaskPhase(99)).toThrow('Unknown task phase number: 99');
   });
 });
 
-describe('isValidStatusTransition', () => {
+describe('stringToTaskPhase', () => {
+  test('should convert valid strings to TaskPhase', () => {
+    expect(stringToTaskPhase('open')).toBe(TaskPhase.Open);
+    expect(stringToTaskPhase('work_phase')).toBe(TaskPhase.WorkPhase);
+    expect(stringToTaskPhase('judge_phase')).toBe(TaskPhase.JudgePhase);
+    expect(stringToTaskPhase('resolved')).toBe(TaskPhase.Resolved);
+    expect(stringToTaskPhase('cancelled')).toBe(TaskPhase.Cancelled);
+    expect(stringToTaskPhase('failed')).toBe(TaskPhase.Failed);
+  });
+
+  test('should throw for unknown phase string', () => {
+    expect(() => stringToTaskPhase('invalid')).toThrow('Unknown task phase: invalid');
+  });
+});
+
+describe('isValidPhaseTransition', () => {
   test('should allow valid transitions from open', () => {
-    expect(isValidStatusTransition(TaskStatus.Open, TaskStatus.InReview)).toBe(true);
-    expect(isValidStatusTransition(TaskStatus.Open, TaskStatus.Cancelled)).toBe(true);
-    expect(isValidStatusTransition(TaskStatus.Open, TaskStatus.Refunded)).toBe(true);
+    expect(isValidPhaseTransition(TaskPhase.Open, TaskPhase.WorkPhase)).toBe(true);
+    expect(isValidPhaseTransition(TaskPhase.Open, TaskPhase.Cancelled)).toBe(true);
   });
 
   test('should reject invalid transitions from open', () => {
-    expect(isValidStatusTransition(TaskStatus.Open, TaskStatus.Completed)).toBe(false);
-    expect(isValidStatusTransition(TaskStatus.Open, TaskStatus.Disputed)).toBe(false);
+    expect(isValidPhaseTransition(TaskPhase.Open, TaskPhase.Resolved)).toBe(false);
+    expect(isValidPhaseTransition(TaskPhase.Open, TaskPhase.JudgePhase)).toBe(false);
   });
 
-  test('should allow valid transitions from in_review', () => {
-    expect(isValidStatusTransition(TaskStatus.InReview, TaskStatus.Completed)).toBe(true);
-    expect(isValidStatusTransition(TaskStatus.InReview, TaskStatus.Disputed)).toBe(true);
+  test('should allow valid transitions from work_phase', () => {
+    expect(isValidPhaseTransition(TaskPhase.WorkPhase, TaskPhase.JudgePhase)).toBe(true);
+    expect(isValidPhaseTransition(TaskPhase.WorkPhase, TaskPhase.Failed)).toBe(true);
   });
 
-  test('should reject all transitions from terminal statuses', () => {
-    expect(isValidStatusTransition(TaskStatus.Completed, TaskStatus.Open)).toBe(false);
-    expect(isValidStatusTransition(TaskStatus.Refunded, TaskStatus.Open)).toBe(false);
-    expect(isValidStatusTransition(TaskStatus.Cancelled, TaskStatus.Open)).toBe(false);
+  test('should allow valid transitions from judge_phase', () => {
+    expect(isValidPhaseTransition(TaskPhase.JudgePhase, TaskPhase.Resolved)).toBe(true);
+    expect(isValidPhaseTransition(TaskPhase.JudgePhase, TaskPhase.Failed)).toBe(true);
   });
 
-  test('should accept string status arguments', () => {
-    expect(isValidStatusTransition('open', 'in_review')).toBe(true);
-    expect(isValidStatusTransition('open', 'completed')).toBe(false);
+  test('should reject all transitions from terminal phases', () => {
+    expect(isValidPhaseTransition(TaskPhase.Resolved, TaskPhase.Open)).toBe(false);
+    expect(isValidPhaseTransition(TaskPhase.Cancelled, TaskPhase.Open)).toBe(false);
+    expect(isValidPhaseTransition(TaskPhase.Failed, TaskPhase.Open)).toBe(false);
   });
 
-  test('should allow valid transitions from disputed', () => {
-    expect(isValidStatusTransition(TaskStatus.Disputed, TaskStatus.Completed)).toBe(true);
-    expect(isValidStatusTransition(TaskStatus.Disputed, TaskStatus.Refunded)).toBe(true);
+  test('should accept string phase arguments', () => {
+    expect(isValidPhaseTransition('open', 'work_phase')).toBe(true);
+    expect(isValidPhaseTransition('open', 'resolved')).toBe(false);
   });
 });
 
-describe('VALID_STATUS_TRANSITIONS', () => {
-  test('should define transitions for all statuses', () => {
-    const statuses = Object.values(TaskStatus);
-    for (const status of statuses) {
-      expect(VALID_STATUS_TRANSITIONS[status]).toBeDefined();
-      expect(Array.isArray(VALID_STATUS_TRANSITIONS[status])).toBe(true);
+describe('VALID_PHASE_TRANSITIONS', () => {
+  test('should define transitions for all phases', () => {
+    const phases = Object.values(TaskPhase);
+    for (const phase of phases) {
+      expect(VALID_PHASE_TRANSITIONS[phase]).toBeDefined();
+      expect(Array.isArray(VALID_PHASE_TRANSITIONS[phase])).toBe(true);
     }
   });
 });
 
-describe('isTerminalStatus', () => {
-  test('should return true for terminal statuses', () => {
-    expect(isTerminalStatus(TaskStatus.Completed)).toBe(true);
-    expect(isTerminalStatus(TaskStatus.Refunded)).toBe(true);
-    expect(isTerminalStatus(TaskStatus.Cancelled)).toBe(true);
+describe('isTerminalPhase', () => {
+  test('should return true for terminal phases', () => {
+    expect(isTerminalPhase(TaskPhase.Resolved)).toBe(true);
+    expect(isTerminalPhase(TaskPhase.Cancelled)).toBe(true);
+    expect(isTerminalPhase(TaskPhase.Failed)).toBe(true);
   });
 
-  test('should return false for non-terminal statuses', () => {
-    expect(isTerminalStatus(TaskStatus.Open)).toBe(false);
-    expect(isTerminalStatus(TaskStatus.InReview)).toBe(false);
-    expect(isTerminalStatus(TaskStatus.Disputed)).toBe(false);
+  test('should return false for non-terminal phases', () => {
+    expect(isTerminalPhase(TaskPhase.Open)).toBe(false);
+    expect(isTerminalPhase(TaskPhase.WorkPhase)).toBe(false);
+    expect(isTerminalPhase(TaskPhase.JudgePhase)).toBe(false);
   });
 
   test('should accept string arguments', () => {
-    expect(isTerminalStatus('completed')).toBe(true);
-    expect(isTerminalStatus('open')).toBe(false);
+    expect(isTerminalPhase('resolved')).toBe(true);
+    expect(isTerminalPhase('open')).toBe(false);
   });
 });
 
-describe('InvalidStatusTransitionError', () => {
+describe('InvalidPhaseTransitionError', () => {
   test('should construct with correct error message', () => {
-    const error = new InvalidStatusTransitionError(TaskStatus.Open, TaskStatus.Completed);
+    const error = new InvalidPhaseTransitionError(TaskPhase.Open, TaskPhase.Resolved);
 
-    expect(error.name).toBe('InvalidStatusTransitionError');
-    expect(error.message).toContain("Invalid status transition from 'open' to 'completed'");
+    expect(error.name).toBe('InvalidPhaseTransitionError');
+    expect(error.message).toContain("Invalid phase transition from 'open' to 'resolved'");
     expect(error.message).toContain("Valid transitions from 'open'");
-    expect(error.fromStatus).toBe(TaskStatus.Open);
-    expect(error.toStatus).toBe(TaskStatus.Completed);
+    expect(error.fromPhase).toBe(TaskPhase.Open);
+    expect(error.toPhase).toBe(TaskPhase.Resolved);
   });
 
   test('should include taskId in message when provided', () => {
-    const error = new InvalidStatusTransitionError(
-      TaskStatus.Open,
-      TaskStatus.Completed,
+    const error = new InvalidPhaseTransitionError(
+      TaskPhase.Open,
+      TaskPhase.Resolved,
       'task-42'
     );
 
     expect(error.message).toContain('(task: task-42)');
   });
 
-  test('should show "none (terminal state)" for terminal status transitions', () => {
-    const error = new InvalidStatusTransitionError(TaskStatus.Completed, TaskStatus.Open);
+  test('should show "none (terminal phase)" for terminal phase transitions', () => {
+    const error = new InvalidPhaseTransitionError(TaskPhase.Resolved, TaskPhase.Open);
 
-    expect(error.message).toContain('none (terminal state)');
+    expect(error.message).toContain('none (terminal phase)');
   });
 });
 
-describe('assertValidStatusTransition', () => {
+describe('assertValidPhaseTransition', () => {
   test('should not throw for valid transitions', () => {
-    expect(() => assertValidStatusTransition(TaskStatus.Open, TaskStatus.InReview)).not.toThrow();
+    expect(() => assertValidPhaseTransition(TaskPhase.Open, TaskPhase.WorkPhase)).not.toThrow();
   });
 
-  test('should throw InvalidStatusTransitionError for invalid transitions', () => {
+  test('should throw InvalidPhaseTransitionError for invalid transitions', () => {
     expect(() =>
-      assertValidStatusTransition(TaskStatus.Open, TaskStatus.Completed, 'task-1')
-    ).toThrow(InvalidStatusTransitionError);
+      assertValidPhaseTransition(TaskPhase.Open, TaskPhase.Resolved, 'task-1')
+    ).toThrow(InvalidPhaseTransitionError);
   });
 });
 
-describe('getStatusDescription', () => {
-  test('should return descriptions for all statuses', () => {
-    expect(getStatusDescription(TaskStatus.Open)).toContain('accepting submissions');
-    expect(getStatusDescription(TaskStatus.InReview)).toContain('challenge period');
-    expect(getStatusDescription(TaskStatus.Completed)).toContain('successfully');
-    expect(getStatusDescription(TaskStatus.Disputed)).toContain('dispute');
-    expect(getStatusDescription(TaskStatus.Refunded)).toContain('returned');
-    expect(getStatusDescription(TaskStatus.Cancelled)).toContain('cancelled');
+describe('getPhaseDescription', () => {
+  test('should return descriptions for all phases', () => {
+    expect(getPhaseDescription(TaskPhase.Open)).toContain('accepting');
+    expect(getPhaseDescription(TaskPhase.WorkPhase)).toContain('producing');
+    expect(getPhaseDescription(TaskPhase.JudgePhase)).toContain('ranking');
+    expect(getPhaseDescription(TaskPhase.Resolved)).toContain('Consensus');
+    expect(getPhaseDescription(TaskPhase.Cancelled)).toContain('cancelled');
+    expect(getPhaseDescription(TaskPhase.Failed)).toContain('failed');
   });
 
   test('should accept string arguments', () => {
-    expect(getStatusDescription('open')).toContain('accepting submissions');
-  });
-});
-
-describe('DisputeStatus enum', () => {
-  test('should define all expected status values', () => {
-    expect(DisputeStatus.Active).toBe('active');
-    expect(DisputeStatus.Resolved).toBe('resolved');
-    expect(DisputeStatus.Cancelled).toBe('cancelled');
-  });
-});
-
-describe('DisputeStatusNumber', () => {
-  test('should map each status to correct number', () => {
-    expect(DisputeStatusNumber[DisputeStatus.Active]).toBe(0);
-    expect(DisputeStatusNumber[DisputeStatus.Resolved]).toBe(1);
-    expect(DisputeStatusNumber[DisputeStatus.Cancelled]).toBe(2);
-  });
-});
-
-describe('calculateDisputeStake', () => {
-  test('should return 1% of bounty when above minimum', () => {
-    const bounty = BigInt('2000000000000000000'); // 2 ETH
-    const stake = calculateDisputeStake(bounty);
-    expect(stake).toBe(BigInt('20000000000000000')); // 0.02 ETH
-  });
-
-  test('should return minimum stake when 1% is below minimum', () => {
-    const bounty = BigInt('100000000000000000'); // 0.1 ETH
-    const stake = calculateDisputeStake(bounty);
-    // 1% of 0.1 ETH = 0.001 ETH < 0.01 ETH minimum
-    expect(stake).toBe(BigInt('10000000000000000')); // 0.01 ETH
-  });
-
-  test('should return minimum for zero bounty', () => {
-    const stake = calculateDisputeStake(BigInt(0));
-    expect(stake).toBe(BigInt('10000000000000000')); // 0.01 ETH
-  });
-
-  test('should return exact minimum when 1% equals minimum', () => {
-    const bounty = BigInt('1000000000000000000'); // 1 ETH
-    const stake = calculateDisputeStake(bounty);
-    // 1% of 1 ETH = 0.01 ETH = minimum
-    expect(stake).toBe(BigInt('10000000000000000')); // 0.01 ETH
+    expect(getPhaseDescription('open')).toContain('accepting');
   });
 });
 
@@ -375,21 +326,17 @@ describe('Address utilities', () => {
 });
 
 describe('Module exports completeness', () => {
-  test('should export TaskStatus enum', () => {
-    expect(TaskStatus).toBeDefined();
+  test('should export TaskPhase enum', () => {
+    expect(TaskPhase).toBeDefined();
   });
 
-  test('should export DisputeStatus enum', () => {
-    expect(DisputeStatus).toBeDefined();
-  });
-
-  test('should export all task status utility functions', () => {
-    expect(typeof numberToTaskStatus).toBe('function');
-    expect(typeof isValidStatusTransition).toBe('function');
-    expect(typeof isTerminalStatus).toBe('function');
-    expect(typeof stringToTaskStatus).toBe('function');
-    expect(typeof assertValidStatusTransition).toBe('function');
-    expect(typeof getStatusDescription).toBe('function');
+  test('should export all task phase utility functions', () => {
+    expect(typeof numberToTaskPhase).toBe('function');
+    expect(typeof isValidPhaseTransition).toBe('function');
+    expect(typeof isTerminalPhase).toBe('function');
+    expect(typeof stringToTaskPhase).toBe('function');
+    expect(typeof assertValidPhaseTransition).toBe('function');
+    expect(typeof getPhaseDescription).toBe('function');
   });
 
   test('should export all address utility functions', () => {
@@ -402,15 +349,10 @@ describe('Module exports completeness', () => {
     expect(typeof isZeroAddress).toBe('function');
   });
 
-  test('should export dispute utility functions', () => {
-    expect(typeof calculateDisputeStake).toBe('function');
-  });
-
   test('should export constants', () => {
-    expect(TaskStatusNumber).toBeDefined();
-    expect(TERMINAL_STATUSES).toBeDefined();
-    expect(VALID_STATUS_TRANSITIONS).toBeDefined();
-    expect(DisputeStatusNumber).toBeDefined();
+    expect(TaskPhaseNumber).toBeDefined();
+    expect(TERMINAL_PHASES).toBeDefined();
+    expect(VALID_PHASE_TRANSITIONS).toBeDefined();
     expect(ZERO_ADDRESS).toBeDefined();
   });
 });

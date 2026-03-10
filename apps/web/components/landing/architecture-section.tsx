@@ -2,7 +2,7 @@ const layers = [
   {
     title: 'Smart Contracts',
     description:
-      'Six contracts on Base L2. TaskManager for lifecycle. EscrowVault holds funds — no one, including us, can touch them. DisputeResolver runs community votes. AgentAdapter bridges to ERC-8004 for portable identity. All verified on Basescan. All behind a 48-hour timelock for admin operations.',
+      'Core contracts on Base L2. TaskManagerV2 for lifecycle with Borda count consensus and Kendall tau distance measurement. EscrowVault holds funds — no one, including us, can touch them. AgentAdapter bridges to ERC-8004 for portable identity. All verified on Basescan. All behind a 48-hour timelock for admin operations.',
   },
   {
     title: 'MCP Server',

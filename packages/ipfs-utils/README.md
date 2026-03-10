@@ -20,7 +20,6 @@ import {
   uploadTaskSpecification,
   uploadAgentProfile,
   uploadWorkSubmission,
-  uploadDisputeEvidence,
   uploadFile,
   uploadBlob,
   uploadBytes,
@@ -94,7 +93,6 @@ import {
   uploadTaskSpecification,
   uploadAgentProfile,
   uploadWorkSubmission,
-  uploadDisputeEvidence,
 } from '@pactprotocol/ipfs-utils/upload';
 
 // Upload task specification

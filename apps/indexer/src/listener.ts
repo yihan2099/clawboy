@@ -23,7 +23,7 @@ export interface IndexerEvent {
 
 /**
  * Create an event listener for blockchain events
- * Updated for competitive task system
+ * Updated for V2 consensus model (N+M workers + judges)
  */
 export function createEventListener(
   chainId: number = 84532,
@@ -87,9 +87,9 @@ export function createEventListener(
         return;
       }
 
-      // ============ TaskManager Events ============
+      // ============ TaskManagerV2 Events ============
 
-      // TaskCreated
+      // TaskCreated (V2: includes requiredWorkers, requiredJudges, workDeadline, judgeDeadline)
       const taskCreatedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -98,17 +98,20 @@ export function createEventListener(
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'creator', type: 'address', indexed: true },
-            { name: 'bountyAmount', type: 'uint256', indexed: false },
+            { name: 'bounty', type: 'uint256', indexed: false },
             { name: 'bountyToken', type: 'address', indexed: false },
-            { name: 'specificationCid', type: 'string', indexed: false },
-            { name: 'deadline', type: 'uint256', indexed: false },
+            { name: 'specCid', type: 'string', indexed: false },
+            { name: 'requiredWorkers', type: 'uint8', indexed: false },
+            { name: 'requiredJudges', type: 'uint8', indexed: false },
+            { name: 'workDeadline', type: 'uint256', indexed: false },
+            { name: 'judgeDeadline', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
         toBlock: currentBlock,
       });
 
-      // WorkSubmitted (new or updated submission)
+      // WorkSubmitted (V2: worker instead of agent, slotIndex instead of submissionIndex)
       const workSubmittedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -116,40 +119,72 @@ export function createEventListener(
           name: 'WorkSubmitted',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'agent', type: 'address', indexed: true },
+            { name: 'worker', type: 'address', indexed: true },
             { name: 'submissionCid', type: 'string', indexed: false },
-            { name: 'submissionIndex', type: 'uint256', indexed: false },
+            { name: 'slotIndex', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
         toBlock: currentBlock,
       });
 
-      // WinnerSelected (creator picks winner)
-      const winnerSelectedLogs = await publicClient.getLogs({
+      // JudgmentSubmitted (V2 new event)
+      const judgmentSubmittedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
           type: 'event',
-          name: 'WinnerSelected',
+          name: 'JudgmentSubmitted',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'winner', type: 'address', indexed: true },
-            { name: 'challengeDeadline', type: 'uint256', indexed: false },
+            { name: 'judge', type: 'address', indexed: true },
+            { name: 'judgmentIndex', type: 'uint8', indexed: false },
           ],
         },
         fromBlock,
         toBlock: currentBlock,
       });
 
-      // AllSubmissionsRejected (creator rejects all)
-      const submissionsRejectedLogs = await publicClient.getLogs({
+      // PhaseChanged (V2 new event)
+      const phaseChangedLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
           type: 'event',
-          name: 'AllSubmissionsRejected',
+          name: 'PhaseChanged',
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'creator', type: 'address', indexed: true },
+            { name: 'fromPhase', type: 'uint8', indexed: false },
+            { name: 'toPhase', type: 'uint8', indexed: false },
+          ],
+        },
+        fromBlock,
+        toBlock: currentBlock,
+      });
+
+      // TaskResolved (V2 new event)
+      const taskResolvedLogs = await publicClient.getLogs({
+        address: addresses.taskManager,
+        event: {
+          type: 'event',
+          name: 'TaskResolved',
+          inputs: [
+            { name: 'taskId', type: 'uint256', indexed: true },
+            { name: 'consensusRanking', type: 'uint8[]', indexed: false },
+            { name: 'winningWorkers', type: 'address[]', indexed: false },
+            { name: 'consensusJudges', type: 'address[]', indexed: false },
+          ],
+        },
+        fromBlock,
+        toBlock: currentBlock,
+      });
+
+      // TaskFailed (V2 new event)
+      const taskFailedLogs = await publicClient.getLogs({
+        address: addresses.taskManager,
+        event: {
+          type: 'event',
+          name: 'TaskFailed',
+          inputs: [
+            { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'reason', type: 'string', indexed: false },
           ],
         },
@@ -157,39 +192,7 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      // TaskCompleted (bounty released to winner)
-      const taskCompletedLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskCompleted',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'winner', type: 'address', indexed: true },
-            { name: 'bountyAmount', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
-      // TaskRefunded (bounty returned to creator)
-      const taskRefundedLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskRefunded',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'creator', type: 'address', indexed: true },
-            { name: 'refundAmount', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
-      // TaskCancelled (creator cancels)
+      // TaskCancelled (unchanged from V1)
       const taskCancelledLogs = await publicClient.getLogs({
         address: addresses.taskManager,
         event: {
@@ -198,23 +201,6 @@ export function createEventListener(
           inputs: [
             { name: 'taskId', type: 'uint256', indexed: true },
             { name: 'creator', type: 'address', indexed: true },
-            { name: 'refundAmount', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
-      // TaskDisputed (task enters dispute)
-      const taskDisputedLogs = await publicClient.getLogs({
-        address: addresses.taskManager,
-        event: {
-          type: 'event',
-          name: 'TaskDisputed',
-          inputs: [
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'disputer', type: 'address', indexed: true },
-            { name: 'disputeId', type: 'uint256', indexed: false },
           ],
         },
         fromBlock,
@@ -255,76 +241,17 @@ export function createEventListener(
         toBlock: currentBlock,
       });
 
-      // ============ DisputeResolver Events ============
-
-      // DisputeCreated
-      const disputeCreatedLogs = await publicClient.getLogs({
-        address: addresses.disputeResolver,
-        event: {
-          type: 'event',
-          name: 'DisputeCreated',
-          inputs: [
-            { name: 'disputeId', type: 'uint256', indexed: true },
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'disputer', type: 'address', indexed: true },
-            { name: 'stake', type: 'uint256', indexed: false },
-            { name: 'votingDeadline', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
-      // VoteSubmitted
-      const voteSubmittedLogs = await publicClient.getLogs({
-        address: addresses.disputeResolver,
-        event: {
-          type: 'event',
-          name: 'VoteSubmitted',
-          inputs: [
-            { name: 'disputeId', type: 'uint256', indexed: true },
-            { name: 'voter', type: 'address', indexed: true },
-            { name: 'supportsDisputer', type: 'bool', indexed: false },
-            { name: 'weight', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
-      // DisputeResolved
-      const disputeResolvedLogs = await publicClient.getLogs({
-        address: addresses.disputeResolver,
-        event: {
-          type: 'event',
-          name: 'DisputeResolved',
-          inputs: [
-            { name: 'disputeId', type: 'uint256', indexed: true },
-            { name: 'taskId', type: 'uint256', indexed: true },
-            { name: 'disputerWon', type: 'bool', indexed: false },
-            { name: 'votesFor', type: 'uint256', indexed: false },
-            { name: 'votesAgainst', type: 'uint256', indexed: false },
-          ],
-        },
-        fromBlock,
-        toBlock: currentBlock,
-      });
-
       // Process all events
       const allEvents = [
         ...taskCreatedLogs.map((l) => parseEvent(l, 'TaskCreated')),
         ...workSubmittedLogs.map((l) => parseEvent(l, 'WorkSubmitted')),
-        ...winnerSelectedLogs.map((l) => parseEvent(l, 'WinnerSelected')),
-        ...submissionsRejectedLogs.map((l) => parseEvent(l, 'AllSubmissionsRejected')),
-        ...taskCompletedLogs.map((l) => parseEvent(l, 'TaskCompleted')),
-        ...taskRefundedLogs.map((l) => parseEvent(l, 'TaskRefunded')),
+        ...judgmentSubmittedLogs.map((l) => parseEvent(l, 'JudgmentSubmitted')),
+        ...phaseChangedLogs.map((l) => parseEvent(l, 'PhaseChanged')),
+        ...taskResolvedLogs.map((l) => parseEvent(l, 'TaskResolved')),
+        ...taskFailedLogs.map((l) => parseEvent(l, 'TaskFailed')),
         ...taskCancelledLogs.map((l) => parseEvent(l, 'TaskCancelled')),
-        ...taskDisputedLogs.map((l) => parseEvent(l, 'TaskDisputed')),
         ...agentRegisteredLogs.map((l) => parseEvent(l, 'AgentRegistered')),
         ...agentProfileUpdatedLogs.map((l) => parseEvent(l, 'AgentProfileUpdated')),
-        ...disputeCreatedLogs.map((l) => parseEvent(l, 'DisputeCreated')),
-        ...voteSubmittedLogs.map((l) => parseEvent(l, 'VoteSubmitted')),
-        ...disputeResolvedLogs.map((l) => parseEvent(l, 'DisputeResolved')),
       ];
 
       // Sort by block number and log index
@@ -347,7 +274,6 @@ export function createEventListener(
       try {
         await Promise.all([
           updateSyncState(chainId, addresses.taskManager, currentBlock),
-          updateSyncState(chainId, addresses.disputeResolver, currentBlock),
           updateSyncState(chainId, addresses.agentAdapter, currentBlock),
         ]);
       } catch (error) {
@@ -373,21 +299,12 @@ export function createEventListener(
       try {
         const checkpoints = await Promise.all([
           getLastSyncedBlock(chainId, addresses.taskManager),
-          getLastSyncedBlock(chainId, addresses.disputeResolver),
           getLastSyncedBlock(chainId, addresses.agentAdapter),
         ]);
         const validCheckpoints = checkpoints.filter((c): c is bigint => c !== null);
         if (validCheckpoints.length > 0) {
-          // CHECKPOINT BEHAVIOR: We use the minimum block across all contracts as the
-          // single shared lastProcessedBlock. This is conservative — if TaskManager is
-          // at block 1000 but DisputeResolver is at block 900, we re-scan from 900 for
-          // all contracts, which may re-deliver already-processed TaskManager events
-          // (idempotency in processEventWithIdempotency handles duplicates safely).
-          //
-          // TODO: Per-contract checkpointing would avoid this re-scanning overhead.
-          // Each contract would track its own lastProcessedBlock independently, allowing
-          // faster-progressing contracts to skip already-indexed ranges. This becomes
-          // important at scale or when contracts have very different event densities.
+          // Use the minimum block across all contracts as the single shared lastProcessedBlock.
+          // This is conservative -- see comment in V1 for rationale.
           lastProcessedBlock = validCheckpoints.reduce((min, c) => (c < min ? c : min));
           console.log(
             `Resuming from minimum checkpoint: block ${lastProcessedBlock} (across ${validCheckpoints.length} contracts)`

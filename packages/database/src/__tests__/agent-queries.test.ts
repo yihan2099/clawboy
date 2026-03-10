@@ -27,10 +27,9 @@ const mockAgent = {
   agent_id: null as string | null,
   agent_uri: null as string | null,
   name: 'Test Agent',
-  description: 'A test agent',
-  skills: ['solidity', 'typescript'],
+  skills: ['solidity', 'typescript'] as string[] | null,
   is_active: true,
-  reputation: '100',
+  reputation: 100,
   tasks_won: 5,
   disputes_won: 0,
   disputes_lost: 0,
@@ -39,8 +38,8 @@ const mockAgent = {
   webhook_url: null as string | null,
   webhook_secret: null as string | null,
   registered_at: '2025-01-01T00:00:00Z',
-  created_at: '2025-01-01T00:00:00Z',
-  updated_at: '2025-01-01T00:00:00Z',
+  created_at: '2025-01-01T00:00:00Z' as string | null,
+  updated_at: '2025-01-01T00:00:00Z' as string | null,
 };
 
 describe('agent-queries', () => {

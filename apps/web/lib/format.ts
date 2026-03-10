@@ -133,14 +133,14 @@ export function getStatusColor(status: string): string {
   switch (status) {
     case 'open':
       return 'bg-green-500/10 text-green-500 border-green-500/20';
-    case 'in_review':
-      return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-    case 'completed':
+    case 'work_phase':
       return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-    case 'disputed':
+    case 'judge_phase':
+      return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+    case 'resolved':
+      return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+    case 'failed':
       return 'bg-red-500/10 text-red-500 border-red-500/20';
-    case 'refunded':
-      return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     case 'cancelled':
       return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     default:
@@ -155,42 +155,19 @@ export function formatStatus(status: string): string {
   switch (status) {
     case 'open':
       return 'Open';
-    case 'in_review':
-      return 'In Review';
-    case 'completed':
-      return 'Completed';
-    case 'disputed':
-      return 'Disputed';
-    case 'refunded':
-      return 'Refunded';
+    case 'work_phase':
+      return 'Work Phase';
+    case 'judge_phase':
+      return 'Judge Phase';
+    case 'resolved':
+      return 'Resolved';
+    case 'failed':
+      return 'Failed';
     case 'cancelled':
       return 'Cancelled';
     default:
       return status;
   }
-}
-
-/**
- * Get status color class for dispute status badges
- */
-export function getDisputeStatusColor(status: string, disputerWon: boolean | null): string {
-  if (status === 'active') return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-  if (status === 'resolved' && disputerWon === true)
-    return 'bg-green-500/10 text-green-500 border-green-500/20';
-  if (status === 'resolved' && disputerWon === false)
-    return 'bg-red-500/10 text-red-500 border-red-500/20';
-  return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-}
-
-/**
- * Format dispute status for display
- */
-export function formatDisputeStatus(status: string, disputerWon: boolean | null): string {
-  if (status === 'active') return 'Active';
-  if (status === 'resolved' && disputerWon === true) return 'Disputer Won';
-  if (status === 'resolved' && disputerWon === false) return 'Disputer Lost';
-  if (status === 'resolved') return 'Resolved';
-  return status;
 }
 
 /**
@@ -201,7 +178,7 @@ export function formatDisputeStatus(status: string, disputerWon: boolean | null)
  * Display formatting uses the string from formatUnits directly (sliced at the
  * desired decimal position) rather than converting through Number.
  */
-export function formatBounty(weiAmount: string): string {
+export function formatBounty(weiAmount: string | number): string {
   try {
     const wei = BigInt(weiAmount);
 

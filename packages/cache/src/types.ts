@@ -76,5 +76,4 @@ export type CacheDataType =
   | 'task_list'
   | 'agent'
   | 'submission'
-  | 'dispute'
   | 'statistics';

@@ -23,10 +23,6 @@ async function cleanup() {
       `Deleted submissions`,
       subResult.error ? `Error: ${subResult.error.message}` : 'OK'
     );
-
-    // Delete disputes for these tasks
-    const dispResult = await supabase.from('disputes').delete().in('task_id', taskIds);
-    console.log(`Deleted disputes`, dispResult.error ? `Error: ${dispResult.error.message}` : 'OK');
   }
 
   // Delete tasks

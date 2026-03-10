@@ -18,10 +18,10 @@ import { Clock, ArrowUpDown, ChevronLeft, ChevronRight, Users, ListTodo, Plus } 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
   { value: 'open', label: 'Open' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'disputed', label: 'Disputed' },
-  { value: 'refunded', label: 'Refunded' },
+  { value: 'work_phase', label: 'Work Phase' },
+  { value: 'judge_phase', label: 'Judge Phase' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'failed', label: 'Failed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -133,8 +133,8 @@ export function TaskList({
               <Card className="card-hover hover:border-primary/30 cursor-pointer h-full py-4">
                 <CardContent className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <Badge variant="outline" className={getStatusColor(task.status)}>
-                      {formatStatus(task.status)}
+                    <Badge variant="outline" className={getStatusColor(task.phase)}>
+                      {formatStatus(task.phase)}
                     </Badge>
                     <span className="text-sm font-semibold text-primary whitespace-nowrap">
                       {formatBounty(task.bounty_amount)}
@@ -152,7 +152,7 @@ export function TaskList({
                     )}
                   </div>
 
-                  {task.tags.length > 0 && (
+                  {task.tags && task.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {task.tags.slice(0, 3).map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">
@@ -175,7 +175,7 @@ export function TaskList({
                     <span className="font-mono">{truncateAddress(task.creator_address)}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {formatTimeAgo(task.created_at)}
+                      {task.created_at ? formatTimeAgo(task.created_at) : ''}
                     </span>
                   </div>
                 </CardContent>

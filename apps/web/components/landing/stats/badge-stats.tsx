@@ -31,8 +31,8 @@ function Separator() {
 
 export function BadgeStats({ stats }: BadgeStatsProps) {
   const successRate =
-    stats.completedTasks + stats.refundedTasks > 0
-      ? Math.round((stats.completedTasks / (stats.completedTasks + stats.refundedTasks)) * 100)
+    stats.resolvedTasks + stats.failedTasks > 0
+      ? Math.round((stats.resolvedTasks / (stats.resolvedTasks + stats.failedTasks)) * 100)
       : 0;
 
   return (

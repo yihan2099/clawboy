@@ -19,12 +19,10 @@ import { updateProfileTool } from '../tools/agent/update-profile';
 import { getReputationTool } from '../tools/agent/get-reputation';
 import { getFeedbackHistoryTool } from '../tools/agent/get-feedback-history';
 import {
-  getDisputeTool,
-  listDisputesTool,
-  startDisputeTool,
-  submitVoteTool,
-  resolveDisputeTool,
-} from '../tools/dispute';
+  submitJudgmentTool,
+  getJudgableTasksTool,
+  getSubmissionsForJudgingTool,
+} from '../tools/judge';
 import { getChallengeHandler, verifySignatureHandler, getSessionHandler } from '../tools/auth';
 import {
   getCapabilitiesHandler,
@@ -152,17 +150,13 @@ async function executeTool(
     case 'get_feedback_history':
       return await getFeedbackHistoryTool.handler(args, context);
 
-    // Dispute tools
-    case 'get_dispute':
-      return await getDisputeTool.handler(args);
-    case 'list_disputes':
-      return await listDisputesTool.handler(args);
-    case 'start_dispute':
-      return await startDisputeTool.handler(args, context);
-    case 'submit_vote':
-      return await submitVoteTool.handler(args, context);
-    case 'resolve_dispute':
-      return await resolveDisputeTool.handler(args);
+    // Judge tools
+    case 'submit_judgment':
+      return await submitJudgmentTool.handler(args, context);
+    case 'get_judgable_tasks':
+      return await getJudgableTasksTool.handler(args);
+    case 'get_submissions_for_judging':
+      return await getSubmissionsForJudgingTool.handler(args);
 
     default:
       throw new Error(`Unknown tool: ${toolName}`);

@@ -1,4 +1,3 @@
-import { cacheLife, cacheTag } from 'next/cache';
 import {
   getPlatformStatistics,
   getRecentOpenTasks,
@@ -8,7 +7,6 @@ import {
   getFeaturedCompletedTasks,
   getBountyStatistics,
   getDetailedTasks,
-  getDetailedDisputes,
   type PlatformStatistics,
   type TaskRow,
   type AgentRow,
@@ -17,25 +15,12 @@ import {
   type FeaturedTask,
   type BountyStatistics,
   type DetailedTask,
-  type DetailedDispute,
 } from '@pactprotocol/database';
 
-// NOTE: Each function intentionally repeats the try/catch error handling pattern.
-// A shared helper wrapper is not possible because the `'use cache'` directive must
-// appear as the FIRST statement inside the function body — it cannot be hoisted
-// through a higher-order wrapper. The repetition is a framework constraint, not a
-// design choice. Each function also uses a distinct cacheTag for targeted revalidation.
+// NOTE: These functions wrap DB queries for the landing page.
+// Caching is handled by the @pactprotocol/cache Redis layer in the database package.
 
-/**
- * Cached platform statistics with 5-minute revalidation.
- * Uses Next.js 16 "use cache" directive.
- * Returns null on error for graceful degradation.
- */
 export async function getCachedPlatformStatistics(): Promise<PlatformStatistics | null> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('platform-stats');
-
   try {
     return await getPlatformStatistics();
   } catch (error) {
@@ -44,14 +29,7 @@ export async function getCachedPlatformStatistics(): Promise<PlatformStatistics 
   }
 }
 
-/**
- * Cached recent open tasks with 5-minute revalidation.
- */
 export async function getCachedRecentTasks(): Promise<TaskRow[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('recent-tasks');
-
   try {
     return await getRecentOpenTasks(5);
   } catch (error) {
@@ -60,14 +38,7 @@ export async function getCachedRecentTasks(): Promise<TaskRow[]> {
   }
 }
 
-/**
- * Cached top agents with 5-minute revalidation.
- */
 export async function getCachedTopAgents(): Promise<AgentRow[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('top-agents');
-
   try {
     return await getTopAgents(5);
   } catch (error) {
@@ -76,14 +47,7 @@ export async function getCachedTopAgents(): Promise<AgentRow[]> {
   }
 }
 
-/**
- * Cached recent submissions with 5-minute revalidation.
- */
 export async function getCachedRecentSubmissions(): Promise<SubmissionWithTask[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('recent-activity');
-
   try {
     return await getRecentSubmissions(5);
   } catch (error) {
@@ -92,14 +56,7 @@ export async function getCachedRecentSubmissions(): Promise<SubmissionWithTask[]
   }
 }
 
-/**
- * Cached tag statistics with 5-minute revalidation.
- */
 export async function getCachedTagStatistics(): Promise<TagStatistic[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('tag-stats');
-
   try {
     return await getTagStatistics(6);
   } catch (error) {
@@ -108,14 +65,7 @@ export async function getCachedTagStatistics(): Promise<TagStatistic[]> {
   }
 }
 
-/**
- * Cached featured completed tasks with 5-minute revalidation.
- */
 export async function getCachedFeaturedTasks(): Promise<FeaturedTask[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('featured-tasks');
-
   try {
     return await getFeaturedCompletedTasks(3);
   } catch (error) {
@@ -124,14 +74,7 @@ export async function getCachedFeaturedTasks(): Promise<FeaturedTask[]> {
   }
 }
 
-/**
- * Cached bounty statistics with 5-minute revalidation.
- */
 export async function getCachedBountyStatistics(): Promise<BountyStatistics | null> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('bounty-stats');
-
   try {
     return await getBountyStatistics();
   } catch (error) {
@@ -140,34 +83,11 @@ export async function getCachedBountyStatistics(): Promise<BountyStatistics | nu
   }
 }
 
-/**
- * Cached detailed tasks for mini dashboard with 5-minute revalidation.
- */
 export async function getCachedDetailedTasks(): Promise<DetailedTask[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('detailed-tasks');
-
   try {
     return await getDetailedTasks(3);
   } catch (error) {
     console.error('Failed to fetch detailed tasks:', error);
-    return [];
-  }
-}
-
-/**
- * Cached detailed disputes for mini dashboard with 5-minute revalidation.
- */
-export async function getCachedDetailedDisputes(): Promise<DetailedDispute[]> {
-  'use cache';
-  cacheLife('minutes');
-  cacheTag('detailed-disputes');
-
-  try {
-    return await getDetailedDisputes(3);
-  } catch (error) {
-    console.error('Failed to fetch detailed disputes:', error);
     return [];
   }
 }

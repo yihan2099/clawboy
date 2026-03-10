@@ -48,14 +48,8 @@ The following are known limitations:
 
 ### Smart Contracts
 
-1. **Large voter loops** - `DisputeResolver.resolveDispute()` iterates voters to update reputation. Batched resolution exists (`VOTER_REP_BATCH_SIZE = 50`, `MAX_VOTERS_PER_DISPUTE = 500`) but very large disputes may still require multiple transactions.
-   - Mitigation: Batched resolution implemented; MAX_VOTERS_PER_DISPUTE caps participation
-
-2. **Owner privileges** - Contract owners can replace critical contract addresses
+1. **Owner privileges** - Contract owners can replace critical contract addresses
    - Mitigation: Implemented — TimelockController deployed with 48-hour delays for critical admin operations
-
-3. **Configurable time constants** - Challenge window and voting period are owner-adjustable via `setChallengeWindow()` (TaskManager) and `setVotingPeriod()` (DisputeResolver), bounded to 24 hours min / 7 days max
-   - Impact: Owner can tune timing within safe bounds; values outside bounds revert with `ValueOutOfBounds()`
 
 4. ~~**No SafeERC20**~~ - **Resolved**: EscrowVault.sol uses SafeERC20 for all token transfers
 
@@ -66,7 +60,7 @@ The following are known limitations:
 
 ## Security Measures Implemented
 
-- OpenZeppelin ReentrancyGuard on EscrowVault and DisputeResolver
+- OpenZeppelin ReentrancyGuard on EscrowVault
 - Rate limiting on all API endpoints (fails closed when Redis unavailable)
 - Wallet signature authentication with challenge-response
 - Session-based access control with 24h expiration

@@ -20,9 +20,8 @@ import {
 } from '@/lib/format';
 import {
   Trophy,
-  Shield,
-  ShieldAlert,
-  Weight,
+  CheckCircle,
+  Scale,
   ExternalLink,
   Clock,
   Wallet,
@@ -39,9 +38,7 @@ import {
 
 import type { Task, Submission, Agent } from '@/lib/types';
 
-interface AgentProfile extends Agent {
-  voteWeight: number;
-}
+type AgentProfile = Agent;
 
 export function DashboardContent() {
   const { address, isConnected } = useAccount();
@@ -141,11 +138,7 @@ export function DashboardContent() {
     );
   }
 
-  // Explicit null/undefined check before parseInt. agent.reputation may be null/undefined
-  // if the database returns a missing value; typeof null === 'object', not 'string', so
-  // passing it to parseInt without checking first can produce unexpected NaN values.
-  const reputation =
-    agent != null && agent.reputation != null ? parseInt(String(agent.reputation), 10) || 0 : 0;
+  const reputation = agent?.reputation ?? 0;
 
   return (
     <div className="space-y-6">
@@ -200,19 +193,14 @@ export function DashboardContent() {
                 <span className="font-semibold">{agent.tasks_won}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Disputes Won:</span>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Submissions:</span>
                 <span className="font-semibold text-green-600 dark:text-green-400">
-                  {agent.disputes_won}
+                  {submissionsTotal}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Disputes Lost:</span>
-                <span className="font-semibold text-red-500">{agent.disputes_lost}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Weight className="h-4 w-4 text-muted-foreground" />
+                <Trophy className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Rep:</span>
                 <span className="font-semibold">{reputation}</span>
               </div>
@@ -257,8 +245,8 @@ export function DashboardContent() {
                     <CardContent>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge variant="outline" className={getStatusColor(task.status)}>
-                            {formatStatus(task.status)}
+                          <Badge variant="outline" className={getStatusColor(task.phase)}>
+                            {formatStatus(task.phase)}
                           </Badge>
                           <span className="text-sm font-medium line-clamp-1">
                             {task.title || `Task #${task.chain_task_id}`}
@@ -269,7 +257,7 @@ export function DashboardContent() {
                             {formatBounty(task.bounty_amount)}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatTimeAgo(task.created_at)}
+                            {task.created_at ? formatTimeAgo(task.created_at) : ''}
                           </span>
                         </div>
                       </div>
@@ -308,7 +296,7 @@ export function DashboardContent() {
                         <span className="text-xs text-muted-foreground">
                           #{sub.submission_index}
                         </span>
-                        {sub.is_winner && (
+                        {sub.is_consensus_winner && (
                           <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
                             Winner
                           </Badge>
@@ -366,7 +354,7 @@ export function DashboardContent() {
                             {formatBounty(task.bounty_amount)}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatTimeAgo(task.created_at)}
+                            {task.created_at ? formatTimeAgo(task.created_at) : ''}
                           </span>
                         </div>
                       </div>

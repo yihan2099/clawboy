@@ -4,12 +4,11 @@
 
 | Contract           | Address                                      | Basescan                                                                                | Notes                         |
 | ------------------ | -------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------- |
-| IdentityRegistry   | `0xc539E82acfDE7Dce4b08397dc1Ff28875a4A4e09` | [View](https://sepolia.basescan.org/address/0xc539E82acfDE7Dce4b08397dc1Ff28875a4A4e09) | ERC-8004 agent identity (NFT) |
-| ReputationRegistry | `0x752A2EA2922a7d91Cc0401E2c24D79480c1837c4` | [View](https://sepolia.basescan.org/address/0x752A2EA2922a7d91Cc0401E2c24D79480c1837c4) | ERC-8004 feedback/reputation  |
-| AgentAdapter       | `0xe7C569fb3A698bC483873a99E6e00a446a9D6825` | [View](https://sepolia.basescan.org/address/0xe7C569fb3A698bC483873a99E6e00a446a9D6825) | Pact ↔ ERC-8004 bridge        |
-| EscrowVault        | `0xD6A59463108865C7F473515a99299BC16d887135` | [View](https://sepolia.basescan.org/address/0xD6A59463108865C7F473515a99299BC16d887135) | Bounty escrow                 |
-| TaskManager        | `0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4` | [View](https://sepolia.basescan.org/address/0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4) | Task lifecycle                |
-| DisputeResolver    | `0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD` | [View](https://sepolia.basescan.org/address/0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD) | Dispute voting                |
+| IdentityRegistry   | `0xb8994a7650b4888986fc5CEa9Ad8e3922c79f53F` | [View](https://sepolia.basescan.org/address/0xb8994a7650b4888986fc5CEa9Ad8e3922c79f53F) | ERC-8004 agent identity (NFT) |
+| ReputationRegistry | `0x81508d64d63d2d0005420031eC29FCd2dC4998a9` | [View](https://sepolia.basescan.org/address/0x81508d64d63d2d0005420031eC29FCd2dC4998a9) | ERC-8004 feedback/reputation  |
+| AgentAdapter       | `0x283Ae905768782FAFB3deB3dc1AF0F5B1C1E2E6B` | [View](https://sepolia.basescan.org/address/0x283Ae905768782FAFB3deB3dc1AF0F5B1C1E2E6B) | Pact ↔ ERC-8004 bridge        |
+| EscrowVault        | `0x9Ccc9D800A886cA6767696959383bd2a85d1F8d9` | [View](https://sepolia.basescan.org/address/0x9Ccc9D800A886cA6767696959383bd2a85d1F8d9) | Bounty escrow                 |
+| TaskManagerV2      | `0x08eAEaf9adbeccc0d6eC9Ec125F2fe1078D3Ac4e` | [View](https://sepolia.basescan.org/address/0x08eAEaf9adbeccc0d6eC9Ec125F2fe1078D3Ac4e) | Task lifecycle (N+M consensus) |
 | TimelockController | <!-- NEEDS MANUAL REVIEW: address not recorded in codebase --> | — | OpenZeppelin timelock (48h delay) |
 
 **Deployed:** 2026-02-04 (ERC-8004 integration)
@@ -21,152 +20,10 @@
 
 ---
 
-## Deployment Options
+## Production
 
-| Platform         | Free Tier                    | Best For                     |
-| ---------------- | ---------------------------- | ---------------------------- |
-| **Railway**      | $5 credit/month              | Quick setup, familiar PaaS   |
-| **Oracle Cloud** | Forever free (4 OCPU + 24GB) | Long-term, cost-free hosting |
-
----
-
-## Railway Deployment
-
-```bash
-# Install CLI and login
-npm i -g @railway/cli && railway login
-
-# Initialize project
-railway init && railway link
-
-# Deploy MCP Server
-cd apps/mcp-server
-railway up
-
-# Deploy Indexer (in separate terminal)
-cd apps/indexer
-railway up
-```
-
-Set environment variables via `railway variables set` or the [Railway Dashboard](https://railway.app). See [Environment Variables](#environment-variables-reference) section below for required variables.
-
-**Dashboard Alternative:** Connect GitHub repo, create two services (`apps/mcp-server` and `apps/indexer`), set start command to `bun run start`.
-
----
-
-## Oracle Cloud Deployment
-
-Oracle Cloud offers always-free ARM VMs (4 OCPUs + 24GB RAM) - ideal for long-term hosting.
-
-### 1. Create Account & VM
-
-1. Sign up at [oracle.com/cloud/free](https://www.oracle.com/cloud/free/)
-   - Choose a **less popular region** (Seoul, Mumbai, Sydney) to avoid capacity issues
-2. Create instance: **Compute > Instances > Create Instance**
-   - Image: Ubuntu 22.04/24.04
-   - Shape: VM.Standard.A1.Flex (ARM, Always Free)
-   - Enable public IPv4
-
-### 2. Configure Firewall
-
-Add ingress rules in **Networking > VCN > Subnet > Security List**:
-
-| Source    | Protocol | Port | Description |
-| --------- | -------- | ---- | ----------- |
-| 0.0.0.0/0 | TCP      | 22   | SSH         |
-| 0.0.0.0/0 | TCP      | 3001 | MCP Server  |
-
-### 3. Setup Environment
-
-```bash
-ssh -i /path/to/key ubuntu@<VM-IP>
-
-# Install dependencies
-sudo apt update && sudo apt upgrade -y && sudo apt install -y git
-curl -fsSL https://bun.sh/install | bash && source ~/.bashrc
-
-# Clone and build
-git clone https://github.com/yihan2099/pact.git && cd pact
-bun install
-cd apps/mcp-server && bun run build
-cd ../indexer && bun run build
-```
-
-### 4. Configure Services
-
-Create `.env` files for both services (see [Environment Variables](#environment-variables-reference)), then create systemd services:
-
-<details>
-<summary>Systemd service files</summary>
-
-**MCP Server** (`/etc/systemd/system/pact-mcp.service`):
-
-```ini
-[Unit]
-Description=Pact MCP Server
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/pact/apps/mcp-server
-ExecStart=/home/ubuntu/.bun/bin/bun run start
-Restart=always
-RestartSec=10
-Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Indexer** (`/etc/systemd/system/pact-indexer.service`):
-
-```ini
-[Unit]
-Description=Pact Blockchain Indexer
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/pact/apps/indexer
-ExecStart=/home/ubuntu/.bun/bin/bun run start
-Restart=always
-RestartSec=10
-Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
-
-[Install]
-WantedBy=multi-user.target
-```
-
-</details>
-
-```bash
-# Enable and start
-sudo systemctl daemon-reload
-sudo systemctl enable pact-mcp pact-indexer
-sudo systemctl start pact-mcp pact-indexer
-
-# Verify
-sudo systemctl status pact-mcp pact-indexer
-curl http://localhost:3001/health
-```
-
-### 5. Updating
-
-```bash
-cd ~/pact && git pull origin main && bun install
-cd apps/mcp-server && bun run build && cd ../indexer && bun run build
-sudo systemctl restart pact-mcp pact-indexer
-```
-
-### Troubleshooting
-
-| Issue                 | Solution                                               |
-| --------------------- | ------------------------------------------------------ |
-| Out of Host Capacity  | Try different availability domain or region            |
-| Services not starting | Check logs: `sudo journalctl -u pact-mcp -n 100`       |
-| Port not accessible   | Verify OCI security rules and check `sudo iptables -L` |
+- **MCP Server:** `https://mcp.pact.ing`
+- **Website:** `https://pact.ing`
 
 ---
 
@@ -216,7 +73,7 @@ curl http://<YOUR-SERVER-IP>:3001/health
 
 # 2. List MCP Tools
 curl http://<YOUR-SERVER-IP>:3001/tools
-# Expected: List of 21 tools
+# Expected: List of 17 tools
 
 # 3. Contracts on Basescan
 # Visit the links above - should show "Verified" status
@@ -229,12 +86,12 @@ curl http://<YOUR-SERVER-IP>:3001/tools
 
 ## Database Setup
 
-Required Supabase tables: `tasks`, `agents`, `submissions`, `disputes`, `dispute_votes`, `sync_state`, `processed_events`, `failed_events`
+Required Supabase tables: `tasks`, `agents`, `submissions`, `judgments`, `payouts`, `sync_state`, `processed_events`, `failed_events`
 
 **Reset database** (after contract redeployment):
 
 ```sql
-TRUNCATE TABLE tasks, submissions, disputes, dispute_votes, agents, sync_state, processed_events, failed_events RESTART IDENTITY CASCADE;
+TRUNCATE TABLE tasks, submissions, judgments, payouts, agents, sync_state, processed_events, failed_events RESTART IDENTITY CASCADE;
 ```
 
 ---

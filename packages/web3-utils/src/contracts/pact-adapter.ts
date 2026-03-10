@@ -56,35 +56,15 @@ export async function getAgentId(address: `0x${string}`, chainId?: number): Prom
 }
 
 /**
- * Get agent's vote weight for disputes
- * Weight = max(1, floor(log2(reputation + 1)))
- */
-export async function getAgentVoteWeight(
-  address: `0x${string}`,
-  chainId?: number
-): Promise<bigint> {
-  const resolvedChainId = chainId || getDefaultChainId();
-  const publicClient = getPublicClient(resolvedChainId);
-  const addresses = getContractAddresses(resolvedChainId);
-
-  return publicClient.readContract({
-    address: addresses.agentAdapter,
-    abi: PactAgentAdapterABI,
-    functionName: 'getVoteWeight',
-    args: [address],
-  }) as Promise<bigint>;
-}
-
-/**
- * Get agent's reputation summary from ERC-8004 feedback
+ * Get agent's reputation summary from on-chain contract.
+ * Returns V2 reputation summary: workerConsensusWins, judgeConsensusWins, totalReputation.
  */
 export async function getAgentReputationSummary(
   address: `0x${string}`,
   chainId?: number
 ): Promise<{
-  taskWins: bigint;
-  disputeWins: bigint;
-  disputeLosses: bigint;
+  workerConsensusWins: bigint;
+  judgeConsensusWins: bigint;
   totalReputation: bigint;
 }> {
   const resolvedChainId = chainId || getDefaultChainId();
@@ -98,18 +78,15 @@ export async function getAgentReputationSummary(
     args: [address],
   });
 
-  // Viem returns result as tuple array
-  const [taskWins, disputeWins, disputeLosses, totalReputation] = result as [
-    bigint,
+  const [workerConsensusWins, judgeConsensusWins, totalReputation] = result as [
     bigint,
     bigint,
     bigint,
   ];
 
   return {
-    taskWins,
-    disputeWins,
-    disputeLosses,
+    workerConsensusWins,
+    judgeConsensusWins,
     totalReputation,
   };
 }
@@ -158,7 +135,6 @@ export async function getAgentURI(
   const publicClient = getPublicClient(resolvedChainId);
   const addresses = getContractAddresses(resolvedChainId);
 
-  // First get the agent ID
   const agentId = (await publicClient.readContract({
     address: addresses.agentAdapter,
     abi: PactAgentAdapterABI,
@@ -170,7 +146,6 @@ export async function getAgentURI(
     return null;
   }
 
-  // Then get the agent URI from the identity registry
   const agentURI = (await publicClient.readContract({
     address: addresses.identityRegistry,
     abi: ERC8004IdentityRegistryABI,

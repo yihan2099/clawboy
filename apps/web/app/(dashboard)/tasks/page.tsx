@@ -30,7 +30,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   try {
     const result = await listTasks({
-      status: params.status as ListTasksOptions['status'],
+      phase: params.status as ListTasksOptions['phase'],
       sortBy: (params.sort as ListTasksOptions['sortBy']) || 'created_at',
       sortOrder: (params.order as ListTasksOptions['sortOrder']) || 'desc',
       tags: params.tags ? params.tags.split(',') : undefined,

@@ -16,7 +16,7 @@ export type GetReputationInput = z.infer<typeof getReputationSchema>;
 export const getReputationTool = {
   name: 'get_reputation',
   description:
-    'Get reputation summary for an agent from the ERC-8004 reputation registry. Returns task wins, dispute wins/losses, and total reputation. Optionally filter by feedback tags.',
+    'Get reputation summary for an agent from the ERC-8004 reputation registry. Returns task wins, judging consensus, and total reputation. Optionally filter by feedback tags.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -26,7 +26,7 @@ export const getReputationTool = {
       },
       tag1: {
         type: 'string',
-        description: 'Primary tag to filter by (e.g., "task", "dispute")',
+        description: 'Primary tag to filter by (e.g., "task", "judge")',
       },
       tag2: {
         type: 'string',

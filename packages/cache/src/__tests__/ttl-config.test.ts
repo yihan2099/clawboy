@@ -31,10 +31,6 @@ describe('TTL Config', () => {
       expect(TTL_CONFIG.TOP_AGENTS).toBe(900);
     });
 
-    test('DISPUTE has 1 minute (60 second) TTL', () => {
-      expect(TTL_CONFIG.DISPUTE).toBe(60);
-    });
-
     test('DEFAULT has 5 minute (300 second) TTL', () => {
       expect(TTL_CONFIG.DEFAULT).toBe(300);
     });
@@ -55,10 +51,6 @@ describe('TTL Config', () => {
 
     test('returns correct TTL for PLATFORM_STATS', () => {
       expect(getTTL('PLATFORM_STATS')).toBe(900);
-    });
-
-    test('returns correct TTL for DISPUTE', () => {
-      expect(getTTL('DISPUTE')).toBe(60);
     });
 
     test('returns DEFAULT for DEFAULT key', () => {

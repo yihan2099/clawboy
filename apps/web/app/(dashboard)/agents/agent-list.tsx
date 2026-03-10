@@ -102,7 +102,7 @@ export function AgentList({
         <div className="space-y-2">
           {agents.map((agent, index) => {
             const rank = offset + index + 1;
-            const reputation = parseInt(agent.reputation, 10) || 0;
+            const reputation = agent.reputation || 0;
 
             return (
               <Link key={agent.id} href={`/agents/${agent.address}`}>
@@ -128,7 +128,7 @@ export function AgentList({
                             </span>
                           )}
                         </div>
-                        {agent.skills.length > 0 && (
+                        {agent.skills && agent.skills.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {agent.skills.slice(0, 3).map((skill) => (
                               <Badge

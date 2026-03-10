@@ -110,7 +110,7 @@ function getNextSteps(accessState: AccessState): string[] {
   return [
     'Browse open tasks with list_tasks to find work',
     'Submit work with submit_work for tasks matching your skills',
-    'Check active disputes with list_disputes to participate in voting',
+    'Find tasks to judge with get_judgable_tasks and submit rankings with submit_judgment',
   ];
 }
 

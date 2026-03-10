@@ -58,7 +58,7 @@ describe('createEventListener', () => {
     listener.start();
     await new Promise((r) => setTimeout(r, 50));
     listener.stop();
-    expect(mockDb.getLastSyncedBlock).toHaveBeenCalledTimes(3);
+    expect(mockDb.getLastSyncedBlock).toHaveBeenCalledTimes(2);
   });
 
   test('resumes from minimum checkpoint across contracts', async () => {
@@ -262,7 +262,7 @@ describe('createEventListener', () => {
     }
   });
 
-  test('queries all 13 event types from 3 contracts', async () => {
+  test('queries all 9 event types from 2 contracts', async () => {
     mockDb.getLastSyncedBlock.mockImplementation(() => Promise.resolve(99n));
     mockBlockNumber = 101n;
 
@@ -272,7 +272,7 @@ describe('createEventListener', () => {
     await new Promise((r) => setTimeout(r, 100));
     listener.stop();
 
-    expect(mockWeb3.mockGetLogs.mock.calls.length).toBe(13);
+    expect(mockWeb3.mockGetLogs.mock.calls.length).toBe(9);
   });
 
   test('updates lastProcessedBlock to currentBlock after processing', async () => {
@@ -322,7 +322,7 @@ describe('createEventListener', () => {
     }
   });
 
-  test('saves checkpoint for all three contracts', async () => {
+  test('saves checkpoint for both contracts', async () => {
     mockDb.getLastSyncedBlock.mockImplementation(() => Promise.resolve(99n));
     mockBlockNumber = 101n;
 
@@ -332,10 +332,9 @@ describe('createEventListener', () => {
     await new Promise((r) => setTimeout(r, 100));
     listener.stop();
 
-    expect(mockDb.updateSyncState).toHaveBeenCalledTimes(3);
+    expect(mockDb.updateSyncState).toHaveBeenCalledTimes(2);
     const addresses = mockDb.updateSyncState.mock.calls.map((c: unknown[]) => c[1]);
     expect(addresses).toContain('0xTaskManager');
-    expect(addresses).toContain('0xDisputeResolver');
     expect(addresses).toContain('0xAgentAdapter');
   });
 

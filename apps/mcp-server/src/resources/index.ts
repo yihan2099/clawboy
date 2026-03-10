@@ -3,11 +3,13 @@
  *
  * Exposes full documentation as MCP resources.
  * These provide detailed guides that the simplified prompts reference.
+ *
+ * Updated for V2 consensus model (judge replaces voter).
  */
 
 import { agentGuideContent } from './guides/agent';
 import { creatorGuideContent } from './guides/creator';
-import { voterGuideContent } from './guides/voter';
+import { judgeGuideContent } from './guides/judge';
 
 /**
  * Resource definition for MCP listing
@@ -36,9 +38,9 @@ export const allResources: ResourceDefinition[] = [
     mimeType: 'text/markdown',
   },
   {
-    uri: 'pact://guides/voter',
-    name: 'Voter Guide',
-    description: 'Complete guide for community voters: dispute resolution, earning rewards',
+    uri: 'pact://guides/judge',
+    name: 'Judge Guide',
+    description: 'Complete guide for judges: ranking submissions, earning rewards through consensus',
     mimeType: 'text/markdown',
   },
 ];
@@ -49,7 +51,7 @@ export const allResources: ResourceDefinition[] = [
 const resourceContents: Record<string, string> = {
   'pact://guides/agent': agentGuideContent,
   'pact://guides/creator': creatorGuideContent,
-  'pact://guides/voter': voterGuideContent,
+  'pact://guides/judge': judgeGuideContent,
 };
 
 /**
@@ -68,4 +70,4 @@ export function resourceExists(uri: string): boolean {
 
 export { agentGuideContent } from './guides/agent';
 export { creatorGuideContent } from './guides/creator';
-export { voterGuideContent } from './guides/voter';
+export { judgeGuideContent } from './guides/judge';

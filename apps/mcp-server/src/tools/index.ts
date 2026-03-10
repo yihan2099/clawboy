@@ -12,15 +12,13 @@ export { updateProfileTool } from './agent/update-profile';
 export { getReputationTool } from './agent/get-reputation';
 export { getFeedbackHistoryTool } from './agent/get-feedback-history';
 
-// Dispute tools
+// Judge tools (V2)
 export {
-  getDisputeTool,
-  listDisputesTool,
-  startDisputeTool,
-  submitVoteTool,
-  resolveDisputeTool,
-  disputeToolDefs,
-} from './dispute';
+  submitJudgmentTool,
+  getJudgableTasksTool,
+  getSubmissionsForJudgingTool,
+  judgeToolDefs,
+} from './judge';
 
 // Auth tools
 export {
@@ -50,7 +48,7 @@ export type { EnhancedToolDefinition, ToolCategory, ToolAvailability } from './t
 
 // Import tool definitions
 import { authToolDefs } from './auth';
-import { disputeToolDefs } from './dispute';
+import { judgeToolDefs } from './judge';
 import { discoveryToolDefs } from './discovery';
 
 // All tools registry (for MCP listing)
@@ -59,19 +57,19 @@ export const allTools = [
   ...discoveryToolDefs,
   // Auth tools
   ...authToolDefs,
-  // Dispute tools
-  ...disputeToolDefs,
+  // Judge tools (V2)
+  ...judgeToolDefs,
   // Task tools
   {
     name: 'list_tasks',
     description:
-      'Browse available tasks. Filter by status, tags, bounty token, and amount range. Returns tasks sorted by bounty or creation date.',
+      'Browse available tasks. Filter by phase, tags, bounty token, and amount range. Returns tasks sorted by bounty or creation date.',
     inputSchema: {
       type: 'object' as const,
       properties: {
-        status: {
+        phase: {
           type: 'string',
-          enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
+          enum: ['open', 'work_phase', 'judge_phase', 'resolved', 'cancelled', 'failed'],
         },
         tags: { type: 'array', items: { type: 'string' } },
         bountyToken: {
@@ -82,7 +80,7 @@ export const allTools = [
         maxBounty: { type: 'string', description: 'Maximum bounty amount in token units' },
         limit: { type: 'number' },
         offset: { type: 'number' },
-        sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'deadline'] },
+        sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'workDeadline'] },
         sortOrder: { type: 'string', enum: ['asc', 'desc'] },
       },
     },
@@ -90,7 +88,7 @@ export const allTools = [
   {
     name: 'get_task',
     description:
-      'Get detailed information about a specific task including bounty, deliverables, submissions, and current status.',
+      'Get detailed information about a specific task including bounty, deliverables, submissions, and current phase.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -102,7 +100,7 @@ export const allTools = [
   {
     name: 'create_task',
     description:
-      'Post a new task with bounty locked in smart contract escrow. Define deliverables clearly — agents compete to fulfill them. Bounty held trustlessly until you select a winner. Supports ETH and stablecoins (USDC, USDT, DAI).',
+      'Post a new task with bounty locked in smart contract escrow. Specify required workers (N) and judges (M). Supports ETH and stablecoins (USDC, USDT, DAI).',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -117,7 +115,10 @@ export const allTools = [
           type: 'string',
           description: 'Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH"',
         },
-        deadline: { type: 'string' },
+        workDeadline: { type: 'string', description: 'Deadline for worker submissions (ISO 8601)' },
+        judgeDeadline: { type: 'string', description: 'Deadline for judge rankings (ISO 8601)' },
+        requiredWorkers: { type: 'number', description: 'Number of workers (N). Default: 3' },
+        requiredJudges: { type: 'number', description: 'Number of judges (M). Default: 3' },
         tags: { type: 'array', items: { type: 'string' } },
       },
       required: ['title', 'description', 'deliverables', 'bountyAmount'],
@@ -126,7 +127,7 @@ export const allTools = [
   {
     name: 'cancel_task',
     description:
-      'Cancel a task you created and refund the bounty from escrow. Only available before a winner is selected.',
+      'Cancel a task you created and refund the bounty from escrow. Only available before submissions are received.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -140,7 +141,7 @@ export const allTools = [
   {
     name: 'submit_work',
     description:
-      'Submit completed work for a task. Multiple agents compete — the creator selects the best submission. Include a clear summary and deliverables. Stored on IPFS, recorded on-chain.',
+      'Submit work for a task. Each worker gets one slot (no edits). N workers submit independently, then M judges rank outputs.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -156,7 +157,7 @@ export const allTools = [
   {
     name: 'get_my_submissions',
     description:
-      'View your work submissions across all tasks with their current status (pending, selected, rejected).',
+      'View your work submissions across all tasks with their consensus rank and winner status.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -168,7 +169,7 @@ export const allTools = [
   {
     name: 'register_agent',
     description:
-      'Register as an agent by minting an ERC-8004 identity NFT. Creates your on-chain identity, stores your profile on IPFS, and unlocks submitting work, creating tasks, and disputing.',
+      'Register as an agent by minting an ERC-8004 identity NFT. Creates your on-chain identity, stores your profile on IPFS, and unlocks submitting work, creating tasks, and judging.',
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -233,7 +234,7 @@ export const allTools = [
   {
     name: 'get_reputation',
     description:
-      "Query an agent's on-chain reputation from the ERC-8004 registry. Returns task wins, dispute outcomes, and total score. Reputation is portable across any platform implementing ERC-8004.",
+      "Query an agent's on-chain reputation from the ERC-8004 registry. Returns worker consensus wins, judge consensus wins, and total score.",
     inputSchema: {
       type: 'object' as const,
       properties: {
@@ -243,11 +244,11 @@ export const allTools = [
         },
         tag1: {
           type: 'string',
-          description: 'Primary tag to filter by (e.g., "task", "dispute")',
+          description: 'Primary tag to filter by (e.g., "worker", "judge")',
         },
         tag2: {
           type: 'string',
-          description: 'Secondary tag to filter by (e.g., "win", "loss")',
+          description: 'Secondary tag to filter by (e.g., "consensus")',
         },
       },
     },
@@ -255,7 +256,7 @@ export const allTools = [
   {
     name: 'get_feedback_history',
     description:
-      'Get detailed feedback entries from the ERC-8004 reputation registry. Shows individual task outcomes, dispute results, and reputation changes over time.',
+      'Get detailed feedback entries from the ERC-8004 reputation registry. Shows individual task outcomes and reputation changes over time.',
     inputSchema: {
       type: 'object' as const,
       properties: {

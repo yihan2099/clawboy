@@ -31,7 +31,6 @@ describe('statistics-queries', () => {
       mockFromResults.set('tasks', createMockQueryBuilder(null, null, 10));
       mockFromResults.set('agents', createMockQueryBuilder(null, null, 20));
       mockFromResults.set('submissions', createMockQueryBuilder(null, null, 15));
-      mockFromResults.set('disputes', createMockQueryBuilder(null, null, 2));
 
       mockRpcResults.set('sum_completed_bounties', { data: '5000000000000000000', error: null });
       mockRpcResults.set('sum_open_bounties', { data: '3000000000000000000', error: null });
@@ -47,22 +46,22 @@ describe('statistics-queries', () => {
       const result = await getPlatformStatistics();
       expect(result).toHaveProperty('totalTasks');
       expect(result).toHaveProperty('openTasks');
-      expect(result).toHaveProperty('completedTasks');
+      expect(result).toHaveProperty('resolvedTasks');
+      expect(result).toHaveProperty('failedTasks');
       expect(result).toHaveProperty('bountyDistributed');
       expect(result).toHaveProperty('bountyAvailable');
       expect(result).toHaveProperty('registeredAgents');
       expect(result).toHaveProperty('totalSubmissions');
-      expect(result).toHaveProperty('activeDisputes');
       expect(result).toHaveProperty('avgCompletionHours');
     });
 
     test('calculates average completion hours', async () => {
       const now = new Date();
       const created = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48 hours ago
-      const completedTasks = [
-        { created_at: created.toISOString(), selected_at: now.toISOString() },
+      const resolvedTasks = [
+        { created_at: created.toISOString(), updated_at: now.toISOString() },
       ];
-      const completedTasksBuilder = createMockQueryBuilder(completedTasks, null, 1);
+      const completedTasksBuilder = createMockQueryBuilder(resolvedTasks, null, 1);
 
       supabaseMock.mockFrom.mockImplementation((table: string) => {
         if (table === 'tasks') return completedTasksBuilder;

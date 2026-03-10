@@ -21,8 +21,8 @@ const mockGetFeedbackHistoryHandler = mock(
         {
           clientAddress: '0xClient2',
           feedbackIndex: '1',
-          tag1: 'dispute',
-          tag2: 'loss',
+          tag1: 'judge',
+          tag2: 'consensus',
           value: '-5',
           valueDecimals: 0,
           isRevoked: false,
@@ -67,8 +67,8 @@ describe('get_feedback_history tool', () => {
         {
           clientAddress: '0xClient2',
           feedbackIndex: '1',
-          tag1: 'dispute',
-          tag2: 'loss',
+          tag1: 'judge',
+          tag2: 'consensus',
           value: '-5',
           valueDecimals: 0,
           isRevoked: false,

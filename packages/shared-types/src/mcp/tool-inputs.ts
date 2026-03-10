@@ -1,13 +1,13 @@
 /**
  * MCP tool input types
  * These define the parameters for each MCP tool
- * Updated for competitive task system with optimistic verification
+ * V2: Phase-based lifecycle with N+M consensus (no disputes)
  */
 
 // Task tools
 export interface ListTasksInput {
-  /** Filter by status */
-  status?: 'open' | 'in_review' | 'completed' | 'disputed' | 'refunded' | 'cancelled';
+  /** Filter by phase */
+  phase?: 'open' | 'work_phase' | 'judge_phase' | 'resolved' | 'cancelled' | 'failed';
   /** Filter by tags */
   tags?: string[];
   /** Filter by minimum bounty (in token units) */
@@ -21,7 +21,7 @@ export interface ListTasksInput {
   /** Offset for pagination */
   offset?: number;
   /** Sort by field */
-  sortBy?: 'bounty' | 'createdAt' | 'deadline';
+  sortBy?: 'bounty' | 'createdAt' | 'workDeadline';
   /** Sort order */
   sortOrder?: 'asc' | 'desc';
 }
@@ -48,8 +48,14 @@ export interface CreateTaskInput {
   bountyAmount: string;
   /** Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH" */
   bountyToken?: string;
-  /** Optional deadline (ISO 8601) */
-  deadline?: string;
+  /** Number of required workers (2-10, default 3) */
+  requiredWorkers?: number;
+  /** Number of required judges (2-10, default 3) */
+  requiredJudges?: number;
+  /** Work deadline (ISO 8601) */
+  workDeadline?: string;
+  /** Judge deadline (ISO 8601, default: workDeadline + 48h) */
+  judgeDeadline?: string;
   /** Optional tags */
   tags?: string[];
 }
@@ -81,74 +87,36 @@ export interface SubmitWorkInput {
 }
 
 export interface GetMySubmissionsInput {
-  /** Filter by task status */
-  taskStatus?: 'open' | 'in_review' | 'completed' | 'disputed' | 'refunded';
-  /** Only show winning submissions */
-  isWinner?: boolean;
+  /** Filter by task phase */
+  taskPhase?: 'open' | 'work_phase' | 'judge_phase' | 'resolved' | 'failed';
+  /** Only show consensus-winning submissions */
+  isConsensusWinner?: boolean;
   /** Number of results */
   limit?: number;
   /** Offset for pagination */
   offset?: number;
 }
 
-// Creator selection tools
-export interface SelectWinnerInput {
-  /** Task ID */
+// Judge tools
+export interface SubmitJudgmentInput {
+  /** Task ID to judge */
   taskId: string;
-  /** Address of the winning agent */
-  winnerAddress: string;
-  /** Optional feedback for the winner */
-  feedback?: string;
+  /** Ranking of submissions — array of submission indices, position 0 = best */
+  ranking: number[];
+  /** Optional reasoning for the ranking (uploaded to IPFS) */
+  reasoning?: string;
 }
 
-export interface RejectAllInput {
-  /** Task ID */
-  taskId: string;
-  /** Reason for rejecting all submissions */
-  reason: string;
-}
-
-export interface FinalizeTaskInput {
-  /** Task ID to finalize (after 48h challenge window) */
-  taskId: string;
-}
-
-// Dispute tools
-export interface StartDisputeInput {
-  /** Task ID to dispute */
-  taskId: string;
-}
-
-export interface SubmitVoteInput {
-  /** Dispute ID */
-  disputeId: string;
-  /** Whether to vote in favor of the disputer */
-  supportsDisputer: boolean;
-}
-
-export interface GetDisputeInput {
-  /** Dispute ID to retrieve */
-  disputeId: string;
-  /** Include all votes */
-  includeVotes?: boolean;
-}
-
-export interface ListDisputesInput {
-  /** Filter by status */
-  status?: 'active' | 'resolved' | 'cancelled';
-  /** Filter by task ID */
-  taskId?: string;
-  /** Filter by disputer address */
-  disputer?: string;
+export interface GetJudgableTasksInput {
   /** Number of results */
   limit?: number;
   /** Offset for pagination */
   offset?: number;
 }
 
-export interface ResolveDisputeInput {
-  /** Dispute ID to resolve */
-  disputeId: string;
+export interface GetSubmissionsForJudgingInput {
+  /** Task ID to get submissions for */
+  taskId: string;
 }
 
 // Utility tools
@@ -159,10 +127,5 @@ export interface GetBalanceInput {
 
 export interface GetProfileInput {
   /** Agent address (omit for self) */
-  address?: string;
-}
-
-export interface GetVoteWeightInput {
-  /** Agent address to check vote weight */
   address?: string;
 }

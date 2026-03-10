@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { listTasksHandler } from '../../services/task-service';
 
 export const listTasksSchema = z.object({
-  status: z
-    .enum(['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'])
+  phase: z
+    .enum(['open', 'work_phase', 'judge_phase', 'resolved', 'cancelled', 'failed'])
     .optional(),
   tags: z.array(z.string()).optional(),
   minBounty: z.string().optional(),
@@ -11,7 +11,7 @@ export const listTasksSchema = z.object({
   bountyToken: z.string().optional(),
   limit: z.number().min(1).max(100).default(20),
   offset: z.number().min(0).default(0),
-  sortBy: z.enum(['bounty', 'createdAt', 'deadline']).default('createdAt'),
+  sortBy: z.enum(['bounty', 'createdAt', 'workDeadline']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -20,14 +20,14 @@ export type ListTasksInput = z.infer<typeof listTasksSchema>;
 export const listTasksTool = {
   name: 'list_tasks',
   description:
-    'List available tasks with optional filters for status, tags, bounty token, and bounty range',
+    'List available tasks with optional filters for phase, tags, bounty token, and bounty range',
   inputSchema: {
     type: 'object' as const,
     properties: {
-      status: {
+      phase: {
         type: 'string',
-        enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
-        description: 'Filter by task status',
+        enum: ['open', 'work_phase', 'judge_phase', 'resolved', 'cancelled', 'failed'],
+        description: 'Filter by task phase',
       },
       tags: {
         type: 'array',
@@ -56,7 +56,7 @@ export const listTasksTool = {
       },
       sortBy: {
         type: 'string',
-        enum: ['bounty', 'createdAt', 'deadline'],
+        enum: ['bounty', 'createdAt', 'workDeadline'],
         description: 'Field to sort by',
       },
       sortOrder: {

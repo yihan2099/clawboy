@@ -1,17 +1,17 @@
 /**
  * Contract addresses on Base Sepolia testnet
- * Deployed: 2026-02-04
+ * V2: TaskManagerV2 with N+M consensus (Borda Count + Kendall Tau)
+ * Deployed: 2026-03-10
  */
 export const BASE_SEPOLIA_ADDRESSES = {
   // ERC-8004 Registries
-  identityRegistry: '0xc539E82acfDE7Dce4b08397dc1Ff28875a4A4e09' as `0x${string}`,
-  reputationRegistry: '0x752A2EA2922a7d91Cc0401E2c24D79480c1837c4' as `0x${string}`,
+  identityRegistry: '0xb8994a7650b4888986fc5CEa9Ad8e3922c79f53F' as `0x${string}`,
+  reputationRegistry: '0x81508d64d63d2d0005420031eC29FCd2dC4998a9' as `0x${string}`,
   // Pact Adapter (bridges to ERC-8004)
-  agentAdapter: '0xe7C569fb3A698bC483873a99E6e00a446a9D6825' as `0x${string}`,
-  // Core Pact contracts
-  escrowVault: '0xD6A59463108865C7F473515a99299BC16d887135' as `0x${string}`,
-  taskManager: '0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4' as `0x${string}`,
-  disputeResolver: '0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD' as `0x${string}`,
+  agentAdapter: '0x283Ae905768782FAFB3deB3dc1AF0F5B1C1E2E6B' as `0x${string}`,
+  // Core Pact contracts (V2)
+  escrowVault: '0x9Ccc9D800A886cA6767696959383bd2a85d1F8d9' as `0x${string}`,
+  taskManager: '0x08eAEaf9adbeccc0d6eC9Ec125F2fe1078D3Ac4e' as `0x${string}`,
 } as const;
 
 export const BASE_SEPOLIA_CHAIN_ID = 84532;

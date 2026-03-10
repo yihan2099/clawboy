@@ -9,7 +9,6 @@ mock.module('@pactprotocol/contracts', () => ({
   PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
-  DisputeResolverABI: [],
   getContractAddresses: mock(() => ({
     escrowVault: '0xEscrowVault' as `0x${string}`,
     taskManager: '0xTaskManager' as `0x${string}`,

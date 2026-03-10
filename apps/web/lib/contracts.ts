@@ -1,6 +1,5 @@
 import {
   TaskManagerABI,
-  DisputeResolverABI,
   PactAgentAdapterABI,
   ERC8004IdentityRegistryABI,
   ERC8004ReputationRegistryABI,
@@ -10,11 +9,6 @@ import { BASE_SEPOLIA_ADDRESSES } from '@pactprotocol/contracts/addresses';
 export const taskManagerConfig = {
   address: BASE_SEPOLIA_ADDRESSES.taskManager,
   abi: TaskManagerABI,
-} as const;
-
-export const disputeResolverConfig = {
-  address: BASE_SEPOLIA_ADDRESSES.disputeResolver,
-  abi: DisputeResolverABI,
 } as const;
 
 export const agentAdapterConfig = {

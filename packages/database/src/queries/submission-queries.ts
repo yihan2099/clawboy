@@ -58,26 +58,14 @@ export async function getSubmissionByTaskAndAgent(
 }
 
 /**
- * Get the winning submission for a task
+ * Check if a worker has submitted to a task
  */
-export async function getWinningSubmission(taskId: string): Promise<SubmissionRow | null> {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('task_id', taskId)
-    .eq('is_winner', true)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
-    throw new Error(`Failed to get winning submission: ${error.message}`);
-  }
-
-  return data as SubmissionRow;
+export async function isWorkerOnTask(
+  taskId: string,
+  agentAddress: string
+): Promise<boolean> {
+  const submission = await getSubmissionByTaskAndAgent(taskId, agentAddress);
+  return submission !== null;
 }
 
 /**
@@ -153,66 +141,30 @@ export async function updateSubmission(
 }
 
 /**
- * Mark a submission as winner (atomic operation)
- * Uses a single UPDATE with CASE to avoid race conditions
- *
- * @remarks
- * The primary path calls the `mark_submission_winner` RPC function which is atomic.
- * If the RPC function is absent (error code 42883) a two-step UPDATE fallback is used.
- *
- * @deprecated **Fallback path only** — the two-step UPDATE fallback inside this function
- * has a TOCTOU race window: two concurrent calls can both clear existing winners and then
- * both set their own winner, leaving the task in an inconsistent state. Deploy migration
- * `20250228000002_mark_submission_winner_atomic.sql` to eliminate the fallback entirely.
- * Once the RPC function exists in all environments, the fallback block can be removed.
+ * Update submission consensus status after resolution
  */
-export async function markSubmissionAsWinner(
+export async function updateSubmissionConsensus(
   taskId: string,
-  agentAddress: string
+  submissionIndex: number,
+  consensusRank: number,
+  isConsensusWinner: boolean
 ): Promise<SubmissionRow> {
   const supabase = getWriteClient();
-  const normalizedAddress = agentAddress.toLowerCase();
 
-  // First attempt: try the atomic RPC function if available
-  const { error: rpcError } = await supabase.rpc('mark_submission_winner', {
-    p_task_id: taskId,
-    p_agent_address: normalizedAddress,
-  });
-
-  // If RPC doesn't exist, fall back to two-step (less ideal: has a race window between
-  // the two UPDATE statements). Deploy migration 20250228000002 to eliminate this race.
-  if (rpcError && rpcError.code === '42883') {
-    // Function doesn't exist, use fallback
-    // Clear existing winners and set new winner in sequence
-    await supabase.from('submissions').update({ is_winner: false }).eq('task_id', taskId);
-
-    const { data, error } = await supabase
-      .from('submissions')
-      .update({ is_winner: true, updated_at: new Date().toISOString() })
-      .eq('task_id', taskId)
-      .eq('agent_address', normalizedAddress)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to mark winner: ${error.message}`);
-    }
-
-    return data as SubmissionRow;
-  } else if (rpcError) {
-    throw new Error(`Failed to mark winner: ${rpcError.message}`);
-  }
-
-  // Fetch the updated submission
   const { data, error } = await supabase
     .from('submissions')
-    .select('*')
+    .update({
+      consensus_rank: consensusRank,
+      is_consensus_winner: isConsensusWinner,
+      updated_at: new Date().toISOString(),
+    })
     .eq('task_id', taskId)
-    .eq('agent_address', normalizedAddress)
+    .eq('submission_index', submissionIndex)
+    .select()
     .single();
 
   if (error) {
-    throw new Error(`Failed to fetch winner submission: ${error.message}`);
+    throw new Error(`Failed to update submission consensus: ${error.message}`);
   }
 
   return data as SubmissionRow;

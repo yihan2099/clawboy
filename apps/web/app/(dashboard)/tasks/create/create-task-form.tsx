@@ -53,12 +53,8 @@ const erc20Abi = [
 // transactions to the wrong network. The smart contract will reject cross-chain calls,
 // but the user experience will be confusing without a clear error.
 if (!process.env.NEXT_PUBLIC_CHAIN_ID) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      '[create-task] NEXT_PUBLIC_CHAIN_ID is not set. ' +
-      'This is required in production to prevent transactions being sent to the wrong network.'
-    );
-  }
+  // Warn instead of throw: this module is evaluated during next build prerendering.
+  // At runtime in the browser, the env var will be available if properly configured.
   console.warn(
     '[create-task] NEXT_PUBLIC_CHAIN_ID is not set — defaulting to Base Sepolia testnet (84532). ' +
     'Set this env var in production.'
@@ -312,14 +308,21 @@ export function CreateTaskForm() {
     setIsUploading(false);
 
     const tokenAddress = selectedToken.address as `0x${string}`;
-    const deadlineTimestamp = deadline
+    const workDeadlineTimestamp = deadline
       ? BigInt(Math.floor(new Date(deadline).getTime() / 1000))
       : BigInt(0);
+    // Judge deadline defaults to 0 (no deadline); in V2 the contract enforces
+    // its own minimum judge window if needed.
+    const judgeDeadlineTimestamp = BigInt(0);
+    // Default to 1 required worker and 1 required judge for simple tasks.
+    // These are uint8 values in the contract.
+    const requiredWorkers = 1;
+    const requiredJudges = 1;
 
     writeContract({
       ...taskManagerConfig,
       functionName: 'createTask',
-      args: [specCid, tokenAddress, bountyAmountParsed, deadlineTimestamp],
+      args: [specCid, bountyAmountParsed, tokenAddress, requiredWorkers, requiredJudges, workDeadlineTimestamp, judgeDeadlineTimestamp],
       value: isNativeToken(tokenAddress) ? bountyAmountParsed : BigInt(0),
     });
   }

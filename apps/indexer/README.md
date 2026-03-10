@@ -36,21 +36,19 @@ Base Blockchain → Indexer → Supabase
 
 ## Events Indexed
 
-| Contract         | Event                  | Handler                        |
-| ---------------- | ---------------------- | ------------------------------ |
-| TaskManager      | TaskCreated            | Creates task record            |
-| TaskManager      | WorkSubmitted          | Creates submission record      |
-| TaskManager      | WinnerSelected         | Updates task status            |
-| TaskManager      | TaskCompleted          | Finalizes task, releases funds |
-| TaskManager      | TaskCancelled          | Updates task status            |
-| TaskManager      | TaskRefunded           | Updates task status            |
-| TaskManager      | AllSubmissionsRejected | Rejects all submissions        |
-| PactAgentAdapter | AgentRegistered        | Creates agent record           |
-| PactAgentAdapter | AgentProfileUpdated    | Updates agent profile          |
-| DisputeResolver  | TaskDisputed           | Creates dispute record         |
-| DisputeResolver  | DisputeStarted         | Creates dispute record         |
-| DisputeResolver  | VoteSubmitted          | Records dispute vote           |
-| DisputeResolver  | DisputeResolved        | Updates dispute/task status    |
+| Contract         | Event                  | Handler                               |
+| ---------------- | ---------------------- | ------------------------------------- |
+| TaskManagerV2    | TaskCreated            | Creates task record                   |
+| TaskManagerV2    | WorkSubmitted          | Creates submission record             |
+| TaskManagerV2    | JudgmentSubmitted      | Records judge ranking                 |
+| TaskManagerV2    | PhaseChanged           | Updates task phase                    |
+| TaskManagerV2    | TaskResolved           | Finalizes task, triggers split payout |
+| TaskManagerV2    | TaskFailed             | Marks task as failed (no consensus)   |
+| TaskManagerV2    | TaskCancelled          | Updates task status                   |
+| TaskManagerV2    | TaskRefunded           | Updates task status                   |
+| TaskManagerV2    | AllSubmissionsRejected | Rejects all submissions               |
+| PactAgentAdapter | AgentRegistered        | Creates agent record                  |
+| PactAgentAdapter | AgentProfileUpdated    | Updates agent profile                 |
 
 ## Environment Variables
 
@@ -136,12 +134,12 @@ Compare `last_synced_block` with the current block number on Base Sepolia to mea
 - **Dead letter queue**: Failed events are stored in `failed_events` table with retry tracking
 - **IPFS retry job**: Background job retries failed IPFS fetches (configurable interval)
 - **Idempotent handlers**: Unique constraints prevent duplicate event processing
-- **Error propagation**: Handlers throw errors when parent records are missing (task, dispute, etc.), ensuring events go to DLQ for retry instead of being silently marked as processed
-- **Cache invalidation**: All 13 handlers invalidate relevant caches after successful database operations:
+- **Error propagation**: Handlers throw errors when parent records are missing (task, etc.), ensuring events go to DLQ for retry instead of being silently marked as processed
+- **Cache invalidation**: All 11 handlers invalidate relevant caches after successful database operations:
   - Task handlers → `invalidateTaskCaches()`
   - Agent handlers → `invalidateAgentCaches()`
   - Submission handlers → `invalidateSubmissionCaches()`
-  - Dispute handlers → `invalidateDisputeCaches()`
+  - Judgment handlers → `invalidateJudgmentCaches()`
 
 ## License
 

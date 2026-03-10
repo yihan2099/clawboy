@@ -6,7 +6,7 @@ import { cacheThrough, TTL_CONFIG } from '@pactprotocol/cache';
 import { getCachedTask } from '@pactprotocol/cache/helpers';
 import type { ListTasksInput, CreateTaskInput, GetTaskInput } from '@pactprotocol/shared-types';
 import type { TaskListItem, GetTaskResponse } from '@pactprotocol/shared-types';
-import { type TaskStatus } from '@pactprotocol/shared-types';
+import { type TaskPhase } from '@pactprotocol/shared-types';
 import { getChainId } from '../config/chain';
 
 /** Extended task list item with formatted bounty */
@@ -24,13 +24,13 @@ export async function listTasksHandler(
   const chainId = getChainId();
 
   // Map sortBy field names
-  let sortBy: 'created_at' | 'deadline' | 'bounty_amount' | undefined;
+  let sortBy: 'created_at' | 'work_deadline' | 'bounty_amount' | 'submission_count' | undefined;
   if (input.sortBy === 'bounty') {
     sortBy = 'bounty_amount';
   } else if (input.sortBy === 'createdAt') {
     sortBy = 'created_at';
-  } else if (input.sortBy === 'deadline') {
-    sortBy = 'deadline';
+  } else if (input.sortBy === 'workDeadline') {
+    sortBy = 'work_deadline';
   }
 
   // Resolve bountyToken filter to address
@@ -77,13 +77,12 @@ export async function listTasksHandler(
 
   const limit = input.limit || 20;
   const offset = input.offset || 0;
-  const status = input.status || '';
+  const phase = input.phase || '';
   const tags = input.tags;
 
-  // Use JSON.stringify + hash to avoid cache key collisions when filter values
-  // contain the ':' character used as a separator in the old string-concat approach.
+  // Use JSON.stringify + hash to avoid cache key collisions
   const cacheParams = JSON.stringify({
-    status,
+    phase,
     tags: tags?.slice().sort() ?? [],
     bountyToken: bountyTokenAddress ?? '',
     minBounty: minBountyWei ?? '',
@@ -93,7 +92,6 @@ export async function listTasksHandler(
     sortBy: sortBy ?? '',
     sortOrder: input.sortOrder ?? '',
   });
-  // Use a simple djb2-style hash for a compact, collision-resistant key
   let hash = 5381;
   for (let i = 0; i < cacheParams.length; i++) {
     hash = ((hash << 5) + hash + cacheParams.charCodeAt(i)) >>> 0;
@@ -104,7 +102,7 @@ export async function listTasksHandler(
     cacheKey,
     async () => {
       const { tasks, total } = await listTasks({
-        status: input.status as TaskStatus | undefined,
+        phase: input.phase as TaskPhase | undefined,
         tags: input.tags,
         minBounty: minBountyWei,
         maxBounty: maxBountyWei,
@@ -125,18 +123,20 @@ export async function listTasksHandler(
         return {
           id: task.id,
           title: task.title,
-          bountyAmount: task.bounty_amount,
+          bountyAmount: String(task.bounty_amount),
           bountyToken: task.bounty_token as `0x${string}`,
           bountyFormatted: formatted,
           bountyTokenSymbol: symbol,
-          status: task.status as TaskStatus,
+          phase: task.phase as TaskPhase,
           creatorAddress: task.creator_address as `0x${string}`,
-          deadline: task.deadline,
-          tags: task.tags,
-          createdAt: task.created_at,
+          workDeadline: task.deadline,
+          judgeDeadline: task.judge_deadline,
+          tags: task.tags ?? [],
+          createdAt: task.created_at ?? '',
           submissionCount: task.submission_count,
-          winnerAddress: task.winner_address,
-          challengeDeadline: task.challenge_deadline,
+          judgmentCount: task.judgment_count,
+          requiredWorkers: task.required_workers,
+          requiredJudges: task.required_judges,
         };
       });
 
@@ -194,21 +194,22 @@ export async function getTaskHandler(
       id: task.id,
       title: task.title,
       description: task.description,
-      status: task.status,
-      bountyAmount: task.bounty_amount,
+      phase: task.phase,
+      bountyAmount: String(task.bounty_amount),
       bountyToken: task.bounty_token,
       bountyFormatted: formatted,
       bountyTokenSymbol: symbol,
       creator: task.creator_address,
-      deadline: task.deadline,
-      tags: task.tags,
+      workDeadline: task.deadline,
+      judgeDeadline: task.judge_deadline,
+      tags: task.tags ?? [],
       deliverables: specification.deliverables || [],
       requirements: specification.requirements,
       submissionCount: task.submission_count,
-      winnerAddress: task.winner_address || undefined,
-      selectedAt: task.selected_at || undefined,
-      challengeDeadline: task.challenge_deadline || undefined,
-      createdAt: task.created_at,
+      judgmentCount: task.judgment_count,
+      requiredWorkers: task.required_workers,
+      requiredJudges: task.required_judges,
+      createdAt: task.created_at ?? '',
     };
   });
 
@@ -233,7 +234,8 @@ export async function createTaskHandler(
     description: input.description,
     deliverables: input.deliverables,
     tags: input.tags,
-    deadline: input.deadline,
+    workDeadline: input.workDeadline,
+    judgeDeadline: input.judgeDeadline,
   };
 
   // Upload to IPFS

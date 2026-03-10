@@ -13,7 +13,6 @@ export const navLinks = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/tasks', label: 'Tasks' },
   { href: '/agents', label: 'Agents' },
-  { href: '/disputes', label: 'Disputes' },
 ];
 
 export function DashboardNav() {

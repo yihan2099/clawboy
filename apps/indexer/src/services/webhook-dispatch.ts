@@ -3,18 +3,17 @@
  *
  * Maps indexer events to the appropriate webhook notification functions.
  * All dispatching is fire-and-forget -- errors are logged but never propagated.
+ *
+ * Updated for V2 consensus model.
  */
 
 import type { IndexerEvent } from '../listener';
-import { getTaskByChainId, getDisputeByChainId } from '@pactprotocol/database';
+import { getTaskByChainId } from '@pactprotocol/database';
 import {
   notifyTaskCreated,
   notifyWorkSubmitted,
-  notifyWinnerSelected,
-  notifyTaskCompleted,
-  notifyDisputeCreated,
-  notifyDisputeResolved,
-  notifyVoteSubmitted,
+  notifyTaskResolved,
+  notifyJudgmentSubmitted,
 } from './webhook-notifier';
 
 /**
@@ -28,11 +27,10 @@ export function dispatchWebhookNotifications(event: IndexerEvent): void {
     try {
       switch (event.name) {
         case 'TaskCreated': {
-          const { taskId, creator, bountyAmount } = event.args as {
+          const { taskId, creator, bounty } = event.args as {
             taskId: bigint;
             creator: `0x${string}`;
-            bountyAmount: bigint;
-            specificationCid: string;
+            bounty: bigint;
           };
           // Look up task from DB for title and tags (just created by handler)
           const task = await getTaskByChainId(taskId.toString(), event.chainId);
@@ -40,109 +38,64 @@ export function dispatchWebhookNotifications(event: IndexerEvent): void {
             taskId.toString(),
             creator.toLowerCase(),
             task?.title ?? 'New Task',
-            bountyAmount.toString(),
+            bounty.toString(),
             task?.tags ?? []
           );
           break;
         }
 
         case 'WorkSubmitted': {
-          const { taskId, agent } = event.args as {
+          const { taskId, worker } = event.args as {
             taskId: bigint;
-            agent: `0x${string}`;
+            worker: `0x${string}`;
           };
           const task = await getTaskByChainId(taskId.toString(), event.chainId);
           if (task) {
-            await notifyWorkSubmitted(taskId.toString(), task.creator_address, agent.toLowerCase());
+            await notifyWorkSubmitted(taskId.toString(), task.creator_address, worker.toLowerCase());
           }
           break;
         }
 
-        case 'WinnerSelected': {
-          const { taskId, winner } = event.args as {
+        case 'JudgmentSubmitted': {
+          const { taskId, judge, judgmentIndex } = event.args as {
             taskId: bigint;
-            winner: `0x${string}`;
+            judge: `0x${string}`;
+            judgmentIndex: number;
           };
           const task = await getTaskByChainId(taskId.toString(), event.chainId);
           if (task) {
-            await notifyWinnerSelected(taskId.toString(), task.id, winner.toLowerCase());
+            await notifyJudgmentSubmitted(
+              taskId.toString(),
+              task.creator_address,
+              judge.toLowerCase(),
+              judgmentIndex
+            );
           }
           break;
         }
 
-        case 'TaskCompleted': {
-          const { taskId, winner, bountyAmount } = event.args as {
+        case 'TaskResolved': {
+          const { taskId, winningWorkers, consensusJudges } = event.args as {
             taskId: bigint;
-            winner: `0x${string}`;
-            bountyAmount: bigint;
-          };
-          await notifyTaskCompleted(
-            taskId.toString(),
-            winner.toLowerCase(),
-            bountyAmount.toString()
-          );
-          break;
-        }
-
-        case 'DisputeCreated': {
-          const { disputeId, taskId, disputer } = event.args as {
-            disputeId: bigint;
-            taskId: bigint;
-            disputer: `0x${string}`;
+            winningWorkers: readonly `0x${string}`[];
+            consensusJudges: readonly `0x${string}`[];
           };
           const task = await getTaskByChainId(taskId.toString(), event.chainId);
           if (task) {
-            await notifyDisputeCreated(
+            await notifyTaskResolved(
               taskId.toString(),
               task.id,
-              disputeId.toString(),
-              disputer.toLowerCase()
-            );
-          }
-          break;
-        }
-
-        case 'VoteSubmitted': {
-          const { disputeId, voter, supportsDisputer } = event.args as {
-            disputeId: bigint;
-            voter: `0x${string}`;
-            supportsDisputer: boolean;
-          };
-          const dispute = await getDisputeByChainId(disputeId.toString());
-          if (dispute) {
-            await notifyVoteSubmitted(
-              dispute.task_id,
-              disputeId.toString(),
-              dispute.disputer_address,
-              voter.toLowerCase(),
-              supportsDisputer
-            );
-          }
-          break;
-        }
-
-        case 'DisputeResolved': {
-          const { disputeId, disputerWon } = event.args as {
-            disputeId: bigint;
-            disputerWon: boolean;
-          };
-          const dispute = await getDisputeByChainId(disputeId.toString());
-          if (dispute) {
-            await notifyDisputeResolved(
-              dispute.task_id,
-              disputeId.toString(),
-              dispute.disputer_address,
-              disputerWon
+              winningWorkers.map((a) => a.toLowerCase()),
+              consensusJudges.map((a) => a.toLowerCase())
             );
           }
           break;
         }
 
         // No webhook notifications for these events
-        case 'AllSubmissionsRejected':
-        case 'TaskRefunded':
+        case 'PhaseChanged':
+        case 'TaskFailed':
         case 'TaskCancelled':
-        case 'TaskDisputed':
         case 'AgentRegistered':
         case 'AgentProfileUpdated':
           break;

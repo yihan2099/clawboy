@@ -9,7 +9,6 @@ mock.module('@pactprotocol/contracts', () => ({
   PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
-  DisputeResolverABI: [],
   getContractAddresses: mock(() => ({
     agentAdapter: '0xAgentAdapter' as `0x${string}`,
     identityRegistry: '0xIdentityRegistry' as `0x${string}`,
@@ -22,7 +21,6 @@ mock.module('@pactprotocol/contracts', () => ({
 const {
   isAgentRegistered,
   getAgentId,
-  getAgentVoteWeight,
   getAgentReputationSummary,
   getAgentAdapterAddress,
 } = await import('../../contracts/pact-adapter');
@@ -84,37 +82,14 @@ describe('pact-adapter contract', () => {
     });
   });
 
-  describe('getAgentVoteWeight', () => {
-    test('returns vote weight', async () => {
-      viemMock.setReadContractResult(5n);
-      const weight = await getAgentVoteWeight(
-        '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as `0x${string}`
-      );
-      expect(weight).toBe(5n);
-    });
-
-    test('calls readContract with getVoteWeight', async () => {
-      viemMock.setReadContractResult(1n);
-      const addr = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as `0x${string}`;
-      await getAgentVoteWeight(addr);
-      expect(viemMock.mockReadContract).toHaveBeenCalledWith(
-        expect.objectContaining({
-          functionName: 'getVoteWeight',
-          args: [addr],
-        })
-      );
-    });
-  });
-
   describe('getAgentReputationSummary', () => {
     test('returns parsed reputation summary', async () => {
-      viemMock.setReadContractResult([10n, 3n, 1n, 100n]);
+      viemMock.setReadContractResult([10n, 5n, 100n]);
       const summary = await getAgentReputationSummary(
         '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as `0x${string}`
       );
-      expect(summary.taskWins).toBe(10n);
-      expect(summary.disputeWins).toBe(3n);
-      expect(summary.disputeLosses).toBe(1n);
+      expect(summary.workerConsensusWins).toBe(10n);
+      expect(summary.judgeConsensusWins).toBe(5n);
       expect(summary.totalReputation).toBe(100n);
     });
   });

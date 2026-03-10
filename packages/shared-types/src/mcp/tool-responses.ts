@@ -1,10 +1,9 @@
 import type { TaskListItem } from '../task/task';
 import type { TaskRequirement } from '../task/task-specification';
-import type { DisputeListItem, DisputeStatus } from '../dispute';
 
 /**
  * MCP tool response types
- * Updated for competitive task system with optimistic verification
+ * V2: Phase-based lifecycle with N+M consensus (no disputes)
  */
 
 // Task tool responses
@@ -18,11 +17,12 @@ export interface GetTaskResponse {
   id: string;
   title: string;
   description: string;
-  status: string;
+  phase: string;
   bountyAmount: string;
   bountyToken: string;
   creator: string;
-  deadline: string | null;
+  workDeadline: string | null;
+  judgeDeadline: string | null;
   tags: string[];
   deliverables: Array<{
     type: string;
@@ -34,21 +34,22 @@ export interface GetTaskResponse {
   submissions?: SubmissionInfo[];
   /** Number of submissions */
   submissionCount: number;
-  /** Selected winner address (if any) */
-  winnerAddress?: string;
-  /** When winner was selected */
-  selectedAt?: string;
-  /** Challenge deadline (48h after selection) */
-  challengeDeadline?: string;
+  /** Number of judgments */
+  judgmentCount: number;
+  /** Required workers (N) */
+  requiredWorkers: number;
+  /** Required judges (M) */
+  requiredJudges: number;
   createdAt: string;
 }
 
 export interface SubmissionInfo {
   agent: string;
   submissionCid: string;
+  submissionIndex: number;
   submittedAt: string;
-  updatedAt: string;
-  isWinner: boolean;
+  consensusRank: number | null;
+  isConsensusWinner: boolean;
 }
 
 export interface CreateTaskResponse {
@@ -68,91 +69,57 @@ export interface CancelTaskResponse {
 export interface SubmitWorkResponse {
   taskId: string;
   submissionCid: string;
+  slotIndex: number;
+  slotsRemaining: number;
   txHash: string;
-  isUpdate: boolean;
 }
 
 export interface GetMySubmissionsResponse {
   submissions: Array<{
     taskId: string;
     taskTitle: string;
-    taskStatus: string;
+    taskPhase: string;
     submissionCid: string;
+    submissionIndex: number;
     submittedAt: string;
-    updatedAt: string;
-    isWinner: boolean;
+    consensusRank: number | null;
+    isConsensusWinner: boolean;
     bountyAmount: string;
   }>;
   total: number;
   hasMore: boolean;
 }
 
-// Creator selection responses
-export interface SelectWinnerResponse {
+// Judge tool responses
+export interface SubmitJudgmentResponse {
   taskId: string;
-  winnerAddress: string;
-  challengeDeadline: string;
+  judgmentIndex: number;
   txHash: string;
 }
 
-export interface RejectAllResponse {
-  taskId: string;
-  refundAmount: string;
-  txHash: string;
-}
-
-export interface FinalizeTaskResponse {
-  taskId: string;
-  winnerAddress: string;
-  bountyReleased: string;
-  txHash: string;
-}
-
-// Dispute responses
-export interface StartDisputeResponse {
-  disputeId: string;
-  taskId: string;
-  stake: string;
-  votingDeadline: string;
-  txHash: string;
-}
-
-export interface SubmitVoteResponse {
-  disputeId: string;
-  voteWeight: number;
-  txHash: string;
-}
-
-export interface GetDisputeResponse {
-  id: string;
-  taskId: string;
-  disputer: string;
-  disputeStake: string;
-  votingDeadline: string;
-  status: DisputeStatus;
-  disputerWon: boolean | null;
-  votesForDisputer: string;
-  votesAgainstDisputer: string;
-  votes?: Array<{
-    voter: string;
-    supportsDisputer: boolean;
-    weight: number;
-    votedAt: string;
+export interface GetJudgableTasksResponse {
+  tasks: Array<{
+    taskId: string;
+    title: string;
+    bountyAmount: string;
+    submissionCount: number;
+    requiredJudges: number;
+    currentJudgmentCount: number;
+    estimatedJudgeFee: string;
+    judgeDeadline: string;
   }>;
-  createdAt: string;
-}
-
-export interface ListDisputesResponse {
-  disputes: DisputeListItem[];
   total: number;
   hasMore: boolean;
 }
 
-export interface ResolveDisputeResponse {
-  disputeId: string;
+export interface GetSubmissionsForJudgingResponse {
   taskId: string;
-  disputerWon: boolean;
-  txHash: string;
+  submissions: Array<{
+    submissionIndex: number;
+    submissionCid: string;
+    content: import('../task/submission-content').WorkSubmission | null;
+  }>;
+  submissionCount: number;
 }
 
 // Utility tool responses
@@ -167,18 +134,9 @@ export interface GetProfileResponse {
   address: string;
   name: string;
   reputation: string;
-  tasksWon: number;
-  disputesWon: number;
-  disputesLost: number;
+  workerConsensusWins: number;
+  judgeConsensusWins: number;
   skills: string[];
-  /** Calculated vote weight for disputes */
-  voteWeight: number;
-}
-
-export interface GetVoteWeightResponse {
-  address: string;
-  reputation: string;
-  voteWeight: number;
 }
 
 // Error response

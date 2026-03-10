@@ -43,11 +43,6 @@ describe('pact-skill index exports', () => {
       expect(skillMetadata.capabilities).toContain('update-profile');
       expect(skillMetadata.capabilities).toContain('reputation');
       expect(skillMetadata.capabilities).toContain('feedback-history');
-      expect(skillMetadata.capabilities).toContain('get-dispute');
-      expect(skillMetadata.capabilities).toContain('list-disputes');
-      expect(skillMetadata.capabilities).toContain('start-dispute');
-      expect(skillMetadata.capabilities).toContain('vote');
-      expect(skillMetadata.capabilities).toContain('resolve-dispute');
       expect(skillMetadata.capabilities).toContain('my-submissions');
     });
   });

@@ -1,9 +1,2 @@
-import type { Database } from './database';
-
-export type DisputeRow = Database['public']['Tables']['disputes']['Row'];
-export type DisputeInsert = Database['public']['Tables']['disputes']['Insert'];
-export type DisputeUpdate = Database['public']['Tables']['disputes']['Update'];
-
-export type DisputeVoteRow = Database['public']['Tables']['dispute_votes']['Row'];
-export type DisputeVoteInsert = Database['public']['Tables']['dispute_votes']['Insert'];
-export type DisputeVoteUpdate = Database['public']['Tables']['dispute_votes']['Update'];
+// Disputes and dispute_votes tables were dropped in V2 migration.
+// This file is kept as a placeholder; all dispute types have been removed.

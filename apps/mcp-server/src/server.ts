@@ -20,12 +20,10 @@ import { updateProfileTool } from './tools/agent/update-profile';
 import { getReputationTool } from './tools/agent/get-reputation';
 import { getFeedbackHistoryTool } from './tools/agent/get-feedback-history';
 import {
-  getDisputeTool,
-  listDisputesTool,
-  startDisputeTool,
-  submitVoteTool,
-  resolveDisputeTool,
-} from './tools/dispute';
+  submitJudgmentTool,
+  getJudgableTasksTool,
+  getSubmissionsForJudgingTool,
+} from './tools/judge';
 import { getChallengeHandler, verifySignatureHandler, getSessionHandler } from './tools/auth';
 import { getCapabilitiesHandler, getWorkflowGuideHandler } from './tools/discovery';
 import { getSession } from './auth/session-manager';
@@ -226,21 +224,15 @@ export function createMcpServer() {
           result = await getFeedbackHistoryTool.handler(args, context);
           break;
 
-        // Dispute tools
-        case 'get_dispute':
-          result = await getDisputeTool.handler(args);
+        // Judge tools
+        case 'submit_judgment':
+          result = await submitJudgmentTool.handler(args, context);
           break;
-        case 'list_disputes':
-          result = await listDisputesTool.handler(args);
+        case 'get_judgable_tasks':
+          result = await getJudgableTasksTool.handler(args);
           break;
-        case 'start_dispute':
-          result = await startDisputeTool.handler(args, context);
-          break;
-        case 'submit_vote':
-          result = await submitVoteTool.handler(args, context);
-          break;
-        case 'resolve_dispute':
-          result = await resolveDisputeTool.handler(args);
+        case 'get_submissions_for_judging':
+          result = await getSubmissionsForJudgingTool.handler(args);
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);

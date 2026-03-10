@@ -21,9 +21,6 @@ mockRetry.setupMock();
 
 const { handleTaskCreated } = await import('../../handlers/task-created');
 const { handleWorkSubmitted } = await import('../../handlers/work-submitted');
-const { handleWinnerSelected } = await import('../../handlers/winner-selected');
-const { handleDisputeCreated } = await import('../../handlers/dispute-started');
-const { handleDisputeResolved } = await import('../../handlers/dispute-resolved');
 const { handleAgentRegistered } = await import('../../handlers/agent-registered');
 import type { IndexerEvent } from '../../listener';
 
@@ -68,25 +65,19 @@ describe('Indexer-Database Integration', () => {
       })
     );
     mockDb.getSubmissionByTaskAndAgent.mockImplementation(() => Promise.resolve(null));
-    mockDb.getDisputeByChainId.mockImplementation(() =>
-      Promise.resolve({
-        id: 'dispute-uuid-1',
-        chain_dispute_id: '1',
-        task_id: 'task-uuid-1',
-        disputer_address: '0xdisputer',
-        status: 'active',
-      })
-    );
   });
 
   test('TaskCreated event creates task in database with correct fields', async () => {
     const event = makeEvent('TaskCreated', {
       taskId: 10n,
       creator: '0xAbCdEf1234567890AbCdEf1234567890AbCdEf12' as `0x${string}`,
-      bountyAmount: 2000000000000000000n,
+      bounty: 2000000000000000000n,
       bountyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-      specificationCid: 'QmTaskSpec456',
-      deadline: 1700000000n,
+      specCid: 'QmTaskSpec456',
+      requiredWorkers: 3,
+      requiredJudges: 2,
+      workDeadline: 1700000000n,
+      judgeDeadline: 1700100000n,
     });
 
     await handleTaskCreated(event);
@@ -150,72 +141,6 @@ describe('Indexer-Database Integration', () => {
     expect((updateArgs[1] as Record<string, unknown>).submission_cid).toBe('QmNewCid');
   });
 
-  test('WinnerSelected event updates task status to in_review', async () => {
-    const event = makeEvent('WinnerSelected', {
-      taskId: 1n,
-      winner: '0xWinnerAgent' as `0x${string}`,
-      challengeDeadline: BigInt(Math.floor(Date.now() / 1000) + 172800),
-    });
-
-    await handleWinnerSelected(event);
-
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updateArgs = mockDb.updateTask.mock.calls[0] as unknown[];
-    expect(updateArgs[0]).toBe('task-uuid-1');
-    const updates = updateArgs[1] as Record<string, unknown>;
-    expect(updates.status).toBe('in_review');
-    expect(updates.winner_address).toBe('0xwinneragent');
-    expect(updates.selected_at).toBeDefined();
-    expect(updates.challenge_deadline).toBeDefined();
-  });
-
-  test('DisputeCreated event creates dispute in database', async () => {
-    const votingDeadline = BigInt(Math.floor(Date.now() / 1000) + 172800);
-
-    const event = makeEvent('DisputeCreated', {
-      disputeId: 5n,
-      taskId: 1n,
-      disputer: '0xDisputerAddress' as `0x${string}`,
-      stake: 100000000000000000n,
-      votingDeadline,
-    });
-
-    await handleDisputeCreated(event);
-
-    expect(mockDb.createDispute).toHaveBeenCalledTimes(1);
-    const args = mockDb.createDispute.mock.calls[0]![0] as Record<string, unknown>;
-    expect(args.task_id).toBe('task-uuid-1');
-    expect(args.chain_dispute_id).toBe('5');
-    expect(args.disputer_address).toBe('0xdisputeraddress');
-    expect(args.dispute_stake).toBe('100000000000000000');
-    expect(args.status).toBe('active');
-    expect(args.tx_hash).toBe('0x1234567890abcdef');
-  });
-
-  test('DisputeResolved event updates dispute and agent stats', async () => {
-    const event = makeEvent('DisputeResolved', {
-      disputeId: 1n,
-      taskId: 1n,
-      disputerWon: false,
-      votesFor: 3n,
-      votesAgainst: 7n,
-    });
-
-    await handleDisputeResolved(event);
-
-    expect(mockDb.updateDispute).toHaveBeenCalledTimes(1);
-    const updateArgs = mockDb.updateDispute.mock.calls[0] as unknown[];
-    expect(updateArgs[0]).toBe('dispute-uuid-1');
-    const updates = updateArgs[1] as Record<string, unknown>;
-    expect(updates.status).toBe('resolved');
-    expect(updates.disputer_won).toBe(false);
-    expect(updates.votes_for_disputer).toBe('3');
-    expect(updates.votes_against_disputer).toBe('7');
-
-    expect(mockDb.incrementDisputesLost).toHaveBeenCalledWith('0xdisputer');
-    expect(mockDb.incrementDisputesWon).not.toHaveBeenCalled();
-  });
-
   test('AgentRegistered event creates agent in database', async () => {
     const event = makeEvent('AgentRegistered', {
       wallet: '0xNewAgentWallet' as `0x${string}`,
@@ -256,10 +181,13 @@ describe('Indexer-Database Integration', () => {
     const event = makeEvent('TaskCreated', {
       taskId: 20n,
       creator: '0xCreator' as `0x${string}`,
-      bountyAmount: 1000n,
+      bounty: 1000n,
       bountyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-      specificationCid: 'QmBadCid',
-      deadline: 0n,
+      specCid: 'QmBadCid',
+      requiredWorkers: 1,
+      requiredJudges: 1,
+      workDeadline: 0n,
+      judgeDeadline: 0n,
     });
 
     await handleTaskCreated(event);
@@ -268,20 +196,5 @@ describe('Indexer-Database Integration', () => {
     const args = mockDb.createTask.mock.calls[0]![0] as Record<string, unknown>;
     expect(args.title).toBe('Untitled Task');
     expect(args.ipfs_fetch_failed).toBe(true);
-  });
-
-  test('DisputeResolved increments disputes won when disputer wins', async () => {
-    const event = makeEvent('DisputeResolved', {
-      disputeId: 1n,
-      taskId: 1n,
-      disputerWon: true,
-      votesFor: 8n,
-      votesAgainst: 2n,
-    });
-
-    await handleDisputeResolved(event);
-
-    expect(mockDb.incrementDisputesWon).toHaveBeenCalledWith('0xdisputer');
-    expect(mockDb.incrementDisputesLost).not.toHaveBeenCalled();
   });
 });

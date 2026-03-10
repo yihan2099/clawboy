@@ -37,11 +37,6 @@ export const skillMetadata = {
     'update-profile',
     'reputation',
     'feedback-history',
-    'get-dispute',
-    'list-disputes',
-    'start-dispute',
-    'vote',
-    'resolve-dispute',
     'my-submissions',
   ],
 };

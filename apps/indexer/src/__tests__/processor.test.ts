@@ -41,46 +41,40 @@ const defaultArgs: Record<string, Record<string, unknown>> = {
   TaskCreated: {
     taskId: 1n,
     creator: '0xCreator',
-    bountyAmount: 1000n,
+    bounty: 1000n,
     bountyToken: '0xToken',
-    specificationCid: 'QmTest',
-    deadline: 0n,
+    specCid: 'QmTest',
+    requiredWorkers: 3,
+    requiredJudges: 3,
+    workDeadline: 0n,
+    judgeDeadline: 0n,
   },
   WorkSubmitted: {
     taskId: 1n,
-    agent: '0xAgent',
+    worker: '0xWorker',
     submissionCid: 'QmSub',
-    submissionIndex: 0n,
+    slotIndex: 0n,
   },
-  WinnerSelected: {
+  JudgmentSubmitted: {
     taskId: 1n,
-    winner: '0xWinner',
-    challengeDeadline: 1700000000n,
+    judge: '0xJudge',
+    judgmentIndex: 0,
   },
-  AllSubmissionsRejected: {
+  PhaseChanged: {
     taskId: 1n,
-    creator: '0xCreator',
-    reason: 'bad',
+    newPhase: 1,
   },
-  TaskCompleted: {
+  TaskResolved: {
     taskId: 1n,
-    winner: '0xWinner',
-    bountyAmount: 5000n,
+    winningWorkers: ['0xWorker1', '0xWorker2'],
+    consensusJudges: ['0xJudge1'],
   },
-  TaskRefunded: {
+  TaskFailed: {
     taskId: 1n,
-    creator: '0xCreator',
-    refundAmount: 1000n,
   },
   TaskCancelled: {
     taskId: 1n,
     creator: '0xCreator',
-    refundAmount: 1000n,
-  },
-  TaskDisputed: {
-    taskId: 1n,
-    disputer: '0xDisputer',
-    disputeId: 1n,
   },
   AgentRegistered: {
     wallet: '0xAgent',
@@ -91,26 +85,6 @@ const defaultArgs: Record<string, Record<string, unknown>> = {
     wallet: '0xAgent',
     agentId: 1n,
     newURI: 'ipfs://QmTest',
-  },
-  DisputeCreated: {
-    disputeId: 1n,
-    taskId: 1n,
-    disputer: '0xDisputer',
-    stake: 500n,
-    votingDeadline: 1700000000n,
-  },
-  VoteSubmitted: {
-    disputeId: 1n,
-    voter: '0xVoter',
-    supportsDisputer: true,
-    weight: 100n,
-  },
-  DisputeResolved: {
-    disputeId: 1n,
-    taskId: 1n,
-    disputerWon: true,
-    votesFor: 300n,
-    votesAgainst: 100n,
   },
 };
 
@@ -132,13 +106,10 @@ describe('processEvent', () => {
     mockDb.getTaskByChainId.mockImplementation(() =>
       Promise.resolve({
         id: 'db-task-1',
-        status: 'open',
+        phase: 'open',
         chain_task_id: '1',
         creator_address: '0xcreator',
       })
-    );
-    mockDb.getDisputeByChainId.mockImplementation(() =>
-      Promise.resolve({ id: 'db-dispute-1', disputer_address: '0xdisputer' })
     );
     mockDb.getSubmissionByTaskAndAgent.mockImplementation(() => Promise.resolve(null));
     mockIpfs.fetchTaskSpecification.mockImplementation(() =>
@@ -159,55 +130,37 @@ describe('processEvent', () => {
     expect(mockDb.createSubmission).toHaveBeenCalledTimes(1);
   });
 
-  test('routes WinnerSelected to handleWinnerSelected', async () => {
-    const event = makeEvent('WinnerSelected', defaultArgs.WinnerSelected);
+  test('routes JudgmentSubmitted to handleJudgmentSubmitted', async () => {
+    const event = makeEvent('JudgmentSubmitted', defaultArgs.JudgmentSubmitted);
     await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('in_review');
+    expect(mockDb.createJudgment).toHaveBeenCalledTimes(1);
   });
 
-  test('routes AllSubmissionsRejected to handleAllSubmissionsRejected', async () => {
-    const event = makeEvent('AllSubmissionsRejected', defaultArgs.AllSubmissionsRejected);
+  test('routes PhaseChanged to handlePhaseChanged', async () => {
+    const event = makeEvent('PhaseChanged', defaultArgs.PhaseChanged);
     await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('in_review');
+    expect(mockDb.updateTaskPhase).toHaveBeenCalledTimes(1);
   });
 
-  test('routes TaskCompleted to handleTaskCompleted', async () => {
-    const event = makeEvent('TaskCompleted', defaultArgs.TaskCompleted);
+  test('routes TaskResolved to handleTaskResolved', async () => {
+    mockDb.getSubmissionsByTaskId.mockImplementation(() =>
+      Promise.resolve({ submissions: [], total: 0 })
+    );
+    const event = makeEvent('TaskResolved', defaultArgs.TaskResolved);
     await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('completed');
+    expect(mockDb.updateTaskPhase).toHaveBeenCalledWith('db-task-1', 'resolved');
   });
 
-  test('routes TaskRefunded to handleTaskRefunded', async () => {
-    const event = makeEvent('TaskRefunded', defaultArgs.TaskRefunded);
+  test('routes TaskFailed to handleTaskFailed', async () => {
+    const event = makeEvent('TaskFailed', defaultArgs.TaskFailed);
     await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('refunded');
+    expect(mockDb.updateTaskPhase).toHaveBeenCalledWith('db-task-1', 'failed');
   });
 
   test('routes TaskCancelled to handleTaskCancelled', async () => {
     const event = makeEvent('TaskCancelled', defaultArgs.TaskCancelled);
     await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('cancelled');
-  });
-
-  test('routes TaskDisputed to handleTaskDisputed', async () => {
-    mockDb.getTaskByChainId.mockImplementation(() =>
-      Promise.resolve({ id: 'db-task-1', status: 'in_review', chain_task_id: '1' })
-    );
-    const event = makeEvent('TaskDisputed', defaultArgs.TaskDisputed);
-    await processEvent(event);
-    expect(mockDb.updateTask).toHaveBeenCalledTimes(1);
-    const updates = mockDb.updateTask.mock.calls[0][1] as Record<string, unknown>;
-    expect(updates.status).toBe('disputed');
+    expect(mockDb.updateTaskPhase).toHaveBeenCalledWith('db-task-1', 'cancelled');
   });
 
   test('routes AgentRegistered to handleAgentRegistered', async () => {
@@ -222,24 +175,6 @@ describe('processEvent', () => {
     expect(mockDb.updateAgent).toHaveBeenCalledTimes(1);
   });
 
-  test('routes DisputeCreated to handleDisputeCreated', async () => {
-    const event = makeEvent('DisputeCreated', defaultArgs.DisputeCreated);
-    await processEvent(event);
-    expect(mockDb.createDispute).toHaveBeenCalledTimes(1);
-  });
-
-  test('routes VoteSubmitted to handleVoteSubmitted', async () => {
-    const event = makeEvent('VoteSubmitted', defaultArgs.VoteSubmitted);
-    await processEvent(event);
-    expect(mockDb.createDisputeVote).toHaveBeenCalledTimes(1);
-  });
-
-  test('routes DisputeResolved to handleDisputeResolved', async () => {
-    const event = makeEvent('DisputeResolved', defaultArgs.DisputeResolved);
-    await processEvent(event);
-    expect(mockDb.updateDispute).toHaveBeenCalledTimes(1);
-  });
-
   test('logs warning for unknown event type', async () => {
     const warnSpy = spyOn(console, 'warn').mockImplementation(() => {});
     await processEvent(makeEvent('UnknownEvent'));
@@ -249,7 +184,7 @@ describe('processEvent', () => {
 
   test('re-throws handler errors', async () => {
     mockDb.getTaskByChainId.mockImplementation(() => Promise.resolve(null));
-    const event = makeEvent('TaskCompleted', defaultArgs.TaskCompleted);
+    const event = makeEvent('TaskFailed', defaultArgs.TaskFailed);
     await expect(processEvent(event)).rejects.toThrow('not found in database');
   });
 });

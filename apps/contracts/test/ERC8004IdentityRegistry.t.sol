@@ -153,7 +153,8 @@ contract ERC8004IdentityRegistryTest is Test {
         vm.prank(user1);
         registry.unsetAgentWallet(agentId);
 
-        uint256 deadline = block.timestamp + 1 hours;
+        // Inverted deadline: must be <= block.timestamp (consumed immediately)
+        uint256 deadline = block.timestamp;
         bytes32 message = keccak256(
             abi.encodePacked("Link wallet to agent:", agentId, deadline, address(registry))
         );
@@ -179,7 +180,8 @@ contract ERC8004IdentityRegistryTest is Test {
         registry.unsetAgentWallet(agentId);
 
         address newWallet = address(0xDEAD);
-        uint256 deadline = block.timestamp + 1 hours;
+        // Inverted deadline: must be <= block.timestamp
+        uint256 deadline = block.timestamp;
 
         // Use wrong private key to sign
         uint256 wrongPk = 0xCAFE;
@@ -195,7 +197,7 @@ contract ERC8004IdentityRegistryTest is Test {
         registry.setAgentWallet(agentId, newWallet, deadline, signature);
     }
 
-    function test_SetAgentWallet_ExpiredDeadlineReverts() public {
+    function test_SetAgentWallet_FutureDeadlineReverts() public {
         vm.prank(user1);
         uint256 agentId = registry.register("ipfs://agent1-uri");
 
@@ -205,8 +207,8 @@ contract ERC8004IdentityRegistryTest is Test {
         uint256 newWalletPk = 0xBEEF;
         address newWallet = vm.addr(newWalletPk);
 
-        // Deadline already passed
-        uint256 deadline = block.timestamp - 1;
+        // Inverted semantics: future deadline is rejected (prevents pre-signed time bombs)
+        uint256 deadline = block.timestamp + 1 hours;
         bytes32 message = keccak256(
             abi.encodePacked("Link wallet to agent:", agentId, deadline, address(registry))
         );
@@ -254,12 +256,10 @@ contract ERC8004IdentityRegistryTest is Test {
         vm.prank(user1);
         registry.unsetAgentWallet(agent1Id);
 
-        // user2's wallet is already linked to agent2
-        uint256 deadline = block.timestamp + 1 hours;
+        // Inverted deadline: must be <= block.timestamp
+        uint256 deadline = block.timestamp;
 
-        // We need user2 to sign. Use a known key for user2.
-        // Since user2 is address(0x2), we can't use vm.sign with it directly.
-        // Instead, create a scenario where newWallet is already linked
+        // Create a scenario where newWallet is already linked
         uint256 newWalletPk = 0xBEEF;
         address newWallet = vm.addr(newWalletPk);
 
@@ -289,7 +289,8 @@ contract ERC8004IdentityRegistryTest is Test {
         uint256 newWalletPk = 0xBEEF;
         address newWallet = vm.addr(newWalletPk);
 
-        uint256 deadline = block.timestamp + 1 hours;
+        // Inverted deadline: must be <= block.timestamp
+        uint256 deadline = block.timestamp;
         bytes32 message = keccak256(
             abi.encodePacked("Link wallet to agent:", agentId, deadline, address(registry))
         );

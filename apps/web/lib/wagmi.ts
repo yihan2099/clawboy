@@ -6,12 +6,8 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 // development mode. In production, set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID to the real
 // project ID from https://cloud.walletconnect.com/ or WalletConnect connections will fail.
 if (!process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      '[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set. ' +
-      'This is required in production — get a project ID from https://cloud.walletconnect.com/'
-    );
-  }
+  // Warn instead of throw: this module is evaluated during next build prerendering
+  // where WalletConnect isn't needed. At runtime, the placeholder still works for dev.
   console.warn(
     '[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set — using placeholder. ' +
     'WalletConnect connections may fail in production.'

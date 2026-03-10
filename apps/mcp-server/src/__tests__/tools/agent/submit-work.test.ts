@@ -7,8 +7,10 @@ const dbMock = createDatabaseMock();
 const mockGetTaskHandler = mock(() =>
   Promise.resolve({
     id: 'task-1',
-    status: 'open',
-    deadline: null,
+    phase: 'open',
+    workDeadline: null as string | null,
+    submissionCount: 0,
+    requiredWorkers: 3,
   })
 );
 
@@ -34,13 +36,18 @@ const validInput = {
 describe('submit_work tool', () => {
   beforeEach(() => {
     mockGetTaskHandler.mockReset();
-    mockGetTaskHandler.mockResolvedValue({ id: 'task-1', status: 'open', deadline: null });
+    mockGetTaskHandler.mockResolvedValue({
+      id: 'task-1',
+      phase: 'open',
+      workDeadline: null,
+      submissionCount: 0,
+      requiredWorkers: 3,
+    });
     ipfsMock.uploadWorkSubmission.mockReset();
     ipfsMock.uploadWorkSubmission.mockResolvedValue({ cid: 'QmWorkCid123' });
     dbMock.getSubmissionByTaskAndAgent.mockReset();
     dbMock.getSubmissionByTaskAndAgent.mockResolvedValue(null);
     dbMock.createSubmission.mockReset();
-    dbMock.updateSubmission.mockReset();
   });
 
   test('should have correct tool metadata', () => {
@@ -56,11 +63,10 @@ describe('submit_work tool', () => {
     expect(ipfsMock.uploadWorkSubmission).toHaveBeenCalled();
     expect(dbMock.createSubmission).toHaveBeenCalled();
     expect(result.submissionCid).toBe('QmWorkCid123');
-    expect(result.isUpdate).toBe(false);
-    expect(result.message).toContain('submitted successfully');
+    expect(result.message).toContain('submitted');
   });
 
-  test('should update existing submission', async () => {
+  test('should throw when already submitted (V2: no edits)', async () => {
     dbMock.getSubmissionByTaskAndAgent.mockResolvedValue({
       id: 'sub-1',
       task_id: 'task-1',
@@ -68,16 +74,9 @@ describe('submit_work tool', () => {
       submission_cid: 'QmOldCid',
     } as any);
 
-    const result = await submitWorkTool.handler(validInput, context);
-
-    expect(dbMock.updateSubmission).toHaveBeenCalledWith(
-      'sub-1',
-      expect.objectContaining({
-        submission_cid: 'QmWorkCid123',
-      })
+    await expect(submitWorkTool.handler(validInput, context)).rejects.toThrow(
+      'already submitted'
     );
-    expect(result.isUpdate).toBe(true);
-    expect(result.message).toContain('updated');
   });
 
   test('should throw when task not found', async () => {
@@ -86,19 +85,27 @@ describe('submit_work tool', () => {
     await expect(submitWorkTool.handler(validInput, context)).rejects.toThrow('Task not found');
   });
 
-  test('should throw when task is not open', async () => {
-    mockGetTaskHandler.mockResolvedValue({ id: 'task-1', status: 'completed', deadline: null });
+  test('should throw when task is not in open or work_phase', async () => {
+    mockGetTaskHandler.mockResolvedValue({
+      id: 'task-1',
+      phase: 'judge_phase',
+      workDeadline: null,
+      submissionCount: 3,
+      requiredWorkers: 3,
+    });
 
     await expect(submitWorkTool.handler(validInput, context)).rejects.toThrow(
-      'Cannot submit work for task with status: completed'
+      'Cannot submit work for task in phase'
     );
   });
 
-  test('should throw when deadline has passed', async () => {
+  test('should throw when work deadline has passed', async () => {
     mockGetTaskHandler.mockResolvedValue({
       id: 'task-1',
-      status: 'open',
-      deadline: '2020-01-01T00:00:00Z' as any,
+      phase: 'open',
+      workDeadline: '2020-01-01T00:00:00Z',
+      submissionCount: 0,
+      requiredWorkers: 3,
     });
 
     await expect(submitWorkTool.handler(validInput, context)).rejects.toThrow(

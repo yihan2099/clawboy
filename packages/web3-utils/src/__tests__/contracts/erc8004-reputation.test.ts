@@ -9,7 +9,6 @@ mock.module('@pactprotocol/contracts', () => ({
   PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
-  DisputeResolverABI: [],
   getContractAddresses: mock(() => ({
     reputationRegistry: '0xReputationRegistry' as `0x${string}`,
     identityRegistry: '0xIdentityRegistry' as `0x${string}`,
@@ -45,11 +44,11 @@ describe('erc8004-reputation contract', () => {
     test('passes tags and client addresses', async () => {
       viemMock.setReadContractResult([0n, 0n, 0]);
       const clients = ['0xaaa' as `0x${string}`];
-      await getFeedbackSummary(1n, 'dispute', 'loss', clients);
+      await getFeedbackSummary(1n, 'judge', 'consensus', clients);
       expect(viemMock.mockReadContract).toHaveBeenCalledWith(
         expect.objectContaining({
           functionName: 'getSummary',
-          args: [1n, clients, 'dispute', 'loss'],
+          args: [1n, clients, 'judge', 'consensus'],
         })
       );
     });
@@ -105,11 +104,11 @@ describe('erc8004-reputation contract', () => {
 
     test('calls with correct function name', async () => {
       viemMock.setReadContractResult(0n);
-      await getFeedbackCount(2n, 'dispute', 'loss');
+      await getFeedbackCount(2n, 'judge', 'consensus');
       expect(viemMock.mockReadContract).toHaveBeenCalledWith(
         expect.objectContaining({
           functionName: 'getFeedbackCount',
-          args: [2n, 'dispute', 'loss'],
+          args: [2n, 'judge', 'consensus'],
         })
       );
     });

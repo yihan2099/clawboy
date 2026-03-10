@@ -1,8 +1,8 @@
-import type { TaskStatus } from './task-status';
+import type { TaskPhase } from './task-status';
 
 /**
- * On-chain task data from the TaskManager contract
- * Updated for competitive task system
+ * On-chain task data from the TaskManagerV2 contract
+ * V2: Phase-based lifecycle with N+M consensus
  */
 export interface OnChainTask {
   /** Unique task ID (uint256) */
@@ -11,8 +11,8 @@ export interface OnChainTask {
   /** Creator's wallet address */
   creator: `0x${string}`;
 
-  /** Current task status */
-  status: TaskStatus;
+  /** Current task phase */
+  phase: TaskPhase;
 
   /** Bounty amount in wei */
   bountyAmount: bigint;
@@ -26,17 +26,23 @@ export interface OnChainTask {
   /** Block number when created */
   createdAtBlock: bigint;
 
-  /** Deadline timestamp for submissions (0 if no deadline) */
-  deadline: bigint;
+  /** Number of required workers (N) */
+  requiredWorkers: number;
 
-  /** Selected winner address (null if not yet selected or rejected all) */
-  selectedWinner: `0x${string}` | null;
+  /** Number of required judges (M) */
+  requiredJudges: number;
 
-  /** Timestamp when winner was selected */
-  selectedAt: bigint | null;
+  /** Deadline timestamp for work submissions */
+  workDeadline: bigint;
 
-  /** Timestamp when challenge window ends */
-  challengeDeadline: bigint | null;
+  /** Deadline timestamp for judge rankings */
+  judgeDeadline: bigint;
+
+  /** Current submission count */
+  submissionCount: number;
+
+  /** Current judgment count */
+  judgmentCount: number;
 }
 
 /**
@@ -49,11 +55,11 @@ export interface OnChainSubmission {
   /** IPFS CID for submission content */
   submissionCid: string;
 
+  /** Submission slot index (0-based) */
+  submissionIndex: number;
+
   /** Timestamp when submitted */
   submittedAt: bigint;
-
-  /** Timestamp when last updated */
-  updatedAt: bigint;
 }
 
 /**
@@ -65,9 +71,6 @@ export interface Task extends OnChainTask {
 
   /** List of submissions for this task */
   submissions?: OnChainSubmission[];
-
-  /** Total submission count */
-  submissionCount?: number;
 }
 
 /**
@@ -78,14 +81,16 @@ export interface TaskListItem {
   title: string;
   bountyAmount: string;
   bountyToken: `0x${string}`;
-  status: TaskStatus;
+  phase: string;
   creatorAddress: `0x${string}`;
-  deadline: string | null;
+  workDeadline: string | null;
+  judgeDeadline: string | null;
   tags: string[];
   createdAt: string;
   submissionCount: number;
-  winnerAddress: string | null;
-  challengeDeadline: string | null;
+  judgmentCount: number;
+  requiredWorkers: number;
+  requiredJudges: number;
 }
 
 /**
@@ -95,7 +100,10 @@ export interface CreateTaskParams {
   specification: import('./task-specification').TaskSpecification;
   bountyAmount: bigint;
   bountyToken?: `0x${string}`;
-  deadline?: bigint;
+  requiredWorkers?: number;
+  requiredJudges?: number;
+  workDeadline?: bigint;
+  judgeDeadline?: bigint;
 }
 
 /**
@@ -104,20 +112,4 @@ export interface CreateTaskParams {
 export interface SubmitWorkParams {
   taskId: bigint;
   submissionCid: string;
-}
-
-/**
- * Parameters for selecting a winner
- */
-export interface SelectWinnerParams {
-  taskId: bigint;
-  winnerAddress: `0x${string}`;
-}
-
-/**
- * Parameters for rejecting all submissions
- */
-export interface RejectAllParams {
-  taskId: bigint;
-  reason: string;
 }

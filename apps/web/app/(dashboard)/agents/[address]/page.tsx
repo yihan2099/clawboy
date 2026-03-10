@@ -4,12 +4,11 @@ import Link from 'next/link';
 import {
   getAgentByAddress,
   getSubmissionsByAgent,
-  calculateVoteWeight,
 } from '@pactprotocol/database/queries';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { truncateAddress, getBaseScanUrl, formatTimeAgo, getIpfsUrl } from '@/lib/format';
-import { ExternalLink, Trophy, Shield, ShieldAlert, Weight, Globe, Clock } from 'lucide-react';
+import { ExternalLink, Trophy, CheckCircle, Scale, Globe, Clock } from 'lucide-react';
 import { PageBreadcrumb } from '@/components/page-breadcrumb';
 import { EditProfile } from './edit-profile';
 import { FeedbackHistory } from './feedback-history';
@@ -20,11 +19,10 @@ interface AgentProfilePageProps {
 
 export async function generateMetadata({ params }: AgentProfilePageProps): Promise<Metadata> {
   const { address } = await params;
-  const agent = await getAgentByAddress(address);
-  const displayName = agent?.name || truncateAddress(address);
+  const displayName = truncateAddress(address);
   return {
     title: `${displayName} | Pact`,
-    description: agent ? `Agent profile for ${displayName} on Pact.` : 'Agent not found.',
+    description: `Agent profile for ${displayName} on Pact.`,
   };
 }
 
@@ -40,8 +38,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
   // submissions, add pagination or a "View all" link. Increasing this limit without pagination
   // will slow down server rendering proportionally.
   const { submissions } = await getSubmissionsByAgent(agent.address, { limit: 10 });
-  const voteWeight = calculateVoteWeight(agent.reputation);
-  const reputation = parseInt(agent.reputation, 10) || 0;
+  const reputation = agent.reputation || 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -96,7 +93,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
       <EditProfile
         agentAddress={agent.address}
         currentName={agent.name || ''}
-        currentSkills={agent.skills}
+        currentSkills={agent.skills ?? []}
       />
 
       {/* Stats Grid */}
@@ -113,36 +110,38 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
         <Card className="py-3">
           <CardContent className="text-center">
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <Shield className="h-3.5 w-3.5" />
-              Disputes Won
+              <CheckCircle className="h-3.5 w-3.5" />
+              Reputation
             </div>
             <div className="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">
-              {agent.disputes_won}
+              {reputation}
             </div>
           </CardContent>
         </Card>
         <Card className="py-3">
           <CardContent className="text-center">
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              Disputes Lost
+              <Scale className="h-3.5 w-3.5" />
+              Submissions
             </div>
-            <div className="text-2xl font-bold mt-1 text-red-500">{agent.disputes_lost}</div>
+            <div className="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400">
+              {submissions.length}
+            </div>
           </CardContent>
         </Card>
         <Card className="py-3">
           <CardContent className="text-center">
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <Weight className="h-3.5 w-3.5" />
-              Vote Weight
+              <Trophy className="h-3.5 w-3.5" />
+              Reputation
             </div>
-            <div className="text-2xl font-bold mt-1">{voteWeight}</div>
+            <div className="text-2xl font-bold mt-1">{reputation}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Skills */}
-      {agent.skills.length > 0 && (
+      {agent.skills && agent.skills.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Skills</CardTitle>
@@ -207,7 +206,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
                       >
                         Task {sub.task_id.slice(0, 8)}...
                       </Link>
-                      {sub.is_winner && (
+                      {sub.is_consensus_winner && (
                         <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
                           Winner
                         </Badge>

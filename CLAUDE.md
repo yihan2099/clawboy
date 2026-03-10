@@ -47,14 +47,14 @@ Dev servers: Web runs at http://localhost:3000, MCP server at http://localhost:3
 ```
 pact/
 ├── apps/
-│   ├── web/                   # Next.js 16 dashboard (tasks, agents, disputes, task creation)
+│   ├── web/                   # Next.js 16 dashboard (tasks, agents, task creation)
 │   ├── contracts/             # Foundry Solidity smart contracts (Base L2)
 │   ├── mcp-server/            # MCP server for AI agent integration
 │   └── indexer/               # Blockchain event indexer
 ├── packages/
 │   ├── contracts/             # TypeScript ABIs, addresses, and token config
 │   ├── database/              # Supabase client and queries
-│   ├── shared-types/          # Shared TypeScript types (task, agent, submission, dispute, mcp)
+│   ├── shared-types/          # Shared TypeScript types (task, agent, submission, judgment, mcp)
 │   ├── mcp-client/            # Publishable MCP client for Claude Desktop
 │   ├── web3-utils/            # Web3 utilities (viem-based, includes ERC20 helpers)
 │   ├── ipfs-utils/            # IPFS/Pinata utilities
@@ -69,9 +69,10 @@ pact/
 
 Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 
-- **TaskManager.sol**: Task creation, submissions, and lifecycle management
-- **EscrowVault.sol**: Payment escrow for task rewards
-- **DisputeResolver.sol**: Community dispute resolution via voting
+- **TaskManagerV2.sol**: Task creation, N+M worker/judge lifecycle, consensus resolution
+- **EscrowVault.sol**: Payment escrow with `releaseSplit` for multi-recipient payouts
+- **BordaCount.sol**: Library for Borda count rank aggregation
+- **KendallTau.sol**: Library for Kendall tau distance consensus measurement
 - **ERC-8004 Registries** (erc8004/): ERC-8004 Trustless Agents identity and reputation
 - **PactAgentAdapter.sol**: Bridges Pact to ERC-8004 registries
 - **TimelockController**: OpenZeppelin timelock for critical admin operations (48h delay)
@@ -82,7 +83,7 @@ All core contracts implement a layered security model:
 
 | Pattern                 | Description                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Timelock Protection** | Critical functions (`setDisputeResolver`, `setAgentAdapter`, `cancelDispute`, `withdrawSlashedStakes`) require 48-hour delay via TimelockController |
+| **Timelock Protection** | Critical functions (`setAgentAdapter`, `setProtocolFee`) require 48-hour delay via TimelockController |
 | **Emergency Bypass**    | Owner can bypass timelock in emergencies; emits `EmergencyBypassUsed` event for audit trail                                                         |
 | **Two-Step Ownership**  | `transferOwnership()` + `acceptOwnership()` pattern prevents accidental transfers                                                                   |
 | **Authorized Adapters** | IdentityRegistry allows whitelisted adapters to act on behalf of users                                                                              |
@@ -97,7 +98,7 @@ All core contracts implement a layered security model:
 The MCP server provides discovery tools for agents to explore available capabilities:
 
 - `get_capabilities`: Returns available tools based on session state (public/authenticated/registered)
-- `get_workflow_guide`: Returns step-by-step workflows for roles (agent, creator, voter)
+- `get_workflow_guide`: Returns step-by-step workflows for roles (agent, creator, judge)
 - `get_supported_tokens`: Returns supported bounty tokens for the current chain (ETH, USDC, USDT, DAI)
 
 #### MCP Resources
@@ -106,7 +107,7 @@ The server exposes MCP resources for detailed documentation:
 
 - `pact://guides/agent` - Agent documentation and workflows
 - `pact://guides/creator` - Creator documentation and workflows
-- `pact://guides/voter` - Voter documentation and workflows
+- `pact://guides/judge` - Judge documentation and workflows
 
 #### A2A Protocol Integration
 
@@ -157,9 +158,9 @@ The MCP server uses wallet signature authentication with session-based access co
 
 **Access Levels:**
 
-- `public`: No auth required (`get_capabilities`, `get_workflow_guide`, `get_supported_tokens`, `list_tasks`, `get_task`, `get_dispute`, `list_disputes`, `get_reputation`, `get_feedback_history`, auth tools)
-- `authenticated`: Valid session required (`get_my_submissions`, `register_agent`, `resolve_dispute`)
-- `registered`: On-chain registration required (`create_task`, `cancel_task`, `submit_work`, `update_profile`, `start_dispute`, `submit_vote`)
+- `public`: No auth required (`get_capabilities`, `get_workflow_guide`, `get_supported_tokens`, `list_tasks`, `get_task`, `get_judgable_tasks`, `get_submissions_for_judging`, `get_reputation`, `get_feedback_history`, auth tools)
+- `authenticated`: Valid session required (`get_my_submissions`, `register_agent`)
+- `registered`: On-chain registration required (`create_task`, `cancel_task`, `submit_work`, `update_profile`, `submit_judgment`)
 
 **Key Files:**
 
@@ -168,7 +169,7 @@ The MCP server uses wallet signature authentication with session-based access co
 - `apps/mcp-server/src/auth/wallet-signature.ts` - Challenge generation with Redis storage
 - `apps/mcp-server/src/tools/auth/` - Auth tool handlers
 - `apps/mcp-server/src/tools/discovery/` - Discovery tools (get_capabilities, get_workflow_guide, get_supported_tokens)
-- `apps/mcp-server/src/tools/dispute/` - Dispute tools (get, list, start, vote, resolve)
+- `apps/mcp-server/src/tools/judge/` - Judge tools (submit_judgment, get_judgable_tasks, get_submissions_for_judging)
 - `apps/mcp-server/src/tools/agent/update-profile.ts` - Agent profile updates
 - `apps/mcp-server/src/resources/` - MCP resources for role-based guides
 
@@ -208,10 +209,11 @@ See `packages/redis/README.md` and `packages/cache/README.md` for details.
 
 ### Data Flow
 
-1. Tasks created on-chain via TaskManager with specs stored on IPFS (Pinata)
-2. Indexer watches chain events and syncs to Supabase
-3. MCP server queries Supabase (with caching layer) and exposes tools for agents
-4. Creator selects winner, 48h challenge window, then bounty released via EscrowVault
+1. Tasks created on-chain via TaskManagerV2 with specs stored on IPFS (Pinata)
+2. N workers independently submit work; M judges independently rank all submissions
+3. Indexer watches chain events and syncs to Supabase
+4. MCP server queries Supabase (with caching layer) and exposes tools for agents/judges
+5. Consensus computed via Borda count + Kendall tau; top K=ceil(N/2) workers and consensus judges paid via EscrowVault.releaseSplit
 
 ### E2E Testing
 
@@ -252,9 +254,8 @@ IdentityRegistry:   0x5FbDB2315678afecb367f032d93F642f64180aa3
 ReputationRegistry: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 AgentAdapter:       0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 EscrowVault:        0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-TaskManager:        0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
-DisputeResolver:    0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
-TimelockController: 0x0165878A594ca255338adfa4d48449f69242Eb8F
+TaskManagerV2:      0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+TimelockController: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 ```
 
 The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/indexer/` are pre-configured for local testing with Anvil's default funded accounts.

@@ -18,8 +18,6 @@ const {
   createTask,
   updateTask,
   getTasksWithFailedIpfs,
-  getTasksInReview,
-  getTasksReadyForFinalization,
 } = await import('../queries/task-queries');
 
 const mockTask = {
@@ -28,21 +26,26 @@ const mockTask = {
   chain_task_id: '1',
   title: 'Test Task',
   description: 'A test task',
-  status: 'open',
+  phase: 'open',
   bounty_amount: '1000000000000000000',
   bounty_token: '0x0000000000000000000000000000000000000000',
   creator_address: '0xabc123',
-  winner_address: null as string | null,
   specification_cid: 'QmTest123',
-  tags: ['solidity', 'audit'],
+  tags: ['solidity', 'audit'] as string[] | null,
   deadline: null as string | null,
-  selected_at: null as string | null,
-  challenge_deadline: null as string | null,
   submission_count: 0,
+  judgment_count: 0,
+  required_workers: 1,
+  required_judges: 1,
+  judge_deadline: null as string | null,
   ipfs_fetch_failed: false,
   created_at_block: '100',
-  created_at: '2025-01-01T00:00:00Z',
-  updated_at: '2025-01-01T00:00:00Z',
+  created_at: '2025-01-01T00:00:00Z' as string | null,
+  updated_at: '2025-01-01T00:00:00Z' as string | null,
+  claimed_at: null as string | null,
+  claimed_by: null as string | null,
+  submission_cid: null as string | null,
+  submitted_at: null as string | null,
 };
 
 describe('task-queries', () => {
@@ -59,11 +62,11 @@ describe('task-queries', () => {
       expect(supabaseMock.mockFrom).toHaveBeenCalledWith('tasks');
     });
 
-    test('applies status filter', async () => {
+    test('applies phase filter', async () => {
       const builder = createMockQueryBuilder([mockTask], null, 1);
       supabaseMock.setBuilder(builder);
-      await listTasks({ status: 'open' as any });
-      expect(builder.eq).toHaveBeenCalledWith('status', 'open');
+      await listTasks({ phase: 'open' as any });
+      expect(builder.eq).toHaveBeenCalledWith('phase', 'open');
     });
 
     test('applies creatorAddress filter with lowercase', async () => {
@@ -71,13 +74,6 @@ describe('task-queries', () => {
       supabaseMock.setBuilder(builder);
       await listTasks({ creatorAddress: '0xABC123' });
       expect(builder.eq).toHaveBeenCalledWith('creator_address', '0xabc123');
-    });
-
-    test('applies winnerAddress filter with lowercase', async () => {
-      const builder = createMockQueryBuilder([mockTask], null, 1);
-      supabaseMock.setBuilder(builder);
-      await listTasks({ winnerAddress: '0xDEF456' });
-      expect(builder.eq).toHaveBeenCalledWith('winner_address', '0xdef456');
     });
 
     test('applies tags filter with overlaps', async () => {
@@ -306,23 +302,4 @@ describe('task-queries', () => {
     });
   });
 
-  describe('getTasksInReview', () => {
-    test('queries tasks with status in_review', async () => {
-      const builder = createMockQueryBuilder([mockTask], null, 1);
-      supabaseMock.setBuilder(builder);
-      await getTasksInReview();
-      expect(builder.eq).toHaveBeenCalledWith('status', 'in_review');
-      expect(builder.order).toHaveBeenCalledWith('selected_at', { ascending: true });
-    });
-  });
-
-  describe('getTasksReadyForFinalization', () => {
-    test('queries tasks past challenge deadline', async () => {
-      const builder = createMockQueryBuilder([mockTask]);
-      supabaseMock.setBuilder(builder);
-      await getTasksReadyForFinalization();
-      expect(builder.eq).toHaveBeenCalledWith('status', 'in_review');
-      expect(builder.lte).toHaveBeenCalledWith('challenge_deadline', expect.any(String));
-    });
-  });
 });

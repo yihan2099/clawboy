@@ -6,8 +6,8 @@
  * Shorter TTLs for data with frequent updates.
  *
  * Rationale summary:
- * - Hot paths (task list, disputes) use short TTLs (30–60 s) to keep UX responsive.
- * - Slow-changing data (agent profiles, leaderboard) uses longer TTLs (5 min–1 h)
+ * - Hot paths (task list, judgments) use short TTLs (30-60 s) to keep UX responsive.
+ * - Slow-changing data (agent profiles, leaderboard) uses longer TTLs (5 min-1 h)
  *   to reduce Supabase read load without meaningful staleness impact.
  * - On-chain data (reputation, feedback) uses 5 min to balance RPC cost vs. freshness;
  *   the indexer invalidates relevant cache tags after processing chain events, so the
@@ -16,13 +16,13 @@
 
 export const TTL_CONFIG = {
   /**
-   * Task list - 30 s to keep submission counts and status reasonably fresh.
-   * The indexer invalidates 'task-list' tag on WorkSubmitted/TaskFinalized events.
+   * Task list - 30 s to keep submission counts and phase reasonably fresh.
+   * The indexer invalidates 'task-list' tag on WorkSubmitted/PhaseChanged events.
    */
   TASK_LIST: 30,
 
   /**
-   * Individual task detail - 5 min. Tag invalidation on TaskFinalized/WorkSubmitted
+   * Individual task detail - 5 min. Tag invalidation on PhaseChanged/TaskResolved
    * means cache is typically evicted before TTL expires for active tasks.
    */
   TASK_DETAIL: 300, // 5 minutes
@@ -40,8 +40,8 @@ export const TTL_CONFIG = {
   AGENT_LIST: 300, // 5 minutes
 
   /**
-   * Submission data - 5 min. Individual submissions change only on resubmission
-   * (same agent, same task). Tag invalidation handles the common case.
+   * Submission data - 5 min. Individual submissions are immutable after creation
+   * in V2 (no edits). Tag invalidation handles consensus results.
    */
   SUBMISSION: 300, // 5 minutes
 
@@ -58,20 +58,29 @@ export const TTL_CONFIG = {
   TOP_AGENTS: 900, // 15 minutes
 
   /**
-   * Dispute data - 60 s. Votes can arrive frequently during an active voting period.
-   * Short TTL ensures vote counts stay current without hammering Supabase.
+   * Task judgments - 30 s. During active judging, judgment count should stay current.
    */
-  DISPUTE: 60, // 1 minute (votes can change quickly)
+  TASK_JUDGMENTS: 30,
 
   /**
-   * Agent reputation data - 5 min. Reputation changes only after dispute resolution
-   * or task finalization; indexer tag invalidation handles those events.
+   * Agent judgments - 60 s. Agent's judgment history changes less frequently.
+   */
+  AGENT_JUDGMENTS: 60,
+
+  /**
+   * Task payouts - 1 h. Payouts are immutable once created.
+   */
+  TASK_PAYOUTS: 3600, // 1 hour
+
+  /**
+   * Agent reputation data - 5 min. Reputation changes only after task resolution;
+   * indexer tag invalidation handles those events.
    */
   REPUTATION: 300, // 5 minutes
 
   /**
    * Agent feedback history - 5 min. On-chain feedback is append-only and changes
-   * only after task/dispute resolution. Tag invalidation keeps this fresh post-event.
+   * only after task resolution. Tag invalidation keeps this fresh post-event.
    */
   FEEDBACK_HISTORY: 300, // 5 minutes
 

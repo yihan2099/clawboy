@@ -4,7 +4,6 @@ import {
   invalidateTaskCaches,
   invalidateAgentCaches,
   invalidateSubmissionCaches,
-  invalidateDisputeCaches,
   invalidateStatsCaches,
   invalidateAllCaches,
 } from '../invalidation';
@@ -14,8 +13,6 @@ import {
   agentByAddressKey,
   submissionKey,
   submissionListKey,
-  disputeKey,
-  disputeListKey,
   platformStatsKey,
   topAgentsKey,
 } from '../key-builder';
@@ -52,13 +49,13 @@ describe('Cache Invalidation', () => {
 
     test('also invalidates task lists', async () => {
       const cache = getCache();
-      await cache.set(taskListKey({ status: 'open' }), { tasks: [], total: 0 });
-      await cache.set(taskListKey({ status: 'completed' }), { tasks: [], total: 0 });
+      await cache.set(taskListKey({ phase: 'open' }), { tasks: [], total: 0 });
+      await cache.set(taskListKey({ phase: 'completed' }), { tasks: [], total: 0 });
 
       await invalidateTaskCaches('123');
 
-      expect(await cache.get(taskListKey({ status: 'open' }))).toBeNull();
-      expect(await cache.get(taskListKey({ status: 'completed' }))).toBeNull();
+      expect(await cache.get(taskListKey({ phase: 'open' }))).toBeNull();
+      expect(await cache.get(taskListKey({ phase: 'completed' }))).toBeNull();
     });
 
     test('also invalidates stats', async () => {
@@ -169,38 +166,6 @@ describe('Cache Invalidation', () => {
 
       expect(await cache.get(submissionKey('t1', '0xa'))).toBeNull();
       expect(await cache.get(submissionKey('t2', '0xb'))).toBeNull();
-    });
-  });
-
-  describe('invalidateDisputeCaches', () => {
-    test('invalidates specific dispute by ID', async () => {
-      const cache = getCache();
-      await cache.set(disputeKey('dispute-1'), { id: 'dispute-1' });
-      await cache.set(disputeKey('dispute-2'), { id: 'dispute-2' });
-
-      await invalidateDisputeCaches('dispute-1');
-
-      expect(await cache.get(disputeKey('dispute-1'))).toBeNull();
-      // dispute-2 may or may not be invalidated depending on implementation
-    });
-
-    test('invalidates dispute lists for task when taskId provided', async () => {
-      const cache = getCache();
-      await cache.set(disputeListKey({ taskId: 'task-1' }), { disputes: [] });
-
-      await invalidateDisputeCaches(undefined, 'task-1');
-
-      expect(await cache.get(disputeListKey({ taskId: 'task-1' }))).toBeNull();
-    });
-
-    test('invalidates all disputes when no params provided', async () => {
-      const cache = getCache();
-      await cache.set(disputeKey('d1'), { id: 'd1' });
-      await cache.set(disputeListKey(), { disputes: [] });
-
-      await invalidateDisputeCaches();
-
-      expect(await cache.get(disputeListKey())).toBeNull();
     });
   });
 

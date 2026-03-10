@@ -11,7 +11,6 @@ import {
   getCachedPlatformStatistics,
   getCachedRecentSubmissions,
   getCachedDetailedTasks,
-  getCachedDetailedDisputes,
 } from '@/app/actions/statistics';
 import { BadgeStats } from './stats/badge-stats';
 import { LiveFeed } from './stats/live-feed';
@@ -41,11 +40,10 @@ function DashboardSkeleton() {
 }
 
 async function HeroDashboard() {
-  const [stats, recentSubmissions, detailedTasks, detailedDisputes] = await Promise.all([
+  const [stats, recentSubmissions, detailedTasks] = await Promise.all([
     getCachedPlatformStatistics(),
     getCachedRecentSubmissions(),
     getCachedDetailedTasks(),
-    getCachedDetailedDisputes(),
   ]);
 
   if (!stats) {
@@ -55,7 +53,7 @@ async function HeroDashboard() {
   return (
     <div className="space-y-4">
       <BadgeStats stats={stats} />
-      <LiveFeed tasks={detailedTasks} submissions={recentSubmissions} disputes={detailedDisputes} />
+      <LiveFeed tasks={detailedTasks} submissions={recentSubmissions} />
     </div>
   );
 }

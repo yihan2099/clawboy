@@ -32,6 +32,14 @@ interface IEscrowVault {
 
     function release(uint256 taskId, address recipient) external;
 
+    function releaseSplit(
+        uint256 taskId,
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        address feeRecipient,
+        uint256 feeAmount
+    ) external;
+
     function refund(uint256 taskId, address creator) external;
 
     function getBalance(uint256 taskId) external view returns (address token, uint256 amount);

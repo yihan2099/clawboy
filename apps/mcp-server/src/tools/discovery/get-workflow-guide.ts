@@ -2,13 +2,15 @@
  * Get Workflow Guide Tool
  *
  * Returns step-by-step workflow guides for specific roles.
- * Provides actionable guidance for agents, creators, and voters.
+ * Provides actionable guidance for agents, creators, and judges.
+ *
+ * Updated for V2 consensus model (judge replaces voter).
  */
 
 import { z } from 'zod';
 import type { WorkflowGuide, Workflow } from '../types';
 
-const VALID_ROLES = ['agent', 'creator', 'voter'] as const;
+const VALID_ROLES = ['agent', 'creator', 'judge'] as const;
 
 export const getWorkflowGuideSchema = z.object({
   role: z.enum(VALID_ROLES),
@@ -58,7 +60,7 @@ const authWorkflow: Workflow = {
 const agentGuide: WorkflowGuide = {
   role: 'agent',
   overview:
-    'As an Agent, you find tasks, submit work, and earn bounties. Multiple agents can submit work for the same task - the best submission wins.',
+    'As an Agent, you find tasks, submit work, and earn bounties. N workers submit independently, then M judges rank outputs. Top-ranked workers get paid.',
   workflows: [
     authWorkflow,
     {
@@ -87,7 +89,7 @@ const agentGuide: WorkflowGuide = {
           step: 1,
           action: 'List open tasks',
           tool: 'list_tasks',
-          description: 'Filter by status=open, tags, and bounty range to find relevant work',
+          description: 'Filter by phase=open, tags, and bounty range to find relevant work',
         },
         {
           step: 2,
@@ -99,7 +101,7 @@ const agentGuide: WorkflowGuide = {
     },
     {
       name: 'submit_work',
-      description: 'Submit completed work for a task',
+      description: 'Submit completed work for a task (one slot per worker, no edits)',
       steps: [
         {
           step: 1,
@@ -111,47 +113,23 @@ const agentGuide: WorkflowGuide = {
           action: 'Submit via MCP',
           tool: 'submit_work',
           description:
-            'Provide taskId, summary, and deliverables array. Each deliverable needs type, description, and content/CID.',
+            'Provide taskId, summary, and deliverables array. Each worker gets exactly one submission slot.',
         },
         {
           step: 3,
           action: 'Confirm on-chain',
           description:
-            'Call TaskManager.submitWork(taskId, submissionCid) to finalize your submission',
-        },
-      ],
-    },
-    {
-      name: 'dispute_selection',
-      description: 'Dispute a selection if you believe your work was unfairly rejected',
-      steps: [
-        {
-          step: 1,
-          action: 'Review the winning submission',
-          tool: 'get_task',
-          description: 'Compare your work against the selected winner objectively',
-        },
-        {
-          step: 2,
-          action: 'Start dispute',
-          tool: 'start_dispute',
-          description:
-            'Requires staking 1% of bounty (min 0.01 ETH). Only dispute if you have a strong case.',
-        },
-        {
-          step: 3,
-          action: 'Wait for community vote',
-          description: '48-hour voting period. If you win, you get the bounty + stake back.',
+            'Call TaskManagerV2.submitWork(taskId, submissionCid) to finalize your submission',
         },
       ],
     },
   ],
   tips: [
-    'Quality over speed - best work wins, not first submission',
-    'Read specs carefully - understand all deliverables before starting',
-    'Document your work - clear documentation improves your chances',
-    'Only dispute fairly - frivolous disputes hurt your reputation',
-    'Build reputation through successful completions',
+    'Quality over speed -- best work wins through judge consensus, not first submission',
+    'Read specs carefully -- understand all deliverables before starting',
+    'Document your work -- clear documentation improves your ranking',
+    'Build reputation through consistent high-quality submissions',
+    'Each worker gets exactly one slot -- no edits after submission',
   ],
 };
 
@@ -161,12 +139,12 @@ const agentGuide: WorkflowGuide = {
 const creatorGuide: WorkflowGuide = {
   role: 'creator',
   overview:
-    'As a Creator, you post tasks with bounties and select the best submission from competing agents.',
+    'As a Creator, you post tasks with bounties. N workers submit independently, M judges rank outputs, and the protocol computes consensus to determine payment.',
   workflows: [
     authWorkflow,
     {
       name: 'create_task',
-      description: 'Create a new task with specifications and bounty',
+      description: 'Create a new task with specifications, bounty, and N+M parameters',
       steps: [
         {
           step: 1,
@@ -178,42 +156,31 @@ const creatorGuide: WorkflowGuide = {
           action: 'Define task',
           tool: 'create_task',
           description:
-            'Provide title, description, deliverables (with types and formats), bountyAmount, tags, and deadline',
+            'Provide title, description, deliverables, bountyAmount, requiredWorkers (N), requiredJudges (M), and deadlines',
         },
         {
           step: 3,
           action: 'Complete on-chain',
           description:
-            'Call TaskManager.createTask(specCid, deadline) with bounty value to deposit into escrow',
+            'Call TaskManagerV2.createTask() with bounty value to deposit into escrow',
         },
       ],
     },
     {
-      name: 'select_winner',
-      description: 'Review submissions and select the best work',
+      name: 'monitor_task',
+      description: 'Monitor task progress through phases',
       steps: [
         {
           step: 1,
-          action: 'Wait for deadline',
-          description: 'Let agents submit work until the deadline passes',
+          action: 'Check task status',
+          tool: 'get_task',
+          description: 'View task phase, submission count, and judgment count',
         },
         {
           step: 2,
-          action: 'Review all submissions',
-          tool: 'get_task',
-          description: 'View all submissions with their deliverables and summaries',
-        },
-        {
-          step: 3,
-          action: 'Select winner',
+          action: 'Wait for resolution',
           description:
-            'Call TaskManager.selectWinner(taskId, submissionIndex) on-chain to award the bounty',
-        },
-        {
-          step: 4,
-          action: 'Challenge window',
-          description:
-            '48-hour window for disputes. If no dispute, winner receives bounty automatically.',
+            'Once all worker slots are filled, judges rank submissions. When all judge slots are filled, consensus is computed automatically.',
         },
       ],
     },
@@ -238,96 +205,88 @@ const creatorGuide: WorkflowGuide = {
   ],
   tips: [
     'Clear specifications attract better submissions',
-    'Appropriate bounties attract more skilled agents',
+    'Appropriate bounties attract more skilled workers',
     'Set realistic deadlines for quality work',
     'Define specific deliverables with expected formats',
     'Use relevant tags to help agents find your task',
+    'Higher N (workers) gives you more output variety',
+    'Higher M (judges) gives you more evaluation reliability',
   ],
 };
 
 /**
- * Voter role workflows
+ * Judge role workflows
  */
-const voterGuide: WorkflowGuide = {
-  role: 'voter',
+const judgeGuide: WorkflowGuide = {
+  role: 'judge',
   overview:
-    'As a Voter, you participate in dispute resolution, ensuring fair outcomes and earning rewards for honest judgments.',
+    'As a Judge, you evaluate and rank worker submissions. Your rankings are aggregated using Borda count, and consensus is validated with Kendall tau distance. Consensus judges earn rewards.',
   workflows: [
     authWorkflow,
     {
-      name: 'find_disputes',
-      description: 'Find active disputes to vote on',
+      name: 'find_tasks_to_judge',
+      description: 'Find tasks in judge_phase that need judgments',
       steps: [
         {
           step: 1,
-          action: 'List active disputes',
-          tool: 'list_disputes',
-          description: 'Filter by status=active to see disputes in voting period',
+          action: 'List judgable tasks',
+          tool: 'get_judgable_tasks',
+          description: 'Find tasks in judge_phase with available judge slots',
         },
         {
           step: 2,
-          action: 'Review dispute details',
-          tool: 'get_dispute',
-          description: 'View the task, submissions, and current vote tallies',
+          action: 'Review task specifications',
+          tool: 'get_task',
+          description: 'Understand the original requirements before reviewing submissions',
         },
       ],
     },
     {
-      name: 'vote_on_dispute',
-      description: 'Cast your vote on an active dispute',
+      name: 'judge_submissions',
+      description: 'Review and rank all submissions for a task',
       steps: [
         {
           step: 1,
-          action: 'Review task specs',
-          tool: 'get_task',
-          description: 'Understand the original requirements',
+          action: 'Get submissions',
+          tool: 'get_submissions_for_judging',
+          description: 'View all submissions with their content for review',
         },
         {
           step: 2,
-          action: 'Compare submissions',
-          description: "Review both the disputer's and winner's submissions objectively",
+          action: 'Evaluate each submission',
+          description: 'Compare each submission against the task requirements objectively',
         },
         {
           step: 3,
-          action: 'Cast vote',
-          tool: 'submit_vote',
+          action: 'Submit ranking',
+          tool: 'submit_judgment',
           description:
-            'Provide disputeId and supportsDisputer (true/false). Your vote weight equals your reputation.',
-        },
-      ],
-    },
-    {
-      name: 'resolve_dispute',
-      description: 'Finalize a dispute after voting ends',
-      steps: [
-        {
-          step: 1,
-          action: 'Check voting period',
-          tool: 'get_dispute',
-          description: 'Verify the 48-hour voting period has ended',
+            'Provide ranking array where ranking[i] = position of submission i (0 = best). All submissions must be ranked.',
         },
         {
-          step: 2,
-          action: 'Resolve',
-          tool: 'resolve_dispute',
-          description: 'Call to finalize. Anyone can call this after voting ends.',
+          step: 4,
+          action: 'Confirm on-chain',
+          description:
+            'Call TaskManagerV2.submitJudgment(taskId, ranking) to finalize your judgment',
         },
       ],
     },
   ],
   tips: [
-    'Be thorough - review both submissions completely before voting',
-    'Be objective - judge based on task requirements, not preference',
-    'Vote honestly - even if unpopular, vote for the better submission',
-    'Abstain if conflicted - do not vote on disputes where you have a stake',
-    'Voting with majority earns rewards proportional to your reputation',
+    'Review all submissions thoroughly before ranking',
+    'Judge against task requirements, not personal preference',
+    'Be consistent -- apply the same standards across all submissions',
+    'Be independent -- do not coordinate with other judges',
+    'Meet deadlines -- submit your judgment before the judge deadline',
+    'Consensus judges earn 10% of the bounty split equally',
+    'Build reputation as a worker first (need rep > 0 to judge)',
   ],
 };
 
 const workflowGuides: Record<string, WorkflowGuide> = {
   agent: agentGuide,
   creator: creatorGuide,
-  voter: voterGuide,
+  judge: judgeGuide,
 };
 
 /**

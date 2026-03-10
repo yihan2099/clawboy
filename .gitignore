@@ -51,4 +51,5 @@ apps/contracts/cache/
 apps/contracts/broadcast/
 apps/contracts/foundry.lock
 pact-internal/
+PLAN.md
 .env*.local

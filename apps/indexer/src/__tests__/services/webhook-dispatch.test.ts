@@ -32,13 +32,6 @@ describe('dispatchWebhookNotifications', () => {
         creator_address: '0xcreator',
       })
     );
-    mockDb.getDisputeByChainId.mockImplementation(() =>
-      Promise.resolve({
-        id: 'db-dispute-1',
-        task_id: 'db-task-1',
-        disputer_address: '0xdisputer',
-      })
-    );
     // Return empty arrays so no real fetch calls happen
     mockDb.getAgentsWithWebhooks.mockImplementation(() => Promise.resolve([]));
     mockDb.getAgentWebhookInfo.mockImplementation(() => Promise.resolve(null));
@@ -53,8 +46,8 @@ describe('dispatchWebhookNotifications', () => {
       makeEvent('TaskCreated', {
         taskId: 1n,
         creator: '0xCreator',
-        bountyAmount: 1000n,
-        specificationCid: 'QmTest',
+        bounty: 1000n,
+        specCid: 'QmTest',
       })
     );
     await new Promise((r) => setTimeout(r, 50));
@@ -64,59 +57,44 @@ describe('dispatchWebhookNotifications', () => {
   });
 
   test('dispatches WorkSubmitted webhook: looks up task creator webhook', async () => {
-    dispatchWebhookNotifications(makeEvent('WorkSubmitted', { taskId: 1n, agent: '0xAgent' }));
+    dispatchWebhookNotifications(makeEvent('WorkSubmitted', { taskId: 1n, worker: '0xWorker' }));
     await new Promise((r) => setTimeout(r, 50));
     expect(mockDb.getTaskByChainId).toHaveBeenCalledWith('1', 84532);
     // notifyWorkSubmitted looks up creator's webhook info
     expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xcreator');
   });
 
-  test('dispatches TaskCompleted webhook: looks up winner webhook', async () => {
+  test('dispatches JudgmentSubmitted webhook: looks up task creator webhook', async () => {
     dispatchWebhookNotifications(
-      makeEvent('TaskCompleted', {
+      makeEvent('JudgmentSubmitted', {
         taskId: 1n,
-        winner: '0xWinner',
-        bountyAmount: 5000n,
+        judge: '0xJudge',
+        judgmentIndex: 0,
       })
     );
     await new Promise((r) => setTimeout(r, 50));
-    // notifyTaskCompleted looks up winner's webhook info
-    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xwinner');
+    expect(mockDb.getTaskByChainId).toHaveBeenCalledWith('1', 84532);
+    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xcreator');
   });
 
-  test('dispatches VoteSubmitted webhook with dispute lookup', async () => {
+  test('dispatches TaskResolved webhook: notifies submitters and judges', async () => {
     dispatchWebhookNotifications(
-      makeEvent('VoteSubmitted', {
-        disputeId: 10n,
-        voter: '0xVoter',
-        supportsDisputer: true,
+      makeEvent('TaskResolved', {
+        taskId: 1n,
+        winningWorkers: ['0xWorker1', '0xWorker2'],
+        consensusJudges: ['0xJudge1'],
       })
     );
     await new Promise((r) => setTimeout(r, 50));
-    expect(mockDb.getDisputeByChainId).toHaveBeenCalledWith('10');
-    // notifyVoteSubmitted looks up disputer's webhook info
-    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xdisputer');
-  });
-
-  test('dispatches DisputeResolved webhook', async () => {
-    dispatchWebhookNotifications(
-      makeEvent('DisputeResolved', {
-        disputeId: 10n,
-        disputerWon: true,
-      })
-    );
-    await new Promise((r) => setTimeout(r, 50));
-    expect(mockDb.getDisputeByChainId).toHaveBeenCalledWith('10');
-    // notifyDisputeResolved looks up disputer's webhook info
-    expect(mockDb.getAgentsWebhookInfoByAddresses).toHaveBeenCalledWith(['0xdisputer']);
+    expect(mockDb.getTaskByChainId).toHaveBeenCalledWith('1', 84532);
+    expect(mockDb.getSubmissionsByTaskId).toHaveBeenCalledWith('db-task-1');
   });
 
   test('does not dispatch for events without webhook support', async () => {
     const noWebhookEvents = [
-      'AllSubmissionsRejected',
-      'TaskRefunded',
+      'PhaseChanged',
+      'TaskFailed',
       'TaskCancelled',
-      'TaskDisputed',
       'AgentRegistered',
       'AgentProfileUpdated',
     ];
@@ -136,7 +114,7 @@ describe('dispatchWebhookNotifications', () => {
         makeEvent('TaskCreated', {
           taskId: 1n,
           creator: '0xCreator',
-          bountyAmount: 1000n,
+          bounty: 1000n,
         })
       )
     ).not.toThrow();

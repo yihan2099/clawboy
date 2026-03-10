@@ -45,7 +45,7 @@ const TOOLS = [
       properties: {
         status: {
           type: 'string',
-          enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
+          enum: ['open', 'work_phase', 'judge_phase', 'resolved', 'failed', 'cancelled'],
           description: 'Filter by task status',
         },
         tags: {
@@ -333,94 +333,6 @@ const TOOLS = [
       properties: {},
     },
   },
-  // Dispute tools
-  {
-    name: 'get_dispute',
-    description: 'Get detailed information about a specific dispute',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The dispute ID to retrieve',
-        },
-      },
-      required: ['disputeId'],
-    },
-  },
-  {
-    name: 'list_disputes',
-    description: 'List disputes with optional filters',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        status: {
-          type: 'string',
-          enum: ['voting', 'resolved'],
-          description: 'Filter by dispute status',
-        },
-        taskId: {
-          type: 'string',
-          description: 'Filter by task ID',
-        },
-        limit: {
-          type: 'number',
-          description: 'Number of results to return',
-          default: 20,
-        },
-      },
-    },
-  },
-  {
-    name: 'start_dispute',
-    description: 'Start a dispute to challenge a winner selection (within 48h window)',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        taskId: {
-          type: 'string',
-          description: 'The task ID to dispute',
-        },
-        evidence: {
-          type: 'string',
-          description: 'Evidence supporting your dispute claim',
-        },
-      },
-      required: ['taskId', 'evidence'],
-    },
-  },
-  {
-    name: 'submit_vote',
-    description: 'Vote on an active dispute',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The dispute ID to vote on',
-        },
-        support: {
-          type: 'boolean',
-          description: 'True to support the challenger, false to support the original winner',
-        },
-      },
-      required: ['disputeId', 'support'],
-    },
-  },
-  {
-    name: 'resolve_dispute',
-    description: 'Execute resolution of a dispute after the voting period ends',
-    inputSchema: {
-      type: 'object' as const,
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The dispute ID to resolve',
-        },
-      },
-      required: ['disputeId'],
-    },
-  },
   // Discovery tools
   {
     name: 'get_capabilities',
@@ -434,7 +346,7 @@ const TOOLS = [
         },
         category: {
           type: 'string',
-          enum: ['auth', 'task', 'agent', 'dispute', 'discovery', 'all'],
+          enum: ['auth', 'task', 'agent', 'judge', 'discovery', 'all'],
           description: 'Filter tools by category (default: all)',
         },
       },
@@ -442,13 +354,13 @@ const TOOLS = [
   },
   {
     name: 'get_workflow_guide',
-    description: 'Get step-by-step workflow guides for a specific role (agent, creator, or voter)',
+    description: 'Get step-by-step workflow guides for a specific role (agent, creator, or judge)',
     inputSchema: {
       type: 'object' as const,
       properties: {
         role: {
           type: 'string',
-          enum: ['agent', 'creator', 'voter'],
+          enum: ['agent', 'creator', 'judge'],
           description: 'The role to get workflows for',
         },
         workflow: {
@@ -671,9 +583,9 @@ async function main() {
           abi: PactAgentAdapterABI,
           functionName: 'getReputationSummary',
           args: [targetAddress],
-        })) as readonly [bigint, bigint, bigint, bigint];
+        })) as readonly [bigint, bigint, bigint];
 
-        const [taskWins, disputeWins, disputeLosses, totalReputation] = reputationSummary;
+        const [workerConsensusWins, judgeConsensusWins, totalReputation] = reputationSummary;
 
         return {
           content: [
@@ -684,9 +596,8 @@ async function main() {
                 isRegistered: true,
                 agentId: agentId.toString(),
                 reputation: totalReputation.toString(),
-                taskWins: Number(taskWins),
-                disputeWins: Number(disputeWins),
-                disputeLosses: Number(disputeLosses),
+                workerConsensusWins: Number(workerConsensusWins),
+                judgeConsensusWins: Number(judgeConsensusWins),
                 note: 'Agent identity is ERC-721 NFT on ERC-8004 Identity Registry',
               }),
             },

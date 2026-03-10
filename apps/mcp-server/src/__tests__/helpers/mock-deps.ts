@@ -24,7 +24,6 @@ export function createContractsMock() {
     // ABIs
     TaskManagerABI: [],
     EscrowVaultABI: [],
-    DisputeResolverABI: [],
     PactAgentAdapterABI: [],
     ERC8004IdentityRegistryABI: [],
     ERC8004ReputationRegistryABI: [],
@@ -33,7 +32,6 @@ export function createContractsMock() {
     getContractAddresses: mock(() => ({
       taskManager: '0xTaskManager',
       escrowVault: '0xEscrowVault',
-      disputeResolver: '0xDisputeResolver',
       identityRegistry: '0xIdentityRegistry',
       reputationRegistry: '0xReputationRegistry',
       agentAdapter: '0xAgentAdapter',
@@ -121,8 +119,6 @@ export function createWeb3UtilsMock() {
     getTaskManagerAddress: mock(() => '0xTaskManager' as `0x${string}`),
     getTaskCount: mock(() => Promise.resolve(0n)),
     getTask: mock(() => Promise.resolve(null)),
-    contractStatusToTaskStatus: mock(() => 'open'),
-
     getEscrowVaultAddress: mock(() => '0xEscrowVault' as `0x${string}`),
     getEscrowBalance: mock(() => Promise.resolve(0n)),
 
@@ -131,7 +127,7 @@ export function createWeb3UtilsMock() {
     getAgentId: mock(() => Promise.resolve(0n)),
     getAgentVoteWeight: mock(() => Promise.resolve(1n)),
     getAgentReputationSummary: mock(() =>
-      Promise.resolve({ taskWins: 0n, disputeWins: 0n, disputeLosses: 0n, totalReputation: 0n })
+      Promise.resolve({ workerConsensusWins: 0n, judgeConsensusWins: 0n, totalReputation: 0n })
     ),
     getIdentityRegistryAddress: mock(() => Promise.resolve('0xIdentityRegistry' as `0x${string}`)),
     getReputationRegistryAddress: mock(() =>
@@ -179,7 +175,6 @@ export function createDatabaseMock() {
     updateTask: mock(() => Promise.resolve({})),
     getTasksInReview: mock(() => Promise.resolve([])),
     getTasksReadyForFinalization: mock(() => Promise.resolve([])),
-    getDisputedTasks: mock(() => Promise.resolve([])),
     getTasksWithFailedIpfs: mock(() => Promise.resolve([])),
 
     // Agent queries
@@ -189,8 +184,6 @@ export function createDatabaseMock() {
     updateAgent: mock(() => Promise.resolve({})),
     getTopAgents: mock(() => Promise.resolve([])),
     incrementTasksWon: mock(() => Promise.resolve()),
-    incrementDisputesWon: mock(() => Promise.resolve()),
-    incrementDisputesLost: mock(() => Promise.resolve()),
     updateAgentReputation: mock(() => Promise.resolve()),
     calculateVoteWeight: mock(() => 1),
     getAgentsWithFailedIpfs: mock(() => Promise.resolve([])),
@@ -204,20 +197,6 @@ export function createDatabaseMock() {
     updateSubmission: mock(() => Promise.resolve({})),
     markSubmissionAsWinner: mock(() => Promise.resolve({})),
 
-    // Dispute queries
-    getDisputeById: mock(() => Promise.resolve(null)),
-    getDisputeByChainId: mock(() => Promise.resolve(null)),
-    getDisputeByTaskId: mock(() => Promise.resolve(null)),
-    listActiveDisputes: mock(() => Promise.resolve([])),
-    getDisputesReadyForResolution: mock(() => Promise.resolve([])),
-    createDispute: mock(() => Promise.resolve({})),
-    updateDispute: mock(() => Promise.resolve({})),
-    getDisputeVotes: mock(() => Promise.resolve([])),
-    getDisputeVote: mock(() => Promise.resolve(null)),
-    hasVoted: mock(() => Promise.resolve(false)),
-    createDisputeVote: mock(() => Promise.resolve({})),
-    getVotesByVoter: mock(() => Promise.resolve([])),
-
     // Sync state queries
     getLastSyncedBlock: mock(() => Promise.resolve(null)),
     updateSyncState: mock(() => Promise.resolve()),
@@ -228,7 +207,6 @@ export function createDatabaseMock() {
     getRecentOpenTasks: mock(() => Promise.resolve([])),
     getRecentSubmissions: mock(() => Promise.resolve([])),
     getDetailedTasks: mock(() => Promise.resolve([])),
-    getDetailedDisputes: mock(() => Promise.resolve([])),
     getTagStatistics: mock(() => Promise.resolve([])),
     getFeaturedCompletedTasks: mock(() => Promise.resolve([])),
     getBountyStatistics: mock(() => Promise.resolve({})),
@@ -264,7 +242,6 @@ export function createIpfsUtilsMock() {
     uploadTaskSpecification: mock(() => Promise.resolve({ cid: 'QmSpecCid' })),
     uploadAgentProfile: mock(() => Promise.resolve({ cid: 'QmAgentCid' })),
     uploadWorkSubmission: mock(() => Promise.resolve({ cid: 'QmWorkCid' })),
-    uploadDisputeEvidence: mock(() => Promise.resolve({ cid: 'QmDisputeCid' })),
     uploadFile: mock(() => Promise.resolve({ cid: 'QmFileCid' })),
     uploadBlob: mock(() => Promise.resolve({ cid: 'QmBlobCid' })),
     uploadBytes: mock(() => Promise.resolve({ cid: 'QmBytesCid' })),
@@ -274,7 +251,6 @@ export function createIpfsUtilsMock() {
     fetchTaskSpecification: mock(() => Promise.resolve({})),
     fetchAgentProfile: mock(() => Promise.resolve({})),
     fetchWorkSubmission: mock(() => Promise.resolve({})),
-    fetchDisputeEvidence: mock(() => Promise.resolve({})),
     fetchFile: mock(() => Promise.resolve({ data: Buffer.from(''), contentType: '' })),
     fetchFileAsText: mock(() => Promise.resolve('')),
     fetchFileAsDataUrl: mock(() => Promise.resolve('')),
@@ -323,8 +299,6 @@ export function createCacheMock() {
     agentListKey: mock(() => 'agent-list'),
     submissionListKey: mock(() => 'sub-list'),
     submissionKey: mock(() => 'sub:id'),
-    disputeKey: mock(() => 'dispute:id'),
-    disputeListKey: mock(() => 'dispute-list'),
     platformStatsKey: mock(() => 'stats'),
     topAgentsKey: mock(() => 'top-agents'),
     tagIndexKey: mock(() => 'tag:id'),
@@ -339,7 +313,6 @@ export function createCacheMock() {
     invalidateTaskCaches: mock(() => Promise.resolve(0)),
     invalidateAgentCaches: mock(() => Promise.resolve(0)),
     invalidateSubmissionCaches: mock(() => Promise.resolve(0)),
-    invalidateDisputeCaches: mock(() => Promise.resolve(0)),
     invalidateStatsCaches: mock(() => Promise.resolve(0)),
     invalidateAllCaches: mock(() => Promise.resolve(0)),
 
@@ -362,8 +335,6 @@ export function createCacheMock() {
     getCachedPeriodStats: mock(() => Promise.resolve(null)),
     getCachedCreatorStats: mock(() => Promise.resolve(null)),
     getCachedAgentStats: mock(() => Promise.resolve(null)),
-    getCachedDispute: mock(() => Promise.resolve(null)),
-    getCachedDisputeList: mock(() => Promise.resolve(null)),
   };
 }
 

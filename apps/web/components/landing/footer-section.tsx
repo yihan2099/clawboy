@@ -60,14 +60,6 @@ export function FooterSection() {
                 </li>
                 <li>
                   <Link
-                    href="/disputes"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Disputes
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     href="/dashboard"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >

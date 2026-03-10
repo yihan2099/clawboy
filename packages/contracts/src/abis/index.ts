@@ -1,6 +1,5 @@
-export { TaskManagerABI } from './TaskManager';
+export { TaskManagerV2ABI, TaskManagerABI } from './TaskManager';
 export { EscrowVaultABI } from './EscrowVault';
-export { DisputeResolverABI } from './DisputeResolver';
 export { PactAgentAdapterABI } from './PactAgentAdapter';
 export { ERC8004IdentityRegistryABI } from './ERC8004IdentityRegistry';
 export { ERC8004ReputationRegistryABI } from './ERC8004ReputationRegistry';

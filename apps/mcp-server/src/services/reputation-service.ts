@@ -38,9 +38,8 @@ export async function getReputationHandler(
         walletAddress: targetAddress,
         agentId: agentId.toString(),
         reputation: {
-          taskWins: summary.taskWins.toString(),
-          disputeWins: summary.disputeWins.toString(),
-          disputeLosses: summary.disputeLosses.toString(),
+          workerConsensusWins: summary.workerConsensusWins.toString(),
+          judgeConsensusWins: summary.judgeConsensusWins.toString(),
           totalReputation: summary.totalReputation.toString(),
         },
       };

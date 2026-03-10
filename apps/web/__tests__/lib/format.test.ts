@@ -9,8 +9,6 @@ import {
   getIpfsUrl,
   getStatusColor,
   formatStatus,
-  getDisputeStatusColor,
-  formatDisputeStatus,
   formatBounty,
 } from '../../lib/format';
 
@@ -26,8 +24,10 @@ describe('truncateAddress', () => {
   });
 
   test('handles falsy input', () => {
-    expect(truncateAddress(undefined as unknown as string)).toBe(undefined);
-    expect(truncateAddress(null as unknown as string)).toBe(null);
+    // @ts-expect-error testing runtime behavior with invalid input
+    expect(truncateAddress(undefined)).toBeUndefined();
+    // @ts-expect-error testing runtime behavior with invalid input
+    expect(truncateAddress(null)).toBeNull();
   });
 });
 
@@ -46,7 +46,8 @@ describe('truncateText', () => {
 
   test('handles empty or falsy input', () => {
     expect(truncateText('', 10)).toBe('');
-    expect(truncateText(null as unknown as string, 10)).toBe(null);
+    // @ts-expect-error testing runtime behavior with invalid input
+    expect(truncateText(null, 10)).toBeNull();
   });
 });
 
@@ -131,12 +132,12 @@ describe('getIpfsUrl', () => {
 });
 
 describe('getStatusColor', () => {
-  test('returns correct colors for known statuses', () => {
+  test('returns correct colors for known phases', () => {
     expect(getStatusColor('open')).toContain('green');
-    expect(getStatusColor('in_review')).toContain('yellow');
-    expect(getStatusColor('completed')).toContain('blue');
-    expect(getStatusColor('disputed')).toContain('red');
-    expect(getStatusColor('refunded')).toContain('gray');
+    expect(getStatusColor('work_phase')).toContain('blue');
+    expect(getStatusColor('judge_phase')).toContain('yellow');
+    expect(getStatusColor('resolved')).toContain('emerald');
+    expect(getStatusColor('failed')).toContain('red');
     expect(getStatusColor('cancelled')).toContain('gray');
   });
 
@@ -146,57 +147,17 @@ describe('getStatusColor', () => {
 });
 
 describe('formatStatus', () => {
-  test('formats known statuses', () => {
+  test('formats known phases', () => {
     expect(formatStatus('open')).toBe('Open');
-    expect(formatStatus('in_review')).toBe('In Review');
-    expect(formatStatus('completed')).toBe('Completed');
-    expect(formatStatus('disputed')).toBe('Disputed');
-    expect(formatStatus('refunded')).toBe('Refunded');
+    expect(formatStatus('work_phase')).toBe('Work Phase');
+    expect(formatStatus('judge_phase')).toBe('Judge Phase');
+    expect(formatStatus('resolved')).toBe('Resolved');
+    expect(formatStatus('failed')).toBe('Failed');
     expect(formatStatus('cancelled')).toBe('Cancelled');
   });
 
   test('returns raw string for unknown status', () => {
     expect(formatStatus('something_else')).toBe('something_else');
-  });
-});
-
-describe('getDisputeStatusColor', () => {
-  test('returns yellow for active disputes', () => {
-    expect(getDisputeStatusColor('active', null)).toContain('yellow');
-  });
-
-  test('returns green when disputer won', () => {
-    expect(getDisputeStatusColor('resolved', true)).toContain('green');
-  });
-
-  test('returns red when disputer lost', () => {
-    expect(getDisputeStatusColor('resolved', false)).toContain('red');
-  });
-
-  test('returns gray for other statuses', () => {
-    expect(getDisputeStatusColor('other', null)).toContain('gray');
-  });
-});
-
-describe('formatDisputeStatus', () => {
-  test('formats active status', () => {
-    expect(formatDisputeStatus('active', null)).toBe('Active');
-  });
-
-  test('formats resolved with disputer won', () => {
-    expect(formatDisputeStatus('resolved', true)).toBe('Disputer Won');
-  });
-
-  test('formats resolved with disputer lost', () => {
-    expect(formatDisputeStatus('resolved', false)).toBe('Disputer Lost');
-  });
-
-  test('formats resolved with null outcome', () => {
-    expect(formatDisputeStatus('resolved', null)).toBe('Resolved');
-  });
-
-  test('returns raw for unknown status', () => {
-    expect(formatDisputeStatus('pending', null)).toBe('pending');
   });
 });
 

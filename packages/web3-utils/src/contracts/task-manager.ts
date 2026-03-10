@@ -1,6 +1,6 @@
 import { TaskManagerABI, getContractAddresses } from '@pactprotocol/contracts';
 import { getPublicClient } from '../client/public-client';
-import type { TaskStatus } from '@pactprotocol/shared-types';
+import type { TaskPhase } from '@pactprotocol/shared-types';
 import { withContractRetry, type RetryConfig } from '../utils/retry';
 
 /**
@@ -31,31 +31,31 @@ export async function getTaskCount(chainId?: number, retryConfig?: RetryConfig):
       publicClient.readContract({
         address: addresses.taskManager,
         abi: TaskManagerABI,
-        functionName: 'taskCount',
+        functionName: 'taskCounter',
       }) as Promise<bigint>,
     retryConfig
   );
 }
 
 /**
- * Get task by ID from contract with automatic retry on transient failures
+ * Get task by ID from TaskManagerV2 contract
  */
 export async function getTask(
   taskId: bigint,
   chainId?: number,
   retryConfig?: RetryConfig
 ): Promise<{
-  id: bigint;
   creator: `0x${string}`;
-  status: number;
-  bountyAmount: bigint;
+  specCid: string;
+  bounty: bigint;
   bountyToken: `0x${string}`;
-  specificationCid: string;
-  createdAtBlock: bigint;
-  deadline: bigint;
-  selectedWinner: `0x${string}`;
-  selectedAt: bigint;
-  challengeDeadline: bigint;
+  requiredWorkers: number;
+  requiredJudges: number;
+  workDeadline: bigint;
+  judgeDeadline: bigint;
+  phase: number;
+  submissionCount: number;
+  judgmentCount: number;
 }> {
   const resolvedChainId = chainId || getDefaultChainId();
   const publicClient = getPublicClient(resolvedChainId);
@@ -72,58 +72,42 @@ export async function getTask(
     retryConfig
   );
 
-  // Viem returns tuple as array
-  const task = result as unknown as readonly [
-    bigint, // id
-    `0x${string}`, // creator
-    number, // status
-    bigint, // bountyAmount
-    `0x${string}`, // bountyToken
-    string, // specificationCid
-    bigint, // createdAtBlock
-    bigint, // deadline
-    `0x${string}`, // selectedWinner
-    bigint, // selectedAt
-    bigint, // challengeDeadline
-  ];
-
-  return {
-    id: task[0],
-    creator: task[1],
-    status: task[2],
-    bountyAmount: task[3],
-    bountyToken: task[4],
-    specificationCid: task[5],
-    createdAtBlock: task[6],
-    deadline: task[7],
-    selectedWinner: task[8],
-    selectedAt: task[9],
-    challengeDeadline: task[10],
+  // TaskManagerV2 returns a Task struct
+  const task = result as unknown as {
+    creator: `0x${string}`;
+    specCid: string;
+    bounty: bigint;
+    bountyToken: `0x${string}`;
+    requiredWorkers: number;
+    requiredJudges: number;
+    workDeadline: bigint;
+    judgeDeadline: bigint;
+    phase: number;
+    submissionCount: number;
+    judgmentCount: number;
   };
+
+  return task;
 }
 
 /**
- * Convert contract status number to TaskStatus enum (updated for competitive model)
+ * Convert contract phase number to TaskPhase enum (V2 phase model)
  */
-export function contractStatusToTaskStatus(status: number): TaskStatus {
-  const statusMap: Record<number, TaskStatus> = {
-    0: 'open' as TaskStatus,
-    1: 'in_review' as TaskStatus,
-    2: 'completed' as TaskStatus,
-    3: 'disputed' as TaskStatus,
-    4: 'refunded' as TaskStatus,
-    5: 'cancelled' as TaskStatus,
+export function contractPhaseToTaskPhase(phase: number): TaskPhase {
+  const phaseMap: Record<number, TaskPhase> = {
+    0: 'open' as TaskPhase,
+    1: 'work_phase' as TaskPhase,
+    2: 'judge_phase' as TaskPhase,
+    3: 'resolved' as TaskPhase,
+    4: 'cancelled' as TaskPhase,
+    5: 'failed' as TaskPhase,
   };
 
-  const mapped = statusMap[status];
+  const mapped = phaseMap[phase];
   if (mapped === undefined) {
-    // Throw rather than defaulting to 'open': an unknown status indicates a contract
-    // upgrade added a new status value that the client code doesn't know about.
-    // Silently returning 'open' would misrepresent the task state and could cause
-    // incorrect business logic (e.g. allowing submissions on a finalized task).
     throw new Error(
-      `Unknown contract task status: ${status}. ` +
-        `Update contractStatusToTaskStatus() to handle the new status value.`
+      `Unknown contract task phase: ${phase}. ` +
+        `Update contractPhaseToTaskPhase() to handle the new phase value.`
     );
   }
 

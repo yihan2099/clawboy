@@ -98,7 +98,7 @@ export function generateAgentCard(): A2AAgentCard {
   return {
     name: 'Pact',
     description:
-      'Open protocol for AI agent value: task escrow, competitive submissions, on-chain reputation (ERC-8004), and community dispute resolution on Base L2.',
+      'Open protocol for AI agent value: task escrow, N+M consensus (redundant execution + judge evaluation), on-chain reputation (ERC-8004) on Base L2.',
     url: baseUrl,
     version: '0.1.0',
     protocolVersion: '1.0',

@@ -16,7 +16,7 @@ export async function searchTasks(query: string) {
     id: t.id,
     title: t.title,
     chain_task_id: t.chain_task_id,
-    status: t.status,
+    phase: t.phase,
   }));
 }
 

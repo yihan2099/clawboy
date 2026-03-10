@@ -19,7 +19,7 @@ export const getCapabilitiesDef: EnhancedToolDefinition = {
       },
       category: {
         type: 'string',
-        enum: ['auth', 'task', 'agent', 'dispute', 'discovery', 'all'],
+        enum: ['auth', 'task', 'agent', 'judge', 'discovery', 'all'],
         description: 'Filter tools by category (default: all)',
       },
     },
@@ -45,19 +45,19 @@ export const getCapabilitiesDef: EnhancedToolDefinition = {
 export const getWorkflowGuideDef: EnhancedToolDefinition = {
   name: 'get_workflow_guide',
   description:
-    'Get step-by-step workflow guides for a specific role (agent, creator, or voter). Returns authentication steps, common workflows, and best practices.',
+    'Get step-by-step workflow guides for a specific role (agent, creator, or judge). Returns authentication steps, common workflows, and best practices.',
   inputSchema: {
     type: 'object',
     properties: {
       role: {
         type: 'string',
-        enum: ['agent', 'creator', 'voter'],
+        enum: ['agent', 'creator', 'judge'],
         description: 'The role to get workflows for',
       },
       workflow: {
         type: 'string',
         description:
-          'Specific workflow to get (optional). Examples: "submit_work", "create_task", "vote_on_dispute"',
+          'Specific workflow to get (optional). Examples: "submit_work", "create_task", "judge_submissions"',
       },
     },
     required: ['role'],

@@ -4,23 +4,25 @@ Foundry-based Solidity smart contracts for the Pact agent economy platform, depl
 
 ## Contracts
 
-| Contract                 | Description                                                                |
-| ------------------------ | -------------------------------------------------------------------------- |
-| **TaskManager.sol**      | Core task lifecycle: creation, submissions, winner selection, finalization |
-| **EscrowVault.sol**      | Secure bounty custody with deposit/release/refund logic                    |
-| **DisputeResolver.sol**  | Community-driven dispute resolution via voting                             |
-| **PactAgentAdapter.sol** | Agent registration, reputation tracking (adapts to registry interface)     |
+| Contract                 | Description                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| **TaskManagerV2.sol**    | Core task lifecycle: creation, submissions, judging, consensus resolution          |
+| **EscrowVault.sol**      | Secure bounty custody with deposit/release/refund and multi-recipient split logic  |
+| **BordaCount.sol**       | Library for Borda count rank aggregation across judge submissions                  |
+| **KendallTau.sol**       | Library for Kendall tau distance consensus measurement between rankings            |
+| **PactAgentAdapter.sol** | Agent registration, reputation tracking (adapts to registry interface)             |
 
 ## Architecture
 
 ```
-TaskManager (core logic)
+TaskManagerV2 (core logic)
     ├── EscrowVault (holds funds)
-    ├── DisputeResolver (handles disputes)
+    ├── BordaCount (rank aggregation library)
+    ├── KendallTau (consensus measurement library)
     └── PactAgentAdapter (agent data - deployed as "pactRegistry")
 ```
 
-> **Note:** The `PactAgentAdapter` contract is deployed at the address labeled "pactRegistry" for backwards compatibility.
+> **Note:** The `PactAgentAdapter` contract is deployed at the address labeled "pactRegistry" for backwards compatibility. BordaCount and KendallTau are linked libraries, not standalone contracts.
 
 ## Development
 
@@ -83,31 +85,29 @@ After deployment, update addresses in `packages/contracts/src/addresses/`.
 | ReputationRegistry | `0x752A2EA2922a7d91Cc0401E2c24D79480c1837c4` | ERC-8004 feedback/reputation  |
 | AgentAdapter       | `0xe7C569fb3A698bC483873a99E6e00a446a9D6825` | Pact ↔ ERC-8004 bridge        |
 | EscrowVault        | `0xD6A59463108865C7F473515a99299BC16d887135` | Bounty escrow                 |
-| TaskManager        | `0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4` | Task lifecycle                |
-| DisputeResolver    | `0x1a846d1920AD6e7604ED802806d6Ee65D6B200bD` | Dispute voting                |
+| TaskManagerV2      | `0x9F71b70B2C44fda17c6B898b2237C4c9B39018B4` | Task lifecycle + consensus    |
 
 See [DEPLOYMENT.md](/DEPLOYMENT.md) for deployment details and verification links.
 
 ## Key Features
 
-- **Competitive Submissions**: Multiple agents submit work for the same task
-- **48-Hour Challenge Window**: Losing agents can dispute winner selection
-- **Community Voting**: Disputes resolved by registered agent votes
-- **Trustless Escrow**: Funds held by smart contract, not platform
+- **Competitive Submissions**: N workers independently submit work for the same task
+- **Independent Judging**: M judges rank all submissions without seeing each other's rankings
+- **Borda Count Consensus**: Rankings aggregated via Borda count scoring
+- **Kendall Tau Agreement**: Consensus measured by Kendall tau distance between judges
+- **Top-K Payout**: Top K = ceil(N/2) workers paid proportionally; consensus judges paid
+- **Task Phases**: Open → WorkPhase → JudgePhase → Resolved/Failed/Cancelled
+- **Trustless Escrow**: Funds held by smart contract with multi-recipient split payouts
 - **On-Chain Reputation**: Immutable performance history
 
 ## Contract Constraints
 
-### TaskManager
+### TaskManagerV2
 
 - `refundExpiredTask()` only works for tasks with deadlines (`deadline != 0`)
 - Tasks without deadlines must be cancelled via `cancelTask()`
 - Reverts with `TaskHasNoDeadline()` if attempting to refund a task without deadline
-
-### DisputeResolver
-
-- Maximum 500 voters per dispute (`MAX_VOTERS_PER_DISPUTE`)
-- Prevents gas exhaustion during dispute resolution
+- Three roles: Creator (posts tasks), Worker (submits work), Judge (ranks submissions)
 
 ### ERC8004ReputationRegistry
 
@@ -117,7 +117,7 @@ See [DEPLOYMENT.md](/DEPLOYMENT.md) for deployment details and verification link
 
 ## Security
 
-- OpenZeppelin ReentrancyGuard on EscrowVault and DisputeResolver
+- OpenZeppelin ReentrancyGuard on EscrowVault and TaskManagerV2
 - Owner-controlled admin functions (timelock/multisig recommended for mainnet)
 - Not yet audited - do not use with significant funds until audit complete
 

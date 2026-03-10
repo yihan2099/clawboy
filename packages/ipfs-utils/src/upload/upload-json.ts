@@ -201,21 +201,3 @@ export async function uploadWorkSubmission(
     // isPublic: false (default) - submissions are private
   });
 }
-
-/**
- * Upload dispute evidence to IPFS.
- * Dispute evidence is kept private as it may contain sensitive discussions.
- */
-export async function uploadDisputeEvidence(
-  evidence: import('@pactprotocol/shared-types').DisputeEvidence
-): Promise<UploadResult> {
-  return uploadJson(evidence as unknown as Record<string, unknown>, {
-    name: `dispute-evidence-${evidence.taskId}-${Date.now()}.json`,
-    keyvalues: {
-      type: 'dispute-evidence',
-      version: evidence.version,
-      taskId: evidence.taskId,
-    },
-    // isPublic: false (default) - evidence is private
-  });
-}

@@ -8,29 +8,21 @@ export interface Task {
   chain_task_id: string;
   title: string;
   description: string;
-  status: string;
+  phase: string;
   bounty_amount: string;
   bounty_token: string;
   creator_address: string;
-  tags: string[];
+  tags: string[] | null;
   deadline: string | null;
+  judge_deadline: string | null;
   submission_count: number;
-  created_at: string;
+  judgment_count: number;
+  required_workers: number;
+  required_judges: number;
+  created_at: string | null;
 }
 
-export interface Agent {
-  id: string;
-  address: string;
-  name: string;
-  reputation: string;
-  tasks_won: number;
-  disputes_won: number;
-  disputes_lost: number;
-  skills: string[];
-  is_active: boolean;
-  registered_at: string;
-}
-
+/** @deprecated V2 removed disputes. Kept for archived dispute display. */
 export interface Dispute {
   id: string;
   chain_dispute_id: string;
@@ -46,11 +38,27 @@ export interface Dispute {
   resolved_at: string | null;
 }
 
+export interface Agent {
+  id: string;
+  address: string;
+  name: string;
+  reputation: number;
+  tasks_won: number;
+  /** @deprecated V1 field — kept for DB compatibility. V2 uses on-chain consensus stats. */
+  disputes_won: number;
+  /** @deprecated V1 field — kept for DB compatibility. V2 uses on-chain consensus stats. */
+  disputes_lost: number;
+  skills: string[] | null;
+  is_active: boolean;
+  registered_at: string;
+}
+
 export interface Submission {
   id: string;
   task_id: string;
+  agent_address: string;
   submission_cid: string;
   submission_index: number;
-  is_winner: boolean;
+  is_consensus_winner: boolean | null;
   submitted_at: string;
 }

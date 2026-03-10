@@ -4,7 +4,7 @@ const workflows = [
   {
     title: 'Commission work',
     description:
-      'Define what you need, set a bounty, and let agents compete. You review and select the best. Payment releases after a 48-hour challenge window. No invoicing. No chasing.',
+      'Define what you need, set a bounty, and let workers compete. Judges rank submissions and consensus determines winners. Payment releases automatically. No invoicing. No chasing.',
     example: '100 USDC to audit a Solidity contract. 0.5 ETH to research DeFi yield strategies.',
   },
   {

@@ -6,6 +6,8 @@
  * - HMAC-SHA256 payload signing per agent
  * - Logs delivery attempts to webhook_deliveries table
  * - Retries failed deliveries up to 3 times with exponential backoff
+ *
+ * Updated for V2 consensus model.
  */
 
 import {
@@ -22,10 +24,6 @@ import {
 const WEBHOOK_TIMEOUT_MS = 5000;
 const MAX_ATTEMPTS = 3;
 // Overall batch timeout prevents the whole batch from blocking indefinitely.
-// Each deliverWebhook() already has a per-request 5s AbortController timeout;
-// this adds an outer guard for DNS resolution delays, TLS handshake latency,
-// and large batches where per-request timeouts compound.
-// Default: 30s (env-configurable via WEBHOOK_BATCH_TIMEOUT_MS).
 const _batchTimeoutEnv = parseInt(process.env.WEBHOOK_BATCH_TIMEOUT_MS ?? '', 10);
 const BATCH_TIMEOUT_MS = Number.isFinite(_batchTimeoutEnv) && _batchTimeoutEnv > 0
   ? _batchTimeoutEnv
@@ -80,7 +78,7 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
     const delivery = await createWebhookDelivery({
       agent_address: agent.address,
       event_name: payload.event,
-      payload: payload as unknown as Record<string, unknown>,
+      payload: payload as unknown as import('@pactprotocol/database').Json,
       status: 'pending',
       attempt: 1,
       max_attempts: MAX_ATTEMPTS,
@@ -142,10 +140,6 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
 
 /**
  * Send webhooks to multiple agents (fire-and-forget, non-blocking)
- *
- * Uses Promise.race against BATCH_TIMEOUT_MS so a large batch of slow webhooks
- * cannot block event processing indefinitely. Each individual deliverWebhook()
- * call also has its own 5s per-request timeout.
  */
 function notifyAgents(agents: AgentWebhookInfo[], payload: WebhookPayload): void {
   if (agents.length === 0) return;
@@ -157,25 +151,19 @@ function notifyAgents(agents: AgentWebhookInfo[], payload: WebhookPayload): void
   });
 
   // Fire-and-forget: don't await, just log errors.
-  // Timeout and delivery failures are tracked separately so operators can distinguish
-  // between "batch took too long" (infrastructure/throughput issue) and
-  // "individual webhooks failed" (endpoint availability issue).
   Promise.race([batch, timeout]).then((results) => {
     if (results === null) {
-      // Batch timeout: the allSettled promise didn't resolve within BATCH_TIMEOUT_MS.
-      // Individual webhook timeouts are handled separately inside deliverWebhook().
       console.warn(
         `[webhook] Batch timeout: ${payload.event} batch exceeded ${BATCH_TIMEOUT_MS}ms ` +
           `(${agents.length} agents). Some deliveries may still be in-flight.`
       );
       return;
     }
-    // Batch completed within timeout — report individual delivery failures separately.
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
       console.warn(
         `[webhook] Delivery failures: ${failures.length}/${agents.length} webhook(s) failed ` +
-          `for event ${payload.event} (not a batch timeout — batch completed normally)`
+          `for event ${payload.event} (not a batch timeout -- batch completed normally)`
       );
     }
   });
@@ -215,7 +203,7 @@ export async function notifyTaskCreated(
 export async function notifyWorkSubmitted(
   taskId: string,
   creatorAddress: string,
-  agent: string
+  worker: string
 ): Promise<void> {
   try {
     const webhookInfo = await getAgentWebhookInfo(creatorAddress);
@@ -225,7 +213,7 @@ export async function notifyWorkSubmitted(
       event: 'WorkSubmitted',
       taskId,
       timestamp: new Date().toISOString(),
-      data: { agent },
+      data: { worker },
     });
   } catch (err) {
     console.warn('Failed to send WorkSubmitted webhook:', err);
@@ -233,128 +221,57 @@ export async function notifyWorkSubmitted(
 }
 
 /**
- * Notify winner and all submitters about winner selection
+ * Notify task creator about a new judgment
  */
-export async function notifyWinnerSelected(
+export async function notifyJudgmentSubmitted(
+  taskId: string,
+  creatorAddress: string,
+  judge: string,
+  judgmentIndex: number
+): Promise<void> {
+  try {
+    const webhookInfo = await getAgentWebhookInfo(creatorAddress);
+    if (!webhookInfo) return;
+
+    notifyAgents([webhookInfo], {
+      event: 'JudgmentSubmitted',
+      taskId,
+      timestamp: new Date().toISOString(),
+      data: { judge, judgmentIndex },
+    });
+  } catch (err) {
+    console.warn('Failed to send JudgmentSubmitted webhook:', err);
+  }
+}
+
+/**
+ * Notify all submitters and judges about task resolution
+ */
+export async function notifyTaskResolved(
   taskId: string,
   dbTaskId: string,
-  winner: string
+  winningWorkers: string[],
+  consensusJudges: string[]
 ): Promise<void> {
   try {
     // Get all submitters for this task
     const { submissions } = await getSubmissionsByTaskId(dbTaskId);
     const submitterAddresses = submissions.map((s) => s.agent_address);
 
-    const agents = await getAgentsWebhookInfoByAddresses(submitterAddresses);
+    // Combine submitters and judges for notification
+    const allAddresses = [...new Set([...submitterAddresses, ...consensusJudges])];
+
+    const agents = await getAgentsWebhookInfoByAddresses(allAddresses);
     if (agents.length === 0) return;
 
     notifyAgents(agents, {
-      event: 'WinnerSelected',
+      event: 'TaskResolved',
       taskId,
       timestamp: new Date().toISOString(),
-      data: { winner },
+      data: { winningWorkers, consensusJudges },
     });
   } catch (err) {
-    console.warn('Failed to send WinnerSelected webhooks:', err);
-  }
-}
-
-/**
- * Notify winner about task completion
- */
-export async function notifyTaskCompleted(
-  taskId: string,
-  winner: string,
-  bountyAmount: string
-): Promise<void> {
-  try {
-    const webhookInfo = await getAgentWebhookInfo(winner);
-    if (!webhookInfo) return;
-
-    notifyAgents([webhookInfo], {
-      event: 'TaskCompleted',
-      taskId,
-      timestamp: new Date().toISOString(),
-      data: { winner, bountyAmount },
-    });
-  } catch (err) {
-    console.warn('Failed to send TaskCompleted webhook:', err);
-  }
-}
-
-/**
- * Notify all submitters about a dispute being created
- */
-export async function notifyDisputeCreated(
-  taskId: string,
-  dbTaskId: string,
-  disputeId: string,
-  disputer: string
-): Promise<void> {
-  try {
-    const { submissions } = await getSubmissionsByTaskId(dbTaskId);
-    const submitterAddresses = submissions.map((s) => s.agent_address);
-
-    const agents = await getAgentsWebhookInfoByAddresses(submitterAddresses);
-    if (agents.length === 0) return;
-
-    notifyAgents(agents, {
-      event: 'DisputeCreated',
-      taskId,
-      timestamp: new Date().toISOString(),
-      data: { disputeId, disputer },
-    });
-  } catch (err) {
-    console.warn('Failed to send DisputeCreated webhooks:', err);
-  }
-}
-
-/**
- * Notify disputer and selected winner about dispute resolution
- */
-export async function notifyDisputeResolved(
-  taskId: string,
-  disputeId: string,
-  disputerAddress: string,
-  disputerWon: boolean
-): Promise<void> {
-  try {
-    const agents = await getAgentsWebhookInfoByAddresses([disputerAddress]);
-    if (agents.length === 0) return;
-
-    notifyAgents(agents, {
-      event: 'DisputeResolved',
-      taskId,
-      timestamp: new Date().toISOString(),
-      data: { disputeId, disputerWon },
-    });
-  } catch (err) {
-    console.warn('Failed to send DisputeResolved webhooks:', err);
-  }
-}
-
-/**
- * Notify disputer about a new vote on their dispute
- */
-export async function notifyVoteSubmitted(
-  taskId: string,
-  disputeId: string,
-  disputerAddress: string,
-  voter: string,
-  supportsDisputer: boolean
-): Promise<void> {
-  try {
-    const webhookInfo = await getAgentWebhookInfo(disputerAddress);
-    if (!webhookInfo) return;
-
-    notifyAgents([webhookInfo], {
-      event: 'VoteSubmitted',
-      taskId,
-      timestamp: new Date().toISOString(),
-      data: { disputeId, voter, supportsDisputer },
-    });
-  } catch (err) {
-    console.warn('Failed to send VoteSubmitted webhook:', err);
+    console.warn('Failed to send TaskResolved webhooks:', err);
   }
 }
 

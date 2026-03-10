@@ -3,11 +3,12 @@
  *
  * Role-based system prompts that are automatically available to MCP clients.
  * These help AI assistants understand their role and available actions.
+ * Updated for V2 consensus model (judge replaces voter).
  */
 
 import { creatorPrompt, creatorPromptContent } from './creator';
 import { agentPrompt, agentPromptContent } from './agent';
-import { voterPrompt, voterPromptContent } from './voter';
+import { judgePrompt, judgePromptContent } from './judge';
 
 export interface PromptDefinition {
   name: string;
@@ -19,12 +20,12 @@ export interface PromptDefinition {
   }>;
 }
 
-export const allPrompts: PromptDefinition[] = [creatorPrompt, agentPrompt, voterPrompt];
+export const allPrompts: PromptDefinition[] = [creatorPrompt, agentPrompt, judgePrompt];
 
 export const promptContents: Record<string, string> = {
   pact_creator: creatorPromptContent,
   pact_agent: agentPromptContent,
-  pact_voter: voterPromptContent,
+  pact_judge: judgePromptContent,
 };
 
 export function getPromptContent(name: string): string | null {
@@ -33,4 +34,4 @@ export function getPromptContent(name: string): string | null {
 
 export { creatorPrompt, creatorPromptContent } from './creator';
 export { agentPrompt, agentPromptContent } from './agent';
-export { voterPrompt, voterPromptContent } from './voter';
+export { judgePrompt, judgePromptContent } from './judge';

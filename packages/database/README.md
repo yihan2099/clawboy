@@ -1,6 +1,6 @@
 # @pactprotocol/database
 
-Supabase client and query functions for Pact. Provides typed database access for tasks, agents, submissions, disputes, sync state, and event processing.
+Supabase client and query functions for Pact. Provides typed database access for tasks, agents, submissions, judgments, payouts, sync state, and event processing.
 
 ## Exports
 
@@ -8,7 +8,7 @@ Supabase client and query functions for Pact. Provides typed database access for
 | ----------- | ------------------------------------------------------------------------------------ |
 | `.`         | Client, schema types, and all queries                                                |
 | `./client`  | Supabase client factory                                                              |
-| `./queries` | Query modules (tasks, agents, disputes, submissions, sync state, events, statistics) |
+| `./queries` | Query modules (tasks, agents, submissions, judgments, payouts, sync state, events, statistics) |
 
 ## Environment Variables
 

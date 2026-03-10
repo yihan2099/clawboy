@@ -14,7 +14,7 @@ describe('ThemeToggle logic', () => {
   });
 
   test('determines light mode from resolvedTheme', () => {
-    const resolvedTheme = 'light';
+    const resolvedTheme: string = 'light';
     const isDark = resolvedTheme === 'dark';
     expect(isDark).toBe(false);
   });
@@ -27,7 +27,7 @@ describe('ThemeToggle logic', () => {
   });
 
   test('toggles to dark when currently light', () => {
-    const resolvedTheme = 'light';
+    const resolvedTheme: string = 'light';
     const isDark = resolvedTheme === 'dark';
     const nextTheme = isDark ? 'light' : 'dark';
     expect(nextTheme).toBe('dark');

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronRight, ArrowUpRight } from 'lucide-react';
-import type { DetailedTask, DetailedDispute, SubmissionWithTask } from '@pactprotocol/database';
+import type { DetailedTask, SubmissionWithTask } from '@pactprotocol/database';
 import {
   formatTimeAgo,
   formatTimeCompact,
@@ -18,16 +18,16 @@ import {
 // TYPES
 // ============================================================================
 
-type FeedItemType = 'task_created' | 'task_completed' | 'submission' | 'submission_won' | 'dispute';
+type FeedItemType = 'task_created' | 'task_resolved' | 'submission' | 'submission_won';
 
 interface FeedItem {
   id: string;
   type: FeedItemType;
   title: string;
   fullTitle: string;
-  bounty?: string;
+  bounty?: string | number;
   timestamp: string;
-  data: DetailedTask | DetailedDispute | SubmissionWithTask;
+  data: DetailedTask | SubmissionWithTask;
 }
 
 // ============================================================================
@@ -36,24 +36,23 @@ interface FeedItem {
 
 function buildFeed(
   tasks: DetailedTask[],
-  submissions: SubmissionWithTask[],
-  disputes: DetailedDispute[]
+  submissions: SubmissionWithTask[]
 ): FeedItem[] {
   const items: FeedItem[] = [];
 
   for (const task of tasks) {
     const taskTitle = truncateText(task.title || 'Untitled', 35);
-    if (task.status === 'completed' && task.winner_address) {
+    if (task.phase === 'resolved') {
       items.push({
-        id: `task-completed-${task.id}`,
-        type: 'task_completed',
+        id: `task-resolved-${task.id}`,
+        type: 'task_resolved',
         title: taskTitle,
         fullTitle: task.title || 'Untitled',
-        timestamp: task.selected_at || task.created_at,
+        timestamp: task.created_at,
         bounty: task.bounty_amount,
         data: task,
       });
-    } else if (task.status === 'open') {
+    } else if (task.phase === 'open') {
       items.push({
         id: `task-created-${task.id}`,
         type: 'task_created',
@@ -71,25 +70,12 @@ function buildFeed(
     const taskTitle = sub.task?.title || 'Task';
     items.push({
       id: `submission-${sub.id}`,
-      type: sub.is_winner ? 'submission_won' : 'submission',
+      type: sub.is_consensus_winner ? 'submission_won' : 'submission',
       title: `${agentPrefix} → ${truncateText(taskTitle, 20)}`,
       fullTitle: taskTitle,
       timestamp: sub.submitted_at,
-      bounty: sub.is_winner ? sub.task?.bounty_amount : undefined,
+      bounty: sub.is_consensus_winner ? sub.task?.bounty_amount : undefined,
       data: sub,
-    });
-  }
-
-  for (const dispute of disputes) {
-    const taskTitle = dispute.task?.title || 'Task';
-    items.push({
-      id: `dispute-${dispute.id}`,
-      type: 'dispute',
-      title: truncateText(taskTitle, 35),
-      fullTitle: taskTitle,
-      timestamp: dispute.created_at,
-      bounty: dispute.dispute_stake,
-      data: dispute,
     });
   }
 
@@ -99,30 +85,26 @@ function buildFeed(
 
 function getEventLabel(type: FeedItemType): string {
   switch (type) {
-    case 'task_completed':
-      return 'Completed';
+    case 'task_resolved':
+      return 'Resolved';
     case 'task_created':
       return 'New task';
     case 'submission':
       return 'Submitted';
     case 'submission_won':
       return 'Won';
-    case 'dispute':
-      return 'Dispute';
   }
 }
 
 function getEventColor(type: FeedItemType): string {
   switch (type) {
-    case 'task_completed':
+    case 'task_resolved':
     case 'submission_won':
       return 'text-emerald-500';
     case 'task_created':
       return 'text-blue-500';
     case 'submission':
       return 'text-muted-foreground';
-    case 'dispute':
-      return 'text-amber-500';
   }
 }
 
@@ -136,14 +118,11 @@ interface ExpandedDetailsProps {
 
 function ExpandedDetails({ item }: ExpandedDetailsProps) {
   const renderLinks = () => {
-    if (item.type === 'task_created' || item.type === 'task_completed') {
+    if (item.type === 'task_created' || item.type === 'task_resolved') {
       const task = item.data as DetailedTask;
       return (
         <>
           <LinkPill href={getBaseScanUrl(task.creator_address)} label="Creator" />
-          {task.winner_address && (
-            <LinkPill href={getBaseScanUrl(task.winner_address)} label="Winner" />
-          )}
           <LinkPill href={getIpfsUrl(task.specification_cid)} label="Spec" />
         </>
       );
@@ -159,21 +138,11 @@ function ExpandedDetails({ item }: ExpandedDetailsProps) {
       );
     }
 
-    if (item.type === 'dispute') {
-      const dispute = item.data as DetailedDispute;
-      return (
-        <>
-          <LinkPill href={getBaseScanUrl(dispute.disputer_address)} label="Disputer" />
-          <LinkPill href={getBaseScanTxUrl(dispute.tx_hash)} label="Tx" />
-        </>
-      );
-    }
-
     return null;
   };
 
   const renderMeta = () => {
-    if (item.type === 'task_created' || item.type === 'task_completed') {
+    if (item.type === 'task_created' || item.type === 'task_resolved') {
       const task = item.data as DetailedTask;
       return (
         <>
@@ -181,7 +150,7 @@ function ExpandedDetails({ item }: ExpandedDetailsProps) {
             {task.submission_count} {task.submission_count === 1 ? 'submission' : 'submissions'}
           </span>
           <span className="text-muted-foreground/40">·</span>
-          <span className="text-muted-foreground capitalize">{task.status}</span>
+          <span className="text-muted-foreground capitalize">{task.phase}</span>
         </>
       );
     }
@@ -199,25 +168,6 @@ function ExpandedDetails({ item }: ExpandedDetailsProps) {
               <span className="text-emerald-500 font-medium">{formatBounty(item.bounty)}</span>
             </>
           )}
-        </>
-      );
-    }
-
-    if (item.type === 'dispute') {
-      const dispute = item.data as DetailedDispute;
-      const votesFor = parseInt(dispute.votes_for_disputer) || 0;
-      const votesAgainst = parseInt(dispute.votes_against_disputer) || 0;
-      return (
-        <>
-          {item.bounty && (
-            <>
-              <span className="text-foreground font-medium">{formatBounty(item.bounty)}</span>
-              <span className="text-muted-foreground/40">·</span>
-            </>
-          )}
-          <span className="text-muted-foreground">
-            {votesFor} for · {votesAgainst} against
-          </span>
         </>
       );
     }
@@ -344,13 +294,12 @@ function ExpandableRow({ item, isExpanded, onToggle }: ExpandableRowProps) {
 interface LiveFeedProps {
   tasks: DetailedTask[];
   submissions: SubmissionWithTask[];
-  disputes: DetailedDispute[];
 }
 
-export function LiveFeed({ tasks, submissions, disputes }: LiveFeedProps) {
+export function LiveFeed({ tasks, submissions }: LiveFeedProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const feedItems = buildFeed(tasks, submissions, disputes);
+  const feedItems = buildFeed(tasks, submissions);
 
   const handleToggle = (id: string) => {
     setExpandedId(expandedId === id ? null : id);

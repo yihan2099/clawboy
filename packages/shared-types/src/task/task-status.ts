@@ -1,215 +1,201 @@
 /**
- * Task Status State Machine
+ * Task Phase State Machine (V2 — N+M Consensus)
  *
- * Defines valid task statuses and transitions between them.
+ * Replaces the old TaskStatus state machine with phase-based lifecycle.
  *
  * State Diagram:
  * ┌──────────────────────────────────────────────────────────────────────────┐
  * │                                                                          │
- * │                            ┌──────────┐                                  │
- * │                            │   open   │                                  │
- * │                            └────┬─────┘                                  │
- * │                                 │                                        │
- * │             ┌───────────────────┼───────────────────┐                    │
- * │             │                   │                   │                    │
- * │             ▼                   ▼                   ▼                    │
- * │      ┌─────────────┐     ┌───────────┐       ┌───────────┐              │
- * │      │  cancelled  │     │ in_review │       │  refunded │              │
- * │      └─────────────┘     └─────┬─────┘       └───────────┘              │
- * │                                │                                        │
- * │                    ┌───────────┴───────────┐                            │
- * │                    │                       │                            │
- * │                    ▼                       ▼                            │
- * │             ┌───────────┐           ┌───────────┐                       │
- * │             │ completed │           │ disputed  │                       │
- * │             └───────────┘           └─────┬─────┘                       │
- * │                                           │                             │
- * │                               ┌───────────┴───────────┐                 │
- * │                               │                       │                 │
- * │                               ▼                       ▼                 │
- * │                        ┌───────────┐           ┌───────────┐            │
- * │                        │ completed │           │  refunded │            │
- * │                        └───────────┘           └───────────┘            │
+ * │  Open ──► WorkPhase ──► JudgePhase ──► Resolved                         │
+ * │    │           │              │              │                            │
+ * │    │           │              │              ├─► Completed (payouts)      │
+ * │    │           │              │              └─► Failed (no consensus)    │
+ * │    │           │              │                                           │
+ * │    │           │              └─► Failed (judge timeout)                  │
+ * │    │           └─► Failed (work timeout, insufficient workers)            │
+ * │    │                                                                      │
+ * │    └─► Cancelled (creator cancels before any submissions)                 │
  * │                                                                          │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
  * Valid Transitions:
- * - open → in_review: Creator selects a winner
- * - open → cancelled: Creator cancels (if no submissions)
- * - open → refunded: All submissions rejected, no winner selected
- * - in_review → completed: Challenge period passed without dispute
- * - in_review → disputed: Agent disputes the winner selection
- * - disputed → completed: Dispute resolved in favor of winner
- * - disputed → refunded: Dispute resolved in favor of disputer
+ * - open → work_phase: First worker submits
+ * - open → cancelled: Creator cancels (no submissions)
+ * - work_phase → judge_phase: All N workers submitted or timeout with enough
+ * - work_phase → failed: Work timeout with insufficient workers
+ * - judge_phase → resolved: All M judges submitted and consensus exists
+ * - judge_phase → failed: Judge timeout or no consensus
+ * - resolved: Terminal (payouts made)
+ * - cancelled: Terminal (refund issued)
+ * - failed: Terminal (refund issued)
  */
 
 /**
- * Task status enum matching the smart contract states
- * Updated for competitive task system with optimistic verification
+ * Task phase enum matching the TaskManagerV2 contract phases
  */
-export enum TaskStatus {
-  /** Task is open and accepting submissions */
+export enum TaskPhase {
+  /** Task is open and accepting worker submissions */
   Open = 'open',
-  /** Creator is reviewing submissions (within challenge window) */
-  InReview = 'in_review',
-  /** Task completed successfully, winner paid */
-  Completed = 'completed',
-  /** Task is under community vote for dispute resolution */
-  Disputed = 'disputed',
-  /** No winner selected, bounty refunded to creator */
-  Refunded = 'refunded',
-  /** Task was cancelled by creator (before any submissions) */
+  /** Work in progress — first submission received, more expected */
+  WorkPhase = 'work_phase',
+  /** Judging in progress — all workers submitted, judges ranking */
+  JudgePhase = 'judge_phase',
+  /** Consensus reached, payouts made */
+  Resolved = 'resolved',
+  /** Task cancelled by creator before any submissions */
   Cancelled = 'cancelled',
+  /** Failed — insufficient workers/judges or no consensus, refunded */
+  Failed = 'failed',
 }
 
 /**
- * Task status type as string union (for database/API compatibility)
+ * Task phase type as string union (for database/API compatibility)
  */
-export type TaskStatusString =
+export type TaskPhaseString =
   | 'open'
-  | 'in_review'
-  | 'completed'
-  | 'disputed'
-  | 'refunded'
-  | 'cancelled';
+  | 'work_phase'
+  | 'judge_phase'
+  | 'resolved'
+  | 'cancelled'
+  | 'failed';
 
 /**
- * Numeric status values matching the smart contract
+ * Numeric phase values matching the smart contract
  */
-export const TaskStatusNumber: Record<TaskStatus, number> = {
-  [TaskStatus.Open]: 0,
-  [TaskStatus.InReview]: 1,
-  [TaskStatus.Completed]: 2,
-  [TaskStatus.Disputed]: 3,
-  [TaskStatus.Refunded]: 4,
-  [TaskStatus.Cancelled]: 5,
+export const TaskPhaseNumber: Record<TaskPhase, number> = {
+  [TaskPhase.Open]: 0,
+  [TaskPhase.WorkPhase]: 1,
+  [TaskPhase.JudgePhase]: 2,
+  [TaskPhase.Resolved]: 3,
+  [TaskPhase.Cancelled]: 4,
+  [TaskPhase.Failed]: 5,
 };
 
 /**
- * Terminal statuses (no further transitions possible)
+ * Terminal phases (no further transitions possible)
  */
-export const TERMINAL_STATUSES: readonly TaskStatus[] = [
-  TaskStatus.Completed,
-  TaskStatus.Refunded,
-  TaskStatus.Cancelled,
+export const TERMINAL_PHASES: readonly TaskPhase[] = [
+  TaskPhase.Resolved,
+  TaskPhase.Cancelled,
+  TaskPhase.Failed,
 ];
 
 /**
- * Valid status transitions
- * Maps from current status to array of valid next statuses
+ * Valid phase transitions
+ * Maps from current phase to array of valid next phases
  */
-export const VALID_STATUS_TRANSITIONS: Record<TaskStatus, readonly TaskStatus[]> = {
-  [TaskStatus.Open]: [TaskStatus.InReview, TaskStatus.Cancelled, TaskStatus.Refunded],
-  [TaskStatus.InReview]: [TaskStatus.Completed, TaskStatus.Disputed],
-  [TaskStatus.Completed]: [], // Terminal state
-  [TaskStatus.Disputed]: [TaskStatus.Completed, TaskStatus.Refunded],
-  [TaskStatus.Refunded]: [], // Terminal state
-  [TaskStatus.Cancelled]: [], // Terminal state
+export const VALID_PHASE_TRANSITIONS: Record<TaskPhase, readonly TaskPhase[]> = {
+  [TaskPhase.Open]: [TaskPhase.WorkPhase, TaskPhase.Cancelled],
+  [TaskPhase.WorkPhase]: [TaskPhase.JudgePhase, TaskPhase.Failed],
+  [TaskPhase.JudgePhase]: [TaskPhase.Resolved, TaskPhase.Failed],
+  [TaskPhase.Resolved]: [], // Terminal state
+  [TaskPhase.Cancelled]: [], // Terminal state
+  [TaskPhase.Failed]: [], // Terminal state
 };
 
 /**
- * Convert numeric status from contract to TaskStatus enum
+ * Convert numeric phase from contract to TaskPhase enum
  */
-export function numberToTaskStatus(num: number): TaskStatus {
-  const entries = Object.entries(TaskStatusNumber);
+export function numberToTaskPhase(num: number): TaskPhase {
+  const entries = Object.entries(TaskPhaseNumber);
   const found = entries.find(([_, value]) => value === num);
   if (!found) {
-    throw new Error(`Unknown task status number: ${num}`);
+    throw new Error(`Unknown task phase number: ${num}`);
   }
-  return found[0] as TaskStatus;
+  return found[0] as TaskPhase;
 }
 
 /**
- * Check if a status transition is valid
+ * Check if a phase transition is valid
  */
-export function isValidStatusTransition(
-  fromStatus: TaskStatus | TaskStatusString,
-  toStatus: TaskStatus | TaskStatusString
+export function isValidPhaseTransition(
+  fromPhase: TaskPhase | TaskPhaseString,
+  toPhase: TaskPhase | TaskPhaseString
 ): boolean {
-  const from = typeof fromStatus === 'string' ? stringToTaskStatus(fromStatus) : fromStatus;
-  const to = typeof toStatus === 'string' ? stringToTaskStatus(toStatus) : toStatus;
-  const validTransitions = VALID_STATUS_TRANSITIONS[from];
+  const from = typeof fromPhase === 'string' ? stringToTaskPhase(fromPhase) : fromPhase;
+  const to = typeof toPhase === 'string' ? stringToTaskPhase(toPhase) : toPhase;
+  const validTransitions = VALID_PHASE_TRANSITIONS[from];
   return validTransitions.includes(to);
 }
 
 /**
- * Check if a status is terminal (no further transitions)
+ * Check if a phase is terminal (no further transitions)
  */
-export function isTerminalStatus(status: TaskStatus | TaskStatusString): boolean {
-  const s = typeof status === 'string' ? stringToTaskStatus(status) : status;
-  return TERMINAL_STATUSES.includes(s);
+export function isTerminalPhase(phase: TaskPhase | TaskPhaseString): boolean {
+  const p = typeof phase === 'string' ? stringToTaskPhase(phase) : phase;
+  return TERMINAL_PHASES.includes(p);
 }
 
 /**
- * Convert string status to TaskStatus enum
+ * Convert string phase to TaskPhase enum
  */
-export function stringToTaskStatus(status: string): TaskStatus {
-  const mapping: Record<string, TaskStatus> = {
-    open: TaskStatus.Open,
-    in_review: TaskStatus.InReview,
-    completed: TaskStatus.Completed,
-    disputed: TaskStatus.Disputed,
-    refunded: TaskStatus.Refunded,
-    cancelled: TaskStatus.Cancelled,
+export function stringToTaskPhase(phase: string): TaskPhase {
+  const mapping: Record<string, TaskPhase> = {
+    open: TaskPhase.Open,
+    work_phase: TaskPhase.WorkPhase,
+    judge_phase: TaskPhase.JudgePhase,
+    resolved: TaskPhase.Resolved,
+    cancelled: TaskPhase.Cancelled,
+    failed: TaskPhase.Failed,
   };
-  const result = mapping[status];
+  const result = mapping[phase];
   if (!result) {
-    throw new Error(`Unknown task status: ${status}`);
+    throw new Error(`Unknown task phase: ${phase}`);
   }
   return result;
 }
 
 /**
- * Error thrown when an invalid status transition is attempted
+ * Error thrown when an invalid phase transition is attempted
  */
-export class InvalidStatusTransitionError extends Error {
+export class InvalidPhaseTransitionError extends Error {
   constructor(
-    public readonly fromStatus: TaskStatus | TaskStatusString,
-    public readonly toStatus: TaskStatus | TaskStatusString,
+    public readonly fromPhase: TaskPhase | TaskPhaseString,
+    public readonly toPhase: TaskPhase | TaskPhaseString,
     public readonly taskId?: string
   ) {
-    const fromEnum = typeof fromStatus === 'string' ? stringToTaskStatus(fromStatus) : fromStatus;
-    const toEnum = typeof toStatus === 'string' ? stringToTaskStatus(toStatus) : toStatus;
+    const fromEnum = typeof fromPhase === 'string' ? stringToTaskPhase(fromPhase) : fromPhase;
+    const toEnum = typeof toPhase === 'string' ? stringToTaskPhase(toPhase) : toPhase;
     const fromStr = fromEnum.valueOf();
     const toStr = toEnum.valueOf();
     const taskRef = taskId ? ` (task: ${taskId})` : '';
     const validTransitions =
-      VALID_STATUS_TRANSITIONS[fromEnum].map((s) => s.valueOf()).join(', ') ||
-      'none (terminal state)';
+      VALID_PHASE_TRANSITIONS[fromEnum].map((p) => p.valueOf()).join(', ') ||
+      'none (terminal phase)';
 
     super(
-      `Invalid status transition from '${fromStr}' to '${toStr}'${taskRef}. ` +
+      `Invalid phase transition from '${fromStr}' to '${toStr}'${taskRef}. ` +
         `Valid transitions from '${fromStr}': ${validTransitions}`
     );
-    this.name = 'InvalidStatusTransitionError';
+    this.name = 'InvalidPhaseTransitionError';
   }
 }
 
 /**
- * Assert that a status transition is valid, throwing if not
+ * Assert that a phase transition is valid, throwing if not
  */
-export function assertValidStatusTransition(
-  fromStatus: TaskStatus | TaskStatusString,
-  toStatus: TaskStatus | TaskStatusString,
+export function assertValidPhaseTransition(
+  fromPhase: TaskPhase | TaskPhaseString,
+  toPhase: TaskPhase | TaskPhaseString,
   taskId?: string
 ): void {
-  if (!isValidStatusTransition(fromStatus, toStatus)) {
-    throw new InvalidStatusTransitionError(fromStatus, toStatus, taskId);
+  if (!isValidPhaseTransition(fromPhase, toPhase)) {
+    throw new InvalidPhaseTransitionError(fromPhase, toPhase, taskId);
   }
 }
 
 /**
- * Get a human-readable description for a task status
+ * Get a human-readable description for a task phase
  */
-export function getStatusDescription(status: TaskStatus | TaskStatusString): string {
-  const s = typeof status === 'string' ? stringToTaskStatus(status) : status;
-  const descriptions: Record<TaskStatus, string> = {
-    [TaskStatus.Open]: 'Task is accepting submissions from agents',
-    [TaskStatus.InReview]: 'Winner selected, challenge period active',
-    [TaskStatus.Completed]: 'Task finished successfully, bounty paid',
-    [TaskStatus.Disputed]: 'Task under dispute review',
-    [TaskStatus.Refunded]: 'Bounty returned to creator',
-    [TaskStatus.Cancelled]: 'Task cancelled by creator',
+export function getPhaseDescription(phase: TaskPhase | TaskPhaseString): string {
+  const p = typeof phase === 'string' ? stringToTaskPhase(phase) : phase;
+  const descriptions: Record<TaskPhase, string> = {
+    [TaskPhase.Open]: 'Task is accepting worker submissions',
+    [TaskPhase.WorkPhase]: 'Workers are producing outputs',
+    [TaskPhase.JudgePhase]: 'Judges are ranking worker outputs',
+    [TaskPhase.Resolved]: 'Consensus reached, payouts distributed',
+    [TaskPhase.Cancelled]: 'Task cancelled by creator',
+    [TaskPhase.Failed]: 'Task failed — bounty refunded to creator',
   };
-  return descriptions[s];
+  return descriptions[p];
 }

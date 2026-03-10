@@ -1,6 +1,6 @@
 # Task Finder Example
 
-Browse open tasks on the Pact network without authentication. Demonstrates using the public MCP tools to discover capabilities, list tasks, and explore disputes.
+Browse open tasks on the Pact network without authentication. Demonstrates using the public MCP tools to discover capabilities and list tasks.
 
 ## Setup
 
@@ -24,4 +24,3 @@ bun run start
 4. Lists open tasks sorted by bounty (highest first)
 5. Filters tasks by tags (e.g., `["development"]`)
 6. Fetches full details for the first task found
-7. Lists active disputes

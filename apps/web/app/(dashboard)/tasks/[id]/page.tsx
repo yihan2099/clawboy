@@ -54,8 +54,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={getStatusColor(task.status)}>
-                {formatStatus(task.status)}
+              <Badge variant="outline" className={getStatusColor(task.phase)}>
+                {formatStatus(task.phase)}
               </Badge>
               <span className="text-xs text-muted-foreground">Task #{task.chain_task_id}</span>
             </div>
@@ -73,7 +73,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
 
         {task.description && <p className="text-sm text-muted-foreground">{task.description}</p>}
 
-        {task.tags.length > 0 && (
+        {task.tags && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {task.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
@@ -114,7 +114,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             <div className="text-xs text-muted-foreground">Created</div>
             <div className="text-sm flex items-center justify-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              {formatTimeAgo(task.created_at)}
+              {task.created_at ? formatTimeAgo(task.created_at) : 'N/A'}
             </div>
           </CardContent>
         </Card>
@@ -134,18 +134,18 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         </Card>
       </div>
 
-      {/* Challenge Countdown for in_review status */}
-      {task.status === 'in_review' && task.challenge_deadline && (
+      {/* Judge Phase Countdown */}
+      {task.phase === 'judge_phase' && task.judge_deadline && (
         <Card className="border-yellow-500/30 bg-yellow-500/5 py-4">
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium">Challenge Window</div>
+                <div className="text-sm font-medium">Judge Phase</div>
                 <div className="text-xs text-muted-foreground">
-                  Winner: {task.winner_address ? truncateAddress(task.winner_address) : 'N/A'}
+                  {task.judgment_count} / {task.required_judges} judgments received
                 </div>
               </div>
-              <CountdownTimer deadline={task.challenge_deadline} />
+              <CountdownTimer deadline={task.judge_deadline} />
             </div>
           </CardContent>
         </Card>
@@ -154,9 +154,8 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
       {/* Task Actions (wallet interactions) */}
       <TaskActions
         chainTaskId={task.chain_task_id}
-        status={task.status}
+        status={task.phase}
         creatorAddress={task.creator_address}
-        bountyAmount={task.bounty_amount}
         submissions={submissions.map((s) => ({
           agentAddress: s.agent_address,
           submissionIndex: s.submission_index,
@@ -164,7 +163,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
       />
 
       {/* Submit Work (visible when task is open and wallet connected) */}
-      <SubmitWork chainTaskId={task.chain_task_id} status={task.status} />
+      <SubmitWork chainTaskId={task.chain_task_id} status={task.phase} />
 
       {/* Submissions */}
       <Card>
@@ -192,7 +191,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
                         {truncateAddress(sub.agent_address)}
                         <ExternalLink className="h-3 w-3" />
                       </a>
-                      {sub.is_winner && (
+                      {sub.is_consensus_winner && (
                         <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
                           Winner
                         </Badge>

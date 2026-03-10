@@ -20,7 +20,6 @@ export interface FeaturedTask {
   tags: string[];
   bounty_amount: string;
   created_at: string;
-  selected_at: string | null;
 }
 
 /**
@@ -35,14 +34,13 @@ export interface BountyStatistics {
 export interface PlatformStatistics {
   totalTasks: number;
   openTasks: number;
-  completedTasks: number;
-  refundedTasks: number;
+  resolvedTasks: number;
+  failedTasks: number;
   bountyDistributed: string; // wei string for precision
   bountyAvailable: string; // wei string - sum of open task bounties
   registeredAgents: number;
   totalSubmissions: number;
-  activeDisputes: number;
-  avgCompletionHours: number | null; // average hours from creation to completion
+  avgCompletionHours: number | null; // average hours from creation to resolution
 }
 
 /**
@@ -55,24 +53,23 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   const [
     totalTasksResult,
     openTasksResult,
-    completedTasksResult,
-    refundedTasksResult,
+    resolvedTasksResult,
+    failedTasksResult,
     bountyDistributedResult,
     bountyAvailableResult,
     agentsResult,
     submissionsResult,
-    activeDisputesResult,
-    completedTasksForAvgResult,
+    resolvedTasksForAvgResult,
   ] = await Promise.all([
     // Total tasks
     supabase.from('tasks').select('*', { count: 'exact', head: true }),
     // Open tasks
-    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'open'),
-    // Completed tasks
-    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-    // Refunded tasks (cancelled/expired)
-    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'refunded'),
-    // Sum of bounties from completed tasks (using RPC for precision)
+    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('phase', 'open'),
+    // Resolved tasks
+    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('phase', 'resolved'),
+    // Failed tasks
+    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('phase', 'failed'),
+    // Sum of bounties from resolved tasks (using RPC for precision)
     supabase.rpc('sum_completed_bounties'),
     // Sum of bounties from open tasks (using RPC for precision)
     supabase.rpc('sum_open_bounties'),
@@ -80,14 +77,12 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
     supabase.from('agents').select('*', { count: 'exact', head: true }),
     // Total submissions
     supabase.from('submissions').select('*', { count: 'exact', head: true }),
-    // Active disputes
-    supabase.from('disputes').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-    // Completed tasks with timestamps for avg calculation
+    // Resolved tasks with timestamps for avg calculation
     supabase
       .from('tasks')
-      .select('created_at, selected_at')
-      .eq('status', 'completed')
-      .not('selected_at', 'is', null),
+      .select('created_at, updated_at')
+      .eq('phase', 'resolved')
+      .not('updated_at', 'is', null),
   ]);
 
   // Check for errors
@@ -97,11 +92,11 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   if (openTasksResult.error) {
     throw new Error(`Failed to get open tasks: ${openTasksResult.error.message}`);
   }
-  if (completedTasksResult.error) {
-    throw new Error(`Failed to get completed tasks: ${completedTasksResult.error.message}`);
+  if (resolvedTasksResult.error) {
+    throw new Error(`Failed to get resolved tasks: ${resolvedTasksResult.error.message}`);
   }
-  if (refundedTasksResult.error) {
-    throw new Error(`Failed to get refunded tasks: ${refundedTasksResult.error.message}`);
+  if (failedTasksResult.error) {
+    throw new Error(`Failed to get failed tasks: ${failedTasksResult.error.message}`);
   }
   if (bountyDistributedResult.error) {
     throw new Error(`Failed to get bounty distributed: ${bountyDistributedResult.error.message}`);
@@ -115,23 +110,19 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   if (submissionsResult.error) {
     throw new Error(`Failed to get submissions count: ${submissionsResult.error.message}`);
   }
-  if (activeDisputesResult.error) {
-    throw new Error(`Failed to get active disputes: ${activeDisputesResult.error.message}`);
-  }
-  // Note: completedTasksForAvgResult errors are non-fatal, we just skip the avg calculation
 
   // Calculate average completion time in hours
   let avgCompletionHours: number | null = null;
-  if (!completedTasksForAvgResult.error && completedTasksForAvgResult.data) {
-    const tasks = completedTasksForAvgResult.data as Array<{
+  if (!resolvedTasksForAvgResult.error && resolvedTasksForAvgResult.data) {
+    const tasks = resolvedTasksForAvgResult.data as Array<{
       created_at: string;
-      selected_at: string;
+      updated_at: string;
     }>;
     if (tasks.length > 0) {
       const totalHours = tasks.reduce((sum, task) => {
         const created = new Date(task.created_at).getTime();
-        const completed = new Date(task.selected_at).getTime();
-        const hours = (completed - created) / (1000 * 60 * 60);
+        const resolved = new Date(task.updated_at).getTime();
+        const hours = (resolved - created) / (1000 * 60 * 60);
         return sum + hours;
       }, 0);
       avgCompletionHours = Math.round((totalHours / tasks.length) * 10) / 10; // 1 decimal place
@@ -141,13 +132,12 @@ export async function getPlatformStatistics(): Promise<PlatformStatistics> {
   return {
     totalTasks: totalTasksResult.count ?? 0,
     openTasks: openTasksResult.count ?? 0,
-    completedTasks: completedTasksResult.count ?? 0,
-    refundedTasks: refundedTasksResult.count ?? 0,
+    resolvedTasks: resolvedTasksResult.count ?? 0,
+    failedTasks: failedTasksResult.count ?? 0,
     bountyDistributed: (bountyDistributedResult.data as string) ?? '0',
     bountyAvailable: (bountyAvailableResult.data as string) ?? '0',
     registeredAgents: agentsResult.count ?? 0,
     totalSubmissions: submissionsResult.count ?? 0,
-    activeDisputes: activeDisputesResult.count ?? 0,
     avgCompletionHours,
   };
 }
@@ -161,7 +151,7 @@ export async function getRecentOpenTasks(limit = 5): Promise<TaskRow[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
-    .eq('status', 'open')
+    .eq('phase', 'open')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -176,7 +166,7 @@ export async function getRecentOpenTasks(limit = 5): Promise<TaskRow[]> {
  * Submission with associated task information
  */
 export interface SubmissionWithTask extends SubmissionRow {
-  task: Pick<TaskRow, 'title' | 'bounty_amount' | 'status'> | null;
+  task: Pick<TaskRow, 'title' | 'bounty_amount' | 'phase'> | null;
 }
 
 /**
@@ -193,7 +183,7 @@ export async function getRecentSubmissions(limit = 5): Promise<SubmissionWithTas
       task:tasks!task_id (
         title,
         bounty_amount,
-        status
+        phase
       )
     `
     )
@@ -215,17 +205,18 @@ export interface DetailedTask {
   chain_task_id: string;
   title: string;
   description: string;
-  status: string;
+  phase: string;
   bounty_amount: string;
   bounty_token: string;
   creator_address: string;
-  winner_address: string | null;
   specification_cid: string;
   tags: string[];
   deadline: string | null;
+  judge_deadline: string | null;
   submission_count: number;
-  selected_at: string | null;
-  challenge_deadline: string | null;
+  judgment_count: number;
+  required_workers: number;
+  required_judges: number;
   created_at: string;
 }
 
@@ -239,7 +230,7 @@ export async function getDetailedTasks(limit = 3): Promise<DetailedTask[]> {
   const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, chain_task_id, title, description, status, bounty_amount, bounty_token, creator_address, winner_address, specification_cid, tags, deadline, submission_count, selected_at, challenge_deadline, created_at'
+      'id, chain_task_id, title, description, phase, bounty_amount, bounty_token, creator_address, specification_cid, tags, deadline, judge_deadline, submission_count, judgment_count, required_workers, required_judges, created_at'
     )
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -249,53 +240,6 @@ export async function getDetailedTasks(limit = 3): Promise<DetailedTask[]> {
   }
 
   return (data ?? []) as DetailedTask[];
-}
-
-/**
- * Detailed dispute info for the mini dashboard
- */
-export interface DetailedDispute {
-  id: string;
-  chain_dispute_id: string;
-  task_id: string;
-  disputer_address: string;
-  dispute_stake: string;
-  voting_deadline: string;
-  status: string;
-  disputer_won: boolean | null;
-  votes_for_disputer: string;
-  votes_against_disputer: string;
-  tx_hash: string;
-  created_at: string;
-  resolved_at: string | null;
-  task: Pick<TaskRow, 'title' | 'bounty_amount'> | null;
-}
-
-/**
- * Get detailed disputes for the mini dashboard.
- */
-export async function getDetailedDisputes(limit = 3): Promise<DetailedDispute[]> {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('disputes')
-    .select(
-      `
-      *,
-      task:tasks!task_id (
-        title,
-        bounty_amount
-      )
-    `
-    )
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    throw new Error(`Failed to get detailed disputes: ${error.message}`);
-  }
-
-  return (data ?? []) as DetailedDispute[];
 }
 
 /**
@@ -353,16 +297,16 @@ export async function getTagStatistics(limit = 6): Promise<TagStatistic[]> {
 }
 
 /**
- * Get recently completed tasks for the featured showcase.
+ * Get recently resolved tasks for the featured showcase.
  */
 export async function getFeaturedCompletedTasks(limit = 3): Promise<FeaturedTask[]> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('id, title, description, tags, bounty_amount, created_at, selected_at')
-    .eq('status', 'completed')
-    .order('selected_at', { ascending: false, nullsFirst: false })
+    .select('id, title, description, tags, bounty_amount, created_at')
+    .eq('phase', 'resolved')
+    .order('updated_at', { ascending: false, nullsFirst: false })
     .limit(limit);
 
   if (error) {

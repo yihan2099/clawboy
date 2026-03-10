@@ -51,7 +51,7 @@ export function SubmitWork({ chainTaskId, status }: SubmitWorkProps) {
   }, [writeError]);
 
   // Only show when task is open and wallet is connected
-  if (status !== 'open' || !address) {
+  if ((status !== 'open' && status !== 'work_phase') || !address) {
     return null;
   }
 

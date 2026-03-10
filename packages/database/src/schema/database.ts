@@ -1,428 +1,931 @@
-/**
- * Supabase database type definitions
- * This file should be regenerated with: supabase gen types typescript
- * Updated for competitive task system with optimistic verification
- */
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
-      tasks: {
-        Row: {
-          id: string;
-          chain_id: number;
-          chain_task_id: string;
-          creator_address: string;
-          status: string; // 'open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'
-          bounty_amount: string;
-          bounty_token: string;
-          specification_cid: string;
-          title: string;
-          description: string;
-          tags: string[];
-          deadline: string | null;
-          winner_address: string | null;
-          selected_at: string | null;
-          challenge_deadline: string | null;
-          submission_count: number;
-          ipfs_fetch_failed: boolean;
-          created_at_block: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          chain_id: number;
-          chain_task_id: string;
-          creator_address: string;
-          status: string;
-          bounty_amount: string;
-          bounty_token: string;
-          specification_cid: string;
-          title: string;
-          description: string;
-          tags?: string[];
-          deadline?: string | null;
-          winner_address?: string | null;
-          selected_at?: string | null;
-          challenge_deadline?: string | null;
-          submission_count?: number;
-          ipfs_fetch_failed?: boolean;
-          created_at_block: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          chain_id?: number;
-          chain_task_id?: string;
-          creator_address?: string;
-          status?: string;
-          bounty_amount?: string;
-          bounty_token?: string;
-          specification_cid?: string;
-          title?: string;
-          description?: string;
-          tags?: string[];
-          deadline?: string | null;
-          winner_address?: string | null;
-          selected_at?: string | null;
-          challenge_deadline?: string | null;
-          submission_count?: number;
-          ipfs_fetch_failed?: boolean;
-          created_at_block?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
       agents: {
-        // TIMING NOTE: Agent rows are created by the indexer when it processes the
-        // AgentRegistered on-chain event. At that point, only the wallet address and
-        // agent_id are available from the event args. The profile_cid and name fields
-        // are populated shortly after by a follow-up IPFS fetch (fetchAgentProfile),
-        // which may take a few seconds or fail (ipfs_fetch_failed=true).
-        //
-        // This means there is a brief window after agent creation where profile_cid
-        // and name may contain placeholder values (empty string or a default). Callers
-        // that need the full profile should check ipfs_fetch_failed and handle the
-        // interim state gracefully. The IPFS retry job (apps/indexer/src/jobs) will
-        // backfill failed profile fetches.
         Row: {
-          id: string;
-          address: string;
-          agent_id: string | null; // ERC-8004 NFT token ID
-          agent_uri: string | null; // ERC-8004 IPFS URI (ipfs://CID)
-          reputation: string;
-          tasks_won: number;
-          disputes_won: number;
-          disputes_lost: number;
-          profile_cid: string;
-          name: string;
-          skills: string[];
-          is_active: boolean;
-          ipfs_fetch_failed: boolean;
-          webhook_url: string | null;
-          webhook_secret: string | null;
-          registered_at: string;
-          created_at: string;
-          updated_at: string;
-        };
+          address: string
+          agent_id: string | null
+          agent_uri: string | null
+          created_at: string | null
+          disputes_lost: number
+          disputes_won: number
+          id: string
+          ipfs_fetch_failed: boolean
+          is_active: boolean
+          name: string
+          profile_cid: string
+          registered_at: string
+          reputation: number
+          skills: string[] | null
+          tasks_won: number
+          updated_at: string | null
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
         Insert: {
-          id?: string;
-          address: string;
-          agent_id?: string | null;
-          agent_uri?: string | null;
-          reputation?: string;
-          tasks_won?: number;
-          disputes_won?: number;
-          disputes_lost?: number;
-          profile_cid: string;
-          name: string;
-          skills?: string[];
-          is_active?: boolean;
-          ipfs_fetch_failed?: boolean;
-          webhook_url?: string | null;
-          webhook_secret?: string | null;
-          registered_at: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+          address: string
+          agent_id?: string | null
+          agent_uri?: string | null
+          created_at?: string | null
+          disputes_lost?: number
+          disputes_won?: number
+          id?: string
+          ipfs_fetch_failed?: boolean
+          is_active?: boolean
+          name: string
+          profile_cid: string
+          registered_at: string
+          reputation?: number
+          skills?: string[] | null
+          tasks_won?: number
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
         Update: {
-          id?: string;
-          address?: string;
-          agent_id?: string | null;
-          agent_uri?: string | null;
-          reputation?: string;
-          tasks_won?: number;
-          disputes_won?: number;
-          disputes_lost?: number;
-          profile_cid?: string;
-          name?: string;
-          skills?: string[];
-          is_active?: boolean;
-          ipfs_fetch_failed?: boolean;
-          webhook_url?: string | null;
-          webhook_secret?: string | null;
-          registered_at?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      submissions: {
+          address?: string
+          agent_id?: string | null
+          agent_uri?: string | null
+          created_at?: string | null
+          disputes_lost?: number
+          disputes_won?: number
+          id?: string
+          ipfs_fetch_failed?: boolean
+          is_active?: boolean
+          name?: string
+          profile_cid?: string
+          registered_at?: string
+          reputation?: number
+          skills?: string[] | null
+          tasks_won?: number
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      archived_dispute_votes: {
         Row: {
-          id: string;
-          task_id: string;
-          agent_address: string;
-          submission_cid: string;
-          submission_index: number;
-          is_winner: boolean;
-          ipfs_fetch_failed: boolean;
-          submitted_at: string;
-          updated_at: string;
-          created_at: string;
-        };
+          created_at: string | null
+          dispute_id: string | null
+          id: string | null
+          supports_disputer: boolean | null
+          tx_hash: string | null
+          vote_weight: string | null
+          voted_at: string | null
+          voter_address: string | null
+        }
         Insert: {
-          id?: string;
-          task_id: string;
-          agent_address: string;
-          submission_cid: string;
-          submission_index: number;
-          is_winner?: boolean;
-          ipfs_fetch_failed?: boolean;
-          submitted_at: string;
-          updated_at: string;
-          created_at?: string;
-        };
+          created_at?: string | null
+          dispute_id?: string | null
+          id?: string | null
+          supports_disputer?: boolean | null
+          tx_hash?: string | null
+          vote_weight?: string | null
+          voted_at?: string | null
+          voter_address?: string | null
+        }
         Update: {
-          id?: string;
-          task_id?: string;
-          agent_address?: string;
-          submission_cid?: string;
-          submission_index?: number;
-          is_winner?: boolean;
-          ipfs_fetch_failed?: boolean;
-          submitted_at?: string;
-          updated_at?: string;
-          created_at?: string;
-        };
-      };
-      disputes: {
+          created_at?: string | null
+          dispute_id?: string | null
+          id?: string | null
+          supports_disputer?: boolean | null
+          tx_hash?: string | null
+          vote_weight?: string | null
+          voted_at?: string | null
+          voter_address?: string | null
+        }
+        Relationships: []
+      }
+      archived_disputes: {
         Row: {
-          id: string;
-          chain_dispute_id: string;
-          task_id: string;
-          disputer_address: string;
-          dispute_stake: string;
-          voting_deadline: string;
-          status: string; // 'active', 'resolved', 'cancelled'
-          disputer_won: boolean | null;
-          votes_for_disputer: string;
-          votes_against_disputer: string;
-          tx_hash: string;
-          created_at: string;
-          updated_at: string;
-          resolved_at: string | null;
-        };
+          chain_dispute_id: string | null
+          created_at: string | null
+          dispute_stake: number | null
+          disputer_address: string | null
+          disputer_won: boolean | null
+          id: string | null
+          resolved_at: string | null
+          status: string | null
+          task_id: string | null
+          tx_hash: string | null
+          votes_against_disputer: number | null
+          votes_for_disputer: number | null
+          voting_deadline: string | null
+        }
         Insert: {
-          id?: string;
-          chain_dispute_id: string;
-          task_id: string;
-          disputer_address: string;
-          dispute_stake: string;
-          voting_deadline: string;
-          status?: string;
-          disputer_won?: boolean | null;
-          votes_for_disputer?: string;
-          votes_against_disputer?: string;
-          tx_hash: string;
-          created_at?: string;
-          updated_at?: string;
-          resolved_at?: string | null;
-        };
+          chain_dispute_id?: string | null
+          created_at?: string | null
+          dispute_stake?: number | null
+          disputer_address?: string | null
+          disputer_won?: boolean | null
+          id?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          task_id?: string | null
+          tx_hash?: string | null
+          votes_against_disputer?: number | null
+          votes_for_disputer?: number | null
+          voting_deadline?: string | null
+        }
         Update: {
-          id?: string;
-          chain_dispute_id?: string;
-          task_id?: string;
-          disputer_address?: string;
-          dispute_stake?: string;
-          voting_deadline?: string;
-          status?: string;
-          disputer_won?: boolean | null;
-          votes_for_disputer?: string;
-          votes_against_disputer?: string;
-          tx_hash?: string;
-          created_at?: string;
-          updated_at?: string;
-          resolved_at?: string | null;
-        };
-      };
-      dispute_votes: {
+          chain_dispute_id?: string | null
+          created_at?: string | null
+          dispute_stake?: number | null
+          disputer_address?: string | null
+          disputer_won?: boolean | null
+          id?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          task_id?: string | null
+          tx_hash?: string | null
+          votes_against_disputer?: number | null
+          votes_for_disputer?: number | null
+          voting_deadline?: string | null
+        }
+        Relationships: []
+      }
+      claims: {
         Row: {
-          id: string;
-          dispute_id: string;
-          voter_address: string;
-          supports_disputer: boolean;
-          vote_weight: string;
-          tx_hash: string;
-          voted_at: string;
-          created_at: string;
-        };
+          agent_address: string
+          claimed_at: string
+          created_at: string | null
+          deadline: string | null
+          id: string
+          status: string
+          submission_cid: string | null
+          submitted_at: string | null
+          task_id: string
+          updated_at: string | null
+          verdict_id: string | null
+        }
         Insert: {
-          id?: string;
-          dispute_id: string;
-          voter_address: string;
-          supports_disputer: boolean;
-          vote_weight: string;
-          tx_hash: string;
-          voted_at: string;
-          created_at?: string;
-        };
+          agent_address: string
+          claimed_at: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          status?: string
+          submission_cid?: string | null
+          submitted_at?: string | null
+          task_id: string
+          updated_at?: string | null
+          verdict_id?: string | null
+        }
         Update: {
-          id?: string;
-          dispute_id?: string;
-          voter_address?: string;
-          supports_disputer?: boolean;
-          vote_weight?: string;
-          tx_hash?: string;
-          voted_at?: string;
-          created_at?: string;
-        };
-      };
-      sync_state: {
-        Row: {
-          id: string;
-          chain_id: number;
-          contract_address: string;
-          last_synced_block: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          chain_id: number;
-          contract_address: string;
-          last_synced_block: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          chain_id?: number;
-          contract_address?: string;
-          last_synced_block?: string;
-          updated_at?: string;
-        };
-      };
-      processed_events: {
-        Row: {
-          id: string;
-          chain_id: number;
-          block_number: string;
-          tx_hash: string;
-          log_index: number;
-          event_name: string;
-          processed_at: string;
-        };
-        Insert: {
-          id?: string;
-          chain_id: number;
-          block_number: string;
-          tx_hash: string;
-          log_index: number;
-          event_name: string;
-          processed_at?: string;
-        };
-        Update: {
-          id?: string;
-          chain_id?: number;
-          block_number?: string;
-          tx_hash?: string;
-          log_index?: number;
-          event_name?: string;
-          processed_at?: string;
-        };
-      };
-      webhook_deliveries: {
-        Row: {
-          id: string;
-          agent_address: string;
-          event_name: string;
-          payload: Record<string, unknown>;
-          status: string; // 'pending', 'delivered', 'failed'
-          status_code: number | null;
-          error_message: string | null;
-          attempt: number;
-          max_attempts: number;
-          next_retry_at: string | null;
-          created_at: string;
-          delivered_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          agent_address: string;
-          event_name: string;
-          payload: Record<string, unknown>;
-          status?: string;
-          status_code?: number | null;
-          error_message?: string | null;
-          attempt?: number;
-          max_attempts?: number;
-          next_retry_at?: string | null;
-          created_at?: string;
-          delivered_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          agent_address?: string;
-          event_name?: string;
-          payload?: Record<string, unknown>;
-          status?: string;
-          status_code?: number | null;
-          error_message?: string | null;
-          attempt?: number;
-          max_attempts?: number;
-          next_retry_at?: string | null;
-          created_at?: string;
-          delivered_at?: string | null;
-        };
-      };
+          agent_address?: string
+          claimed_at?: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          status?: string
+          submission_cid?: string | null
+          submitted_at?: string | null
+          task_id?: string
+          updated_at?: string | null
+          verdict_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_verdict"
+            columns: ["verdict_id"]
+            isOneToOne: false
+            referencedRelation: "verdicts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       failed_events: {
         Row: {
-          id: string;
-          chain_id: number;
-          block_number: string;
-          tx_hash: string;
-          log_index: number;
-          event_name: string;
-          event_data: Record<string, unknown>;
-          error_message: string;
-          error_stack: string | null;
-          retry_count: number;
-          max_retries: number;
-          status: string; // 'pending', 'retrying', 'failed', 'resolved'
-          created_at: string;
-          last_retry_at: string | null;
-          resolved_at: string | null;
-          resolution_notes: string | null;
-        };
+          block_number: string
+          chain_id: number
+          created_at: string
+          error_message: string
+          error_stack: string | null
+          event_data: Json
+          event_name: string
+          id: string
+          last_retry_at: string | null
+          log_index: number
+          max_retries: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          retry_count: number
+          status: string
+          tx_hash: string
+        }
         Insert: {
-          id?: string;
-          chain_id: number;
-          block_number: string;
-          tx_hash: string;
-          log_index: number;
-          event_name: string;
-          event_data: Record<string, unknown>;
-          error_message: string;
-          error_stack?: string | null;
-          retry_count?: number;
-          max_retries?: number;
-          status?: string;
-          created_at?: string;
-          last_retry_at?: string | null;
-          resolved_at?: string | null;
-          resolution_notes?: string | null;
-        };
+          block_number: string
+          chain_id: number
+          created_at?: string
+          error_message: string
+          error_stack?: string | null
+          event_data: Json
+          event_name: string
+          id?: string
+          last_retry_at?: string | null
+          log_index: number
+          max_retries?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          retry_count?: number
+          status?: string
+          tx_hash: string
+        }
         Update: {
-          id?: string;
-          chain_id?: number;
-          block_number?: string;
-          tx_hash?: string;
-          log_index?: number;
-          event_name?: string;
-          event_data?: Record<string, unknown>;
-          error_message?: string;
-          error_stack?: string | null;
-          retry_count?: number;
-          max_retries?: number;
-          status?: string;
-          created_at?: string;
-          last_retry_at?: string | null;
-          resolved_at?: string | null;
-          resolution_notes?: string | null;
-        };
-      };
-    };
-    Views: {};
-    Functions: {};
-    Enums: {};
-  };
+          block_number?: string
+          chain_id?: number
+          created_at?: string
+          error_message?: string
+          error_stack?: string | null
+          event_data?: Json
+          event_name?: string
+          id?: string
+          last_retry_at?: string | null
+          log_index?: number
+          max_retries?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          retry_count?: number
+          status?: string
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      judgments: {
+        Row: {
+          created_at: string
+          id: string
+          in_consensus: boolean | null
+          judge_address: string
+          judgment_index: number
+          ranking: number[]
+          submitted_at: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          in_consensus?: boolean | null
+          judge_address: string
+          judgment_index: number
+          ranking: number[]
+          submitted_at?: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          in_consensus?: boolean | null
+          judge_address?: string
+          judgment_index?: number
+          ranking?: number[]
+          submitted_at?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "judgments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processed_events: {
+        Row: {
+          block_number: string
+          chain_id: number
+          event_name: string
+          id: string
+          log_index: number
+          processed_at: string
+          tx_hash: string
+        }
+        Insert: {
+          block_number: string
+          chain_id: number
+          event_name: string
+          id?: string
+          log_index: number
+          processed_at?: string
+          tx_hash: string
+        }
+        Update: {
+          block_number?: string
+          chain_id?: number
+          event_name?: string
+          id?: string
+          log_index?: number
+          processed_at?: string
+          tx_hash?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          agent_address: string
+          consensus_rank: number | null
+          created_at: string
+          id: string
+          ipfs_fetch_failed: boolean
+          is_consensus_winner: boolean | null
+          submission_cid: string
+          submission_index: number
+          submitted_at: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_address: string
+          consensus_rank?: number | null
+          created_at?: string
+          id?: string
+          ipfs_fetch_failed?: boolean
+          is_consensus_winner?: boolean | null
+          submission_cid: string
+          submission_index?: number
+          submitted_at?: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_address?: string
+          consensus_rank?: number | null
+          created_at?: string
+          id?: string
+          ipfs_fetch_failed?: boolean
+          is_consensus_winner?: boolean | null
+          submission_cid?: string
+          submission_index?: number
+          submitted_at?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_state: {
+        Row: {
+          chain_id: number
+          contract_address: string
+          id: string
+          last_synced_block: string
+          updated_at: string | null
+        }
+        Insert: {
+          chain_id: number
+          contract_address: string
+          id?: string
+          last_synced_block: string
+          updated_at?: string | null
+        }
+        Update: {
+          chain_id?: number
+          contract_address?: string
+          id?: string
+          last_synced_block?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      task_payouts: {
+        Row: {
+          amount: string
+          consensus_rank: number | null
+          created_at: string
+          id: string
+          paid_at: string | null
+          recipient_address: string
+          role: string
+          task_id: string
+          tx_hash: string | null
+        }
+        Insert: {
+          amount: string
+          consensus_rank?: number | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          recipient_address: string
+          role: string
+          task_id: string
+          tx_hash?: string | null
+        }
+        Update: {
+          amount?: string
+          consensus_rank?: number | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          recipient_address?: string
+          role?: string
+          task_id?: string
+          tx_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_payouts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          bounty_amount: string
+          bounty_token: string
+          chain_id: number
+          chain_task_id: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string | null
+          created_at_block: string
+          creator_address: string
+          deadline: string | null
+          description: string
+          id: string
+          ipfs_fetch_failed: boolean
+          judge_deadline: string | null
+          judgment_count: number
+          phase: string
+          required_judges: number
+          required_workers: number
+          specification_cid: string
+          submission_cid: string | null
+          submission_count: number
+          submitted_at: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          bounty_amount?: string
+          bounty_token?: string
+          chain_id?: number
+          chain_task_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string | null
+          created_at_block: string
+          creator_address: string
+          deadline?: string | null
+          description: string
+          id?: string
+          ipfs_fetch_failed?: boolean
+          judge_deadline?: string | null
+          judgment_count?: number
+          phase?: string
+          required_judges?: number
+          required_workers?: number
+          specification_cid: string
+          submission_cid?: string | null
+          submission_count?: number
+          submitted_at?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          bounty_amount?: string
+          bounty_token?: string
+          chain_id?: number
+          chain_task_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string | null
+          created_at_block?: string
+          creator_address?: string
+          deadline?: string | null
+          description?: string
+          id?: string
+          ipfs_fetch_failed?: boolean
+          judge_deadline?: string | null
+          judgment_count?: number
+          phase?: string
+          required_judges?: number
+          required_workers?: number
+          specification_cid?: string
+          submission_cid?: string | null
+          submission_count?: number
+          submitted_at?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      verdicts: {
+        Row: {
+          claim_id: string
+          created_at: string | null
+          feedback_cid: string
+          id: string
+          outcome: string
+          score: number
+          task_id: string
+          tx_hash: string
+          verified_at: string
+          verifier_address: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string | null
+          feedback_cid: string
+          id?: string
+          outcome: string
+          score: number
+          task_id: string
+          tx_hash: string
+          verified_at: string
+          verifier_address: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string | null
+          feedback_cid?: string
+          id?: string
+          outcome?: string
+          score?: number
+          task_id?: string
+          tx_hash?: string
+          verified_at?: string
+          verifier_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verdicts_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verdicts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_deliveries: {
+        Row: {
+          agent_address: string
+          attempt: number
+          created_at: string | null
+          delivered_at: string | null
+          error_message: string | null
+          event_name: string
+          id: string
+          max_attempts: number
+          next_retry_at: string | null
+          payload: Json
+          status: string
+          status_code: number | null
+        }
+        Insert: {
+          agent_address: string
+          attempt?: number
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          event_name: string
+          id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          payload: Json
+          status?: string
+          status_code?: number | null
+        }
+        Update: {
+          agent_address?: string
+          attempt?: number
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          event_name?: string
+          id?: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          payload?: Json
+          status?: string
+          status_code?: number | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      add_failed_event: {
+        Args: {
+          p_block_number: string
+          p_chain_id: number
+          p_error_message: string
+          p_error_stack?: string
+          p_event_data: Json
+          p_event_name: string
+          p_log_index: number
+          p_tx_hash: string
+        }
+        Returns: string
+      }
+      cleanup_old_processed_events: {
+        Args: { p_days_to_keep?: number }
+        Returns: number
+      }
+      count_tasks_with_bounty_filter: {
+        Args: {
+          p_claimed_by?: string
+          p_creator_address?: string
+          p_max_bounty?: string
+          p_min_bounty?: string
+          p_phase?: string
+          p_tags?: string[]
+        }
+        Returns: number
+      }
+      get_agents_with_failed_ipfs: {
+        Args: { p_limit?: number }
+        Returns: {
+          address: string
+          created_at: string
+          id: string
+          name: string
+          profile_cid: string
+        }[]
+      }
+      get_bounty_statistics: {
+        Args: never
+        Returns: {
+          avg_bounty: number
+          max_bounty: number
+          min_bounty: number
+        }[]
+      }
+      get_retryable_failed_events: {
+        Args: { p_limit?: number }
+        Returns: {
+          block_number: string
+          chain_id: number
+          created_at: string
+          event_data: Json
+          event_name: string
+          id: string
+          log_index: number
+          retry_count: number
+          tx_hash: string
+        }[]
+      }
+      get_tag_statistics: {
+        Args: { p_limit?: number }
+        Returns: {
+          count: number
+          tag: string
+        }[]
+      }
+      get_tasks_with_failed_ipfs: {
+        Args: { p_limit?: number }
+        Returns: {
+          chain_task_id: string
+          created_at: string
+          id: string
+          specification_cid: string
+          title: string
+        }[]
+      }
+      increment_failed_event_retry: {
+        Args: {
+          p_error_message: string
+          p_error_stack: string
+          p_event_id: string
+          p_last_retry_at: string
+        }
+        Returns: {
+          id: string
+          max_retries: number
+          retry_count: number
+          status: string
+        }[]
+      }
+      is_event_processed: {
+        Args: { p_chain_id: number; p_log_index: number; p_tx_hash: string }
+        Returns: boolean
+      }
+      list_tasks_with_bounty_filter: {
+        Args: {
+          p_claimed_by?: string
+          p_creator_address?: string
+          p_limit?: number
+          p_max_bounty?: string
+          p_min_bounty?: string
+          p_offset?: number
+          p_sort_by?: string
+          p_sort_order?: string
+          p_phase?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          bounty_amount: string
+          bounty_token: string
+          chain_task_id: string
+          claimed_at: string
+          claimed_by: string
+          created_at: string
+          created_at_block: string
+          creator_address: string
+          deadline: string
+          description: string
+          id: string
+          specification_cid: string
+          phase: string
+          submission_cid: string
+          submitted_at: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }[]
+      }
+      mark_event_processed: {
+        Args: {
+          p_block_number: string
+          p_chain_id: number
+          p_event_name: string
+          p_log_index: number
+          p_tx_hash: string
+        }
+        Returns: boolean
+      }
+      resolve_failed_event: {
+        Args: { p_event_id: string; p_notes?: string }
+        Returns: boolean
+      }
+      sum_completed_bounties: { Args: never; Returns: string }
+      sum_open_bounties: { Args: never; Returns: string }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

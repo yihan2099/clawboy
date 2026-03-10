@@ -92,7 +92,7 @@ Pre-configured TTL values for different data types:
 | `SUBMISSION`       | 5min  | Submission data                          |
 | `PLATFORM_STATS`   | 15min | Platform statistics                      |
 | `TOP_AGENTS`       | 15min | Top agents leaderboard                   |
-| `DISPUTE`          | 1min  | Dispute data (votes change quickly)      |
+| `JUDGMENT`         | 1min  | Judgment data (rankings change quickly)  |
 | `DEFAULT`          | 5min  | Fallback TTL                             |
 
 ```typescript
@@ -128,8 +128,8 @@ agentByAddressKey('0x...'); // 'agent:addr:0x...'
 | `agentListKey(params)`        | `agents:l:10:o:0`      |
 | `submissionKey(taskId, addr)` | `submission:123:0x...` |
 | `submissionListKey(params)`   | `submissions:t:123`    |
-| `disputeKey(id)`              | `dispute:789`          |
-| `disputeListKey(params)`      | `disputes:s:active`    |
+| `judgmentKey(taskId)`          | `judgment:123`         |
+| `judgmentListKey(params)`      | `judgments:t:123`      |
 | `platformStatsKey()`          | `stats:platform`       |
 | `topAgentsKey(limit)`         | `stats:top_agents:10`  |
 
@@ -142,7 +142,9 @@ import {
   invalidateTaskCaches,
   invalidateAgentCaches,
   invalidateSubmissionCaches,
-  invalidateDisputeCaches,
+  invalidateJudgmentCaches,
+  invalidatePayoutCaches,
+  invalidatePhaseCaches,
   invalidateStatsCaches,
   invalidateAllCaches,
 } from '@pactprotocol/cache';

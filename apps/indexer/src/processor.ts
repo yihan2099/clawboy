@@ -1,29 +1,25 @@
 import type { IndexerEvent } from './listener';
 import { handleTaskCreated } from './handlers/task-created';
 import { handleWorkSubmitted } from './handlers/work-submitted';
-import { handleWinnerSelected } from './handlers/winner-selected';
-import { handleAllSubmissionsRejected } from './handlers/submissions-rejected';
-import { handleTaskCompleted } from './handlers/task-completed';
-import { handleTaskRefunded } from './handlers/task-refunded';
+import { handleJudgmentSubmitted } from './handlers/judgment-submitted';
+import { handlePhaseChanged } from './handlers/phase-changed';
+import { handleTaskResolved } from './handlers/task-resolved';
+import { handleTaskFailed } from './handlers/task-failed';
 import { handleTaskCancelled } from './handlers/task-cancelled';
-import { handleTaskDisputed } from './handlers/task-disputed';
 import { handleAgentRegistered } from './handlers/agent-registered';
 import { handleAgentProfileUpdated } from './handlers/agent-profile-updated';
-import { handleDisputeCreated } from './handlers/dispute-started';
-import { handleVoteSubmitted } from './handlers/vote-submitted';
-import { handleDisputeResolved } from './handlers/dispute-resolved';
 import { dispatchWebhookNotifications } from './services/webhook-dispatch';
 
 /**
  * Process an indexer event by routing to the appropriate handler
- * Updated for competitive task system
+ * Updated for V2 consensus model (N+M workers + judges)
  */
 export async function processEvent(event: IndexerEvent): Promise<void> {
   console.log(`Processing event: ${event.name} at block ${event.blockNumber}`);
 
   try {
     switch (event.name) {
-      // TaskManager events
+      // TaskManagerV2 events
       case 'TaskCreated':
         await handleTaskCreated(event);
         break;
@@ -32,28 +28,24 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         await handleWorkSubmitted(event);
         break;
 
-      case 'WinnerSelected':
-        await handleWinnerSelected(event);
+      case 'JudgmentSubmitted':
+        await handleJudgmentSubmitted(event);
         break;
 
-      case 'AllSubmissionsRejected':
-        await handleAllSubmissionsRejected(event);
+      case 'PhaseChanged':
+        await handlePhaseChanged(event);
         break;
 
-      case 'TaskCompleted':
-        await handleTaskCompleted(event);
+      case 'TaskResolved':
+        await handleTaskResolved(event);
         break;
 
-      case 'TaskRefunded':
-        await handleTaskRefunded(event);
+      case 'TaskFailed':
+        await handleTaskFailed(event);
         break;
 
       case 'TaskCancelled':
         await handleTaskCancelled(event);
-        break;
-
-      case 'TaskDisputed':
-        await handleTaskDisputed(event);
         break;
 
       // PactAgentAdapter events (ERC-8004)
@@ -65,26 +57,13 @@ export async function processEvent(event: IndexerEvent): Promise<void> {
         await handleAgentProfileUpdated(event);
         break;
 
-      // DisputeResolver events
-      case 'DisputeCreated':
-        await handleDisputeCreated(event);
-        break;
-
-      case 'VoteSubmitted':
-        await handleVoteSubmitted(event);
-        break;
-
-      case 'DisputeResolved':
-        await handleDisputeResolved(event);
-        break;
-
       default:
         console.warn(`Unknown event type: ${event.name}`);
     }
 
     // Fire-and-forget webhook notifications after successful event processing.
     // Intentional: webhook failures must never block event indexing or trigger
-    // DLQ retries — database consistency is the primary concern; webhooks are
+    // DLQ retries -- database consistency is the primary concern; webhooks are
     // best-effort delivery. dispatchWebhookNotifications() catches all internal
     // errors. Webhook retry logic is handled separately by processWebhookRetries().
     dispatchWebhookNotifications(event);

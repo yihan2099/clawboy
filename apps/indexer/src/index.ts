@@ -165,7 +165,7 @@ async function processRetryableEvents(): Promise<void> {
         blockNumber: BigInt(failedEvent.block_number),
         transactionHash: failedEvent.tx_hash as `0x${string}`,
         logIndex: failedEvent.log_index,
-        args: failedEvent.event_data,
+        args: failedEvent.event_data as Record<string, unknown>,
       };
 
       // Try to process again

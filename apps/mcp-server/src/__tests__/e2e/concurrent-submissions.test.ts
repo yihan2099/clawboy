@@ -1,4 +1,6 @@
 /**
+ * TODO: Update for V2 — uses V1 patterns (status vs phase, winner selection flow)
+ *
  * End-to-End Concurrent Submission Tests (Anvil Only)
  *
  * Tests concurrent and conflicting submission scenarios:

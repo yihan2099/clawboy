@@ -1,14 +1,13 @@
 import { getSupabaseClient, getSupabaseAdminClient } from '../client';
 import type { TaskRow, TaskInsert, TaskUpdate } from '../schema/tasks';
-import type { TaskStatus } from '@pactprotocol/shared-types';
+import type { TaskPhase } from '@pactprotocol/shared-types';
 
 // Use admin client for write operations (bypasses RLS)
 const getWriteClient = () => getSupabaseAdminClient();
 
 export interface ListTasksOptions {
-  status?: TaskStatus;
+  phase?: TaskPhase;
   creatorAddress?: string;
-  winnerAddress?: string;
   tags?: string[];
   minBounty?: string;
   maxBounty?: string;
@@ -16,7 +15,7 @@ export interface ListTasksOptions {
   bountyToken?: string;
   limit?: number;
   offset?: number;
-  sortBy?: 'bounty_amount' | 'created_at' | 'deadline' | 'submission_count';
+  sortBy?: 'bounty_amount' | 'created_at' | 'work_deadline' | 'submission_count';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -33,9 +32,8 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
 }> {
   const supabase = getSupabaseClient();
   const {
-    status,
+    phase,
     creatorAddress,
-    winnerAddress,
     tags,
     minBounty,
     maxBounty,
@@ -46,16 +44,12 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   } = options;
 
   // When bounty filters are provided, use RPC function for proper numeric comparison
-  // This is necessary because bounty_amount is stored as TEXT (wei strings),
-  // and lexicographic comparison doesn't work correctly for numeric values
-  // (e.g., "500000..." > "1000000..." lexicographically, but < numerically)
   if (minBounty || maxBounty) {
     const { data, error } = await supabase.rpc('list_tasks_with_bounty_filter', {
       p_min_bounty: minBounty || null,
       p_max_bounty: maxBounty || null,
-      p_status: status || null,
+      p_phase: phase || null,
       p_creator_address: creatorAddress?.toLowerCase() || null,
-      p_winner_address: winnerAddress?.toLowerCase() || null,
       p_tags: tags && tags.length > 0 ? tags : null,
       p_limit: limit,
       p_offset: offset,
@@ -69,26 +63,18 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
 
     const tasks = (data ?? []) as TaskRow[];
 
-    // Get accurate count using the companion count function
     const { data: countData, error: countError } = await supabase.rpc(
       'count_tasks_with_bounty_filter',
       {
         p_min_bounty: minBounty || null,
         p_max_bounty: maxBounty || null,
-        p_status: status || null,
+        p_phase: phase || null,
         p_creator_address: creatorAddress?.toLowerCase() || null,
-        p_winner_address: winnerAddress?.toLowerCase() || null,
         p_tags: tags && tags.length > 0 ? tags : null,
       }
     );
 
     if (countError) {
-      // Non-fatal: count function unavailable or failed. Return tasks.length as the total.
-      // LIMITATION: If the caller is paginating (offset > 0 or limit < actual total), this
-      // will report an incorrect total (e.g. page size instead of full result set count).
-      // The pagination UI may show incorrect "N total results" — acceptable degradation
-      // vs. failing the entire request. Deploy the count_tasks_with_bounty_filter RPC to fix.
-      // isEstimate=true signals to callers that the total may be wrong for paginated results.
       console.warn('[task-queries] count_tasks_with_bounty_filter failed:', countError.message);
       return { tasks, total: tasks.length, isEstimate: true };
     }
@@ -99,23 +85,18 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   // Standard query without bounty filtering
   let query = supabase.from('tasks').select('*', { count: 'exact' });
 
-  if (status) {
-    query = query.eq('status', status);
+  if (phase) {
+    query = query.eq('phase', phase);
   }
 
   if (creatorAddress) {
     query = query.eq('creator_address', creatorAddress.toLowerCase());
   }
 
-  if (winnerAddress) {
-    query = query.eq('winner_address', winnerAddress.toLowerCase());
-  }
-
   if (tags && tags.length > 0) {
     query = query.overlaps('tags', tags);
   }
 
-  // Filter by bounty token address
   if (options.bountyToken) {
     query = query.eq('bounty_token', options.bountyToken.toLowerCase());
   }
@@ -154,8 +135,6 @@ export async function getTaskById(id: string): Promise<TaskRow | null> {
 
 /**
  * Get a task by its on-chain task ID
- * @param chainTaskId - The on-chain task ID
- * @param chainId - Optional chain ID to filter by (for multi-chain support)
  */
 export async function getTaskByChainId(
   chainTaskId: string,
@@ -165,7 +144,6 @@ export async function getTaskByChainId(
 
   let query = supabase.from('tasks').select('*').eq('chain_task_id', chainTaskId);
 
-  // If chain_id is provided, filter by it
   if (chainId !== undefined) {
     query = query.eq('chain_id', chainId);
   }
@@ -215,9 +193,10 @@ export async function updateTask(id: string, updates: TaskUpdate): Promise<TaskR
 }
 
 /**
- * Get tasks in review (ready for dispute or finalization)
+ * Get tasks by phase
  */
-export async function getTasksInReview(
+export async function getTasksByPhase(
+  phase: string,
   limit = 20,
   offset = 0
 ): Promise<{ tasks: TaskRow[]; total: number }> {
@@ -226,12 +205,12 @@ export async function getTasksInReview(
   const { data, error, count } = await supabase
     .from('tasks')
     .select('*', { count: 'exact' })
-    .eq('status', 'in_review')
-    .order('selected_at', { ascending: true })
+    .eq('phase', phase)
+    .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (error) {
-    throw new Error(`Failed to get tasks in review: ${error.message}`);
+    throw new Error(`Failed to get tasks by phase: ${error.message}`);
   }
 
   return {
@@ -241,48 +220,30 @@ export async function getTasksInReview(
 }
 
 /**
- * Get tasks that are past their challenge deadline and ready for finalization
+ * Update task phase
  */
-export async function getTasksReadyForFinalization(): Promise<TaskRow[]> {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('status', 'in_review')
-    .lte('challenge_deadline', new Date().toISOString());
-
-  if (error) {
-    throw new Error(`Failed to get tasks ready for finalization: ${error.message}`);
-  }
-
-  return (data ?? []) as TaskRow[];
+export async function updateTaskPhase(id: string, phase: string): Promise<TaskRow> {
+  return updateTask(id, { phase } as TaskUpdate);
 }
 
 /**
- * Get disputed tasks
+ * Update task judgment count
  */
-export async function getDisputedTasks(
-  limit = 20,
-  offset = 0
-): Promise<{ tasks: TaskRow[]; total: number }> {
-  const supabase = getSupabaseClient();
+export async function updateTaskJudgmentCount(
+  id: string,
+  judgmentCount: number
+): Promise<TaskRow> {
+  return updateTask(id, { judgment_count: judgmentCount } as TaskUpdate);
+}
 
-  const { data, error, count } = await supabase
-    .from('tasks')
-    .select('*', { count: 'exact' })
-    .eq('status', 'disputed')
-    .order('selected_at', { ascending: true })
-    .range(offset, offset + limit - 1);
-
-  if (error) {
-    throw new Error(`Failed to get disputed tasks: ${error.message}`);
-  }
-
-  return {
-    tasks: (data ?? []) as TaskRow[],
-    total: count ?? 0,
-  };
+/**
+ * Update task submission count
+ */
+export async function updateTaskSubmissionCount(
+  id: string,
+  submissionCount: number
+): Promise<TaskRow> {
+  return updateTask(id, { submission_count: submissionCount } as TaskUpdate);
 }
 
 /**

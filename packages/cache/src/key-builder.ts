@@ -16,8 +16,10 @@ export const KEY_PREFIX = {
   AGENT_LIST: 'agents:',
   SUBMISSION: 'submission:',
   SUBMISSION_LIST: 'submissions:',
-  DISPUTE: 'dispute:',
-  DISPUTE_LIST: 'disputes:',
+  JUDGMENT: 'judgment:',
+  JUDGMENT_LIST: 'judgments:',
+  PAYOUT: 'payout:',
+  PAYOUT_LIST: 'payouts:',
   STATS: 'stats:',
   TAG_INDEX: 'tag:',
 } as const;
@@ -26,7 +28,7 @@ export const KEY_PREFIX = {
  * Task list filter parameters for key generation
  */
 export interface TaskListKeyParams {
-  status?: string;
+  phase?: string;
   creatorAddress?: string;
   limit?: number;
   offset?: number;
@@ -40,7 +42,7 @@ export interface TaskListKeyParams {
 export function taskListKey(params: TaskListKeyParams = {}): string {
   const parts: string[] = [KEY_PREFIX.TASK_LIST];
 
-  if (params.status) parts.push(`s:${params.status}`);
+  if (params.phase) parts.push(`p:${params.phase}`);
   if (params.creatorAddress) parts.push(`c:${params.creatorAddress.toLowerCase()}`);
   if (params.limit) parts.push(`l:${params.limit}`);
   if (params.offset) parts.push(`o:${params.offset}`);
@@ -58,6 +60,20 @@ export function taskKey(taskId: string): string {
 }
 
 /**
+ * Generate a cache key for task judgments
+ */
+export function taskJudgmentsKey(taskId: string): string {
+  return `${KEY_PREFIX.TASK}${taskId}:judgments`;
+}
+
+/**
+ * Generate a cache key for task payouts
+ */
+export function taskPayoutsKey(taskId: string): string {
+  return `${KEY_PREFIX.TASK}${taskId}:payouts`;
+}
+
+/**
  * Generate a cache key for an agent by address
  */
 export function agentByAddressKey(address: string): string {
@@ -69,6 +85,20 @@ export function agentByAddressKey(address: string): string {
  */
 export function agentKey(agentId: string): string {
   return `${KEY_PREFIX.AGENT}${agentId}`;
+}
+
+/**
+ * Generate a cache key for agent judgments
+ */
+export function agentJudgmentsKey(address: string): string {
+  return `${KEY_PREFIX.AGENT}${address.toLowerCase()}:judgments`;
+}
+
+/**
+ * Generate a cache key for agent payouts
+ */
+export function agentPayoutsKey(address: string): string {
+  return `${KEY_PREFIX.AGENT}${address.toLowerCase()}:payouts`;
 }
 
 /**
@@ -127,37 +157,6 @@ export function submissionKey(taskId: string, agentAddress: string): string {
 }
 
 /**
- * Generate a cache key for a dispute
- */
-export function disputeKey(disputeId: string): string {
-  return `${KEY_PREFIX.DISPUTE}${disputeId}`;
-}
-
-/**
- * Dispute list filter parameters for key generation
- */
-export interface DisputeListKeyParams {
-  taskId?: string;
-  status?: string;
-  limit?: number;
-  offset?: number;
-}
-
-/**
- * Generate a cache key for a dispute list query
- */
-export function disputeListKey(params: DisputeListKeyParams = {}): string {
-  const parts: string[] = [KEY_PREFIX.DISPUTE_LIST];
-
-  if (params.taskId) parts.push(`t:${params.taskId}`);
-  if (params.status) parts.push(`s:${params.status}`);
-  if (params.limit) parts.push(`l:${params.limit}`);
-  if (params.offset) parts.push(`o:${params.offset}`);
-
-  return parts.join('');
-}
-
-/**
  * Generate a cache key for platform statistics
  */
 export function platformStatsKey(): string {
@@ -169,6 +168,13 @@ export function platformStatsKey(): string {
  */
 export function topAgentsKey(limit: number = 10): string {
   return `${KEY_PREFIX.STATS}top_agents:${limit}`;
+}
+
+/**
+ * Generate a cache key for tasks by phase
+ */
+export function tasksByPhaseKey(phase: string): string {
+  return `${KEY_PREFIX.TASK_LIST}phase:${phase}`;
 }
 
 /**
@@ -204,6 +210,20 @@ export function agentPattern(): string {
  */
 export function submissionPattern(): string {
   return `${KEY_PREFIX.SUBMISSION}*`;
+}
+
+/**
+ * Pattern for matching all judgment-related keys
+ */
+export function judgmentPattern(): string {
+  return `${KEY_PREFIX.JUDGMENT}*`;
+}
+
+/**
+ * Pattern for matching all payout-related keys
+ */
+export function payoutPattern(): string {
+  return `${KEY_PREFIX.PAYOUT}*`;
 }
 
 /**

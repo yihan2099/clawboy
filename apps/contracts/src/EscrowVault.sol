@@ -56,6 +56,11 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
     /// @notice Reverted when a timelock-gated function is called before setTimelock() has been called.
     ///         Call setTimelock() (owner-only) with the TimelockController address to unlock these functions.
     error TimelockNotConfigured();
+    error RecipientAmountMismatch();
+    error PayoutSumMismatch();
+    error SplitTransferFailed();
+
+    event FundsSplitReleased(uint256 indexed taskId, uint256 recipientCount, uint256 feeAmount);
 
     modifier onlyTaskManager() {
         if (msg.sender != taskManager) revert OnlyTaskManager();
@@ -260,6 +265,74 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
         }
 
         emit Refunded(taskId, creator, escrow.amount);
+    }
+
+    /**
+     * @notice Release bounty split across multiple recipients with a protocol fee
+     * @param taskId The task ID
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts for each recipient
+     * @param feeRecipient Address to receive the protocol fee
+     * @param feeAmount Protocol fee amount
+     * @dev SECURITY: nonReentrant prevents reentrancy attacks on ETH transfers
+     */
+    function releaseSplit(
+        uint256 taskId,
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        address feeRecipient,
+        uint256 feeAmount
+    )
+        external
+        onlyTaskManager
+        nonReentrant
+        whenNotPaused
+    {
+        if (recipients.length != amounts.length) revert RecipientAmountMismatch();
+
+        Escrow storage escrow = _escrows[taskId];
+        if (escrow.amount == 0) revert EscrowNotFound();
+        if (escrow.released) revert EscrowAlreadyReleased();
+
+        // Validate that all amounts sum to the escrowed amount
+        uint256 totalPayout = feeAmount;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            totalPayout += amounts[i];
+        }
+        if (totalPayout != escrow.amount) revert PayoutSumMismatch();
+
+        escrow.released = true;
+
+        if (escrow.token == address(0)) {
+            // ETH transfers
+            if (feeAmount > 0) {
+                (bool feeSuccess,) = feeRecipient.call{ value: feeAmount }("");
+                if (!feeSuccess) revert SplitTransferFailed();
+            }
+            for (uint256 i = 0; i < recipients.length; i++) {
+                if (amounts[i] > 0) {
+                    (bool success,) = recipients[i].call{ value: amounts[i] }("");
+                    if (!success) revert SplitTransferFailed();
+                }
+            }
+        } else {
+            // ERC20 transfers
+            if (feeAmount > 0) {
+                IERC20(escrow.token).safeTransfer(feeRecipient, feeAmount);
+            }
+            for (uint256 i = 0; i < recipients.length; i++) {
+                if (amounts[i] > 0) {
+                    IERC20(escrow.token).safeTransfer(recipients[i], amounts[i]);
+                }
+            }
+        }
+
+        if (feeAmount > 0) {
+            accumulatedFees[escrow.token] += feeAmount;
+            emit ProtocolFeeCollected(taskId, escrow.token, feeAmount, feeRecipient);
+        }
+
+        emit FundsSplitReleased(taskId, recipients.length, feeAmount);
     }
 
     /**

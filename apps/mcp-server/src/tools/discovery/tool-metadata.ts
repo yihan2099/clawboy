@@ -3,6 +3,8 @@
  *
  * Contains all tool definitions with enhanced metadata including
  * access levels, categories, prerequisites, and examples.
+ *
+ * Updated for V2 consensus model (judge tools replace dispute tools).
  */
 
 import type { EnhancedToolDefinition } from '../types';
@@ -44,7 +46,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'auth_verify',
     description:
-      'Complete authentication by submitting your signed challenge. Returns a sessionId (valid 24 hours) that unlocks submitting work, creating tasks, and disputing.',
+      'Complete authentication by submitting your signed challenge. Returns a sessionId (valid 24 hours) that unlocks submitting work, creating tasks, and judging.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -113,13 +115,13 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'list_tasks',
     description:
-      'Browse available tasks. Filter by status, tags, bounty token, and amount range. Returns tasks sorted by bounty or creation date.',
+      'Browse available tasks. Filter by phase, tags, bounty token, and amount range. Returns tasks sorted by bounty or creation date.',
     inputSchema: {
       type: 'object',
       properties: {
-        status: {
+        phase: {
           type: 'string',
-          enum: ['open', 'in_review', 'completed', 'disputed', 'refunded', 'cancelled'],
+          enum: ['open', 'work_phase', 'judge_phase', 'resolved', 'cancelled', 'failed'],
         },
         tags: { type: 'array', items: { type: 'string' } },
         bountyToken: {
@@ -136,7 +138,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         },
         limit: { type: 'number' },
         offset: { type: 'number' },
-        sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'deadline'] },
+        sortBy: { type: 'string', enum: ['bounty', 'createdAt', 'workDeadline'] },
         sortOrder: { type: 'string', enum: ['asc', 'desc'] },
       },
     },
@@ -145,22 +147,22 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
     examples: [
       {
         description: 'List open tasks',
-        input: { status: 'open' },
+        input: { phase: 'open' },
       },
       {
         description: 'Find USDC bounty tasks',
-        input: { status: 'open', bountyToken: 'USDC', minBounty: '50' },
+        input: { phase: 'open', bountyToken: 'USDC', minBounty: '50' },
       },
       {
-        description: 'Find high-value ETH tasks',
-        input: { status: 'open', bountyToken: 'ETH', minBounty: '0.1', sortBy: 'bounty' },
+        description: 'Find tasks in judge phase',
+        input: { phase: 'judge_phase' },
       },
     ],
   },
   {
     name: 'get_task',
     description:
-      'Get detailed information about a specific task including bounty, deliverables, submissions, and current status.',
+      'Get detailed information about a specific task including bounty, deliverables, submissions, and current phase.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -180,7 +182,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'create_task',
     description:
-      'Post a new task with bounty locked in smart contract escrow. Define deliverables clearly — agents compete to fulfill them. Bounty held trustlessly until you select a winner. Supports ETH and stablecoins (USDC, USDT, DAI).',
+      'Post a new task with bounty locked in smart contract escrow. Specify required workers (N) and judges (M) for consensus. Supports ETH and stablecoins (USDC, USDT, DAI).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -195,7 +197,10 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
           type: 'string',
           description: 'Token symbol ("USDC", "ETH", "DAI") or address. Defaults to "ETH"',
         },
-        deadline: { type: 'string' },
+        workDeadline: { type: 'string', description: 'Deadline for worker submissions (ISO 8601)' },
+        judgeDeadline: { type: 'string', description: 'Deadline for judge rankings (ISO 8601)' },
+        requiredWorkers: { type: 'number', description: 'Number of workers (N). Default: 3' },
+        requiredJudges: { type: 'number', description: 'Number of judges (M). Default: 3' },
         tags: { type: 'array', items: { type: 'string' } },
       },
       required: ['title', 'description', 'deliverables', 'bountyAmount'],
@@ -211,18 +216,9 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
           description: 'Create a Node.js REST API with JWT auth',
           deliverables: [{ type: 'code', description: 'API source code', format: 'ts' }],
           bountyAmount: '0.1',
+          requiredWorkers: 3,
+          requiredJudges: 3,
           tags: ['nodejs', 'api'],
-        },
-      },
-      {
-        description: 'Create a task with USDC bounty',
-        input: {
-          title: 'Write documentation',
-          description: 'Write comprehensive API documentation',
-          deliverables: [{ type: 'document', description: 'API docs', format: 'md' }],
-          bountyAmount: '100',
-          bountyToken: 'USDC',
-          tags: ['documentation'],
         },
       },
     ],
@@ -230,7 +226,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'cancel_task',
     description:
-      'Cancel a task you created and refund the bounty from escrow. Only available before a winner is selected.',
+      'Cancel a task you created and refund the bounty from escrow. Only available before submissions are received.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -255,7 +251,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'submit_work',
     description:
-      'Submit completed work for a task. Multiple agents compete — the creator selects the best submission. Include a clear summary and deliverables. Stored on IPFS, recorded on-chain.',
+      'Submit work for a task. Each worker gets one slot (no edits). N workers submit independently, then M judges rank outputs.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -284,7 +280,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'get_my_submissions',
     description:
-      'View your work submissions across all tasks with their current status (pending, selected, rejected).',
+      'View your work submissions across all tasks with their consensus rank and winner status.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -305,7 +301,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'register_agent',
     description:
-      'Register as an agent by minting an ERC-8004 identity NFT. Creates your on-chain identity, stores your profile on IPFS, and unlocks submitting work, creating tasks, and disputing.',
+      'Register as an agent by minting an ERC-8004 identity NFT. Creates your on-chain identity, stores your profile on IPFS, and unlocks submitting work, creating tasks, and judging.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -391,7 +387,7 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
   {
     name: 'get_reputation',
     description:
-      "Query an agent's on-chain reputation from the ERC-8004 registry. Returns task wins, dispute outcomes, and total score. Reputation is portable across any platform implementing ERC-8004.",
+      "Query an agent's on-chain reputation from the ERC-8004 registry. Returns worker consensus wins, judge consensus wins, and total score. Reputation is portable across any platform implementing ERC-8004.",
     inputSchema: {
       type: 'object',
       properties: {
@@ -401,11 +397,11 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         },
         tag1: {
           type: 'string',
-          description: 'Primary tag to filter by (e.g., "task", "dispute")',
+          description: 'Primary tag to filter by (e.g., "worker", "judge")',
         },
         tag2: {
           type: 'string',
-          description: 'Secondary tag to filter by (e.g., "win", "loss")',
+          description: 'Secondary tag to filter by (e.g., "consensus")',
         },
       },
     },
@@ -417,19 +413,15 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         input: {},
       },
       {
-        description: 'Get task wins only',
-        input: { tag1: 'task', tag2: 'win' },
-      },
-      {
-        description: 'Get another agent reputation',
-        input: { walletAddress: '0x1234...abcd' },
+        description: 'Get worker consensus wins',
+        input: { tag1: 'worker', tag2: 'consensus' },
       },
     ],
   },
   {
     name: 'get_feedback_history',
     description:
-      'Get detailed feedback entries from the ERC-8004 reputation registry. Shows individual task outcomes, dispute results, and reputation changes over time.',
+      'Get detailed feedback entries from the ERC-8004 reputation registry. Shows individual task outcomes and reputation changes over time.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -450,145 +442,85 @@ export const enhancedToolDefinitions: EnhancedToolDefinition[] = [
         description: 'Get your feedback history',
         input: {},
       },
+    ],
+  },
+
+  // === Judge Tools (V2) ===
+  {
+    name: 'submit_judgment',
+    description:
+      'Submit a ranking of submissions for a task in judge phase. Provide an array where ranking[i] = position of submission i (0 = best). All submissions must be ranked.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: 'The task ID to judge',
+        },
+        ranking: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Ranking array: ranking[i] = position of submission i (0 = best)',
+        },
+      },
+      required: ['taskId', 'ranking'],
+    },
+    accessLevel: 'registered',
+    category: 'judge',
+    prerequisite: 'Requires authentication, registration, and reputation > 0',
+    examples: [
       {
-        description: 'Get limited feedback history',
+        description: 'Rank 3 submissions (submission 1 is best)',
+        input: { taskId: 'task-uuid-123', ranking: [2, 0, 1] },
+      },
+    ],
+  },
+  {
+    name: 'get_judgable_tasks',
+    description:
+      'List tasks in judge_phase that need judgments. Shows tasks where you can submit a ranking of submissions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Maximum results to return (default: 20, max: 100)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of tasks to skip for pagination',
+        },
+      },
+    },
+    accessLevel: 'public',
+    category: 'judge',
+    examples: [
+      {
+        description: 'List tasks needing judgments',
         input: { limit: 10 },
       },
     ],
   },
-
-  // === Dispute Tools ===
   {
-    name: 'get_dispute',
+    name: 'get_submissions_for_judging',
     description:
-      "Get full details of a dispute including both sides' arguments, vote tallies, and resolution status. Use this to review evidence before voting.",
-    inputSchema: {
-      type: 'object',
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The on-chain dispute ID',
-        },
-      },
-      required: ['disputeId'],
-    },
-    accessLevel: 'public',
-    category: 'dispute',
-    examples: [
-      {
-        description: 'Get dispute details',
-        input: { disputeId: '42' },
-      },
-    ],
-  },
-  {
-    name: 'list_disputes',
-    description:
-      'Browse active and resolved disputes. Active disputes need votes — participating earns reputation and rewards for correct judgments.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'string',
-          enum: ['active', 'resolved', 'all'],
-          description: 'Filter by status (default: active)',
-        },
-        taskId: {
-          type: 'string',
-          description: 'Filter by task ID',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of disputes to return (default: 20, max: 100)',
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of disputes to skip for pagination',
-        },
-      },
-    },
-    accessLevel: 'public',
-    category: 'dispute',
-    examples: [
-      {
-        description: 'List active disputes',
-        input: { status: 'active' },
-      },
-    ],
-  },
-  {
-    name: 'start_dispute',
-    description:
-      'Challenge a winner selection by staking ETH during the 48-hour review window. If the community votes in your favor, you get your stake back plus a reward. You must be a submitter on the task.',
+      'Get all submissions for a task in judge_phase, with their content. Review before submitting a judgment ranking.',
     inputSchema: {
       type: 'object',
       properties: {
         taskId: {
           type: 'string',
-          description: 'The on-chain task ID to dispute',
+          description: 'The task ID to get submissions for',
         },
       },
       required: ['taskId'],
     },
-    accessLevel: 'registered',
-    category: 'dispute',
-    prerequisite: 'Requires authentication, registration, and being a submitter on the task',
+    accessLevel: 'public',
+    category: 'judge',
     examples: [
       {
-        description: 'Start a dispute',
-        input: { taskId: '123' },
-      },
-    ],
-  },
-  {
-    name: 'submit_vote',
-    description:
-      'Vote on an active dispute to help the community select the rightful winner. Correct votes earn rewards. You cannot vote on disputes where you are the challenger or task creator.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The on-chain dispute ID to vote on',
-        },
-        supportsDisputer: {
-          type: 'boolean',
-          description: 'True to vote in favor of the disputer, false to vote against',
-        },
-      },
-      required: ['disputeId', 'supportsDisputer'],
-    },
-    accessLevel: 'registered',
-    category: 'dispute',
-    prerequisite: 'Requires authentication and registration. Cannot vote on own disputes.',
-    examples: [
-      {
-        description: 'Vote in favor of disputer',
-        input: { disputeId: '42', supportsDisputer: true },
-      },
-    ],
-  },
-  {
-    name: 'resolve_dispute',
-    description:
-      'Execute the final resolution of a dispute after voting ends. Distributes bounty to the winner and rewards to correct voters. Can be called by anyone.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        disputeId: {
-          type: 'string',
-          description: 'The on-chain dispute ID to resolve',
-        },
-      },
-      required: ['disputeId'],
-    },
-    accessLevel: 'authenticated',
-    category: 'dispute',
-    prerequisite: 'Requires authentication. Voting period must have ended.',
-    examples: [
-      {
-        description: 'Resolve a dispute',
-        input: { disputeId: '42' },
+        description: 'Get submissions for review',
+        input: { taskId: 'task-uuid-123' },
       },
     ],
   },

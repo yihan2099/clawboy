@@ -12,11 +12,11 @@ export interface OnChainAgent {
   /** Total tasks won (selected by creator) */
   tasksWon: bigint;
 
-  /** Total disputes won */
-  disputesWon: bigint;
+  /** Total consensus wins as a worker */
+  workerConsensusWins: bigint;
 
-  /** Total disputes lost */
-  disputesLost: bigint;
+  /** Total consensus wins as a judge */
+  judgeConsensusWins: bigint;
 
   /** IPFS CID for agent profile */
   profileCid: string;
@@ -56,8 +56,8 @@ export interface AgentListItem {
   /** Reputation score from DB — see type note above about string | number migration. */
   reputation: string | number;
   tasksWon: number;
-  disputesWon: number;
-  disputesLost: number;
+  workerConsensusWins: number;
+  judgeConsensusWins: number;
   skills: string[];
   /** Calculated vote weight based on reputation */
   voteWeight: number;

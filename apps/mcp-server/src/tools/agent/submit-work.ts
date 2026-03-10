@@ -4,7 +4,6 @@ import { uploadWorkSubmission } from '@pactprotocol/ipfs-utils';
 import {
   getSubmissionByTaskAndAgent,
   createSubmission,
-  updateSubmission,
 } from '@pactprotocol/database';
 import type { WorkSubmission } from '@pactprotocol/shared-types';
 
@@ -36,7 +35,7 @@ export type SubmitWorkInput = z.infer<typeof submitWorkSchema>;
 export const submitWorkTool = {
   name: 'submit_work',
   description:
-    'Submit work for an open task. In the competitive model, any registered agent can submit work. You can update your submission before the deadline.',
+    'Submit work for a task. In V2, each worker gets exactly one slot (no edits). N workers submit independently, then M judges rank the outputs.',
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -79,25 +78,43 @@ export const submitWorkTool = {
   handler: async (args: unknown, context: { callerAddress: `0x${string}` }) => {
     const input = submitWorkSchema.parse(args);
 
-    // Verify task exists and is open
+    // Verify task exists
     const task = await getTaskHandler({ taskId: input.taskId });
     if (!task) {
       throw new Error(`Task not found: ${input.taskId}`);
     }
 
-    if (task.status !== 'open') {
+    // V2: Check phase (must be open or work_phase)
+    if (task.phase !== 'open' && task.phase !== 'work_phase') {
       throw new Error(
-        `Cannot submit work for task with status: ${task.status}. Task must be open.`
+        `Cannot submit work for task in phase: ${task.phase}. Task must be in open or work_phase.`
       );
     }
 
-    // Check if deadline has passed (server-side pre-validation).
-    // The smart contract also enforces this at submitWork() via the DeadlinePassed
-    // revert, so this is a UX improvement that provides early feedback before
-    // the agent builds and uploads an IPFS submission that will be rejected on-chain.
-    if (task.deadline && new Date(task.deadline) < new Date()) {
+    // Check if work deadline has passed (server-side pre-validation)
+    if (task.workDeadline && new Date(task.workDeadline) < new Date()) {
       throw new Error(
-        `Task deadline has passed (deadline: ${task.deadline}). Submissions are no longer accepted.`
+        `Work deadline has passed (deadline: ${task.workDeadline}). Submissions are no longer accepted.`
+      );
+    }
+
+    // V2: Check if worker already submitted (no edits in V2)
+    const existingSubmission = await getSubmissionByTaskAndAgent(
+      input.taskId,
+      context.callerAddress
+    );
+    if (existingSubmission) {
+      throw new Error(
+        'You have already submitted work for this task. In V2, each worker gets exactly one submission slot (no edits).'
+      );
+    }
+
+    // Check if slots are full
+    const submissionCount = task.submissionCount;
+    const requiredWorkers = task.requiredWorkers;
+    if (requiredWorkers && submissionCount !== undefined && submissionCount >= requiredWorkers) {
+      throw new Error(
+        `All ${requiredWorkers} worker slots are filled. No more submissions accepted.`
       );
     }
 
@@ -120,48 +137,25 @@ export const submitWorkTool = {
     // Upload to IPFS
     const uploadResult = await uploadWorkSubmission(submission);
 
-    // Check if this is an update to an existing submission
-    const existingSubmission = await getSubmissionByTaskAndAgent(
-      input.taskId,
-      context.callerAddress
-    );
-
-    let isUpdate = false;
-
-    if (existingSubmission) {
-      // Update existing submission
-      await updateSubmission(existingSubmission.id, {
-        submission_cid: uploadResult.cid,
-        updated_at: new Date().toISOString(),
-      });
-      isUpdate = true;
-    } else {
-      // Create new submission with a temporary submission_index=0 placeholder.
-      // TEMPORARY DESYNC: The on-chain submissionIndex is assigned by TaskManager.submitWork()
-      // at transaction execution time, which happens after this DB write. We cannot know
-      // the correct index here without simulating the transaction. The indexer's
-      // WorkSubmitted handler (apps/indexer/src/handlers/work-submitted.ts) is the
-      // authoritative backfill: it will update this row with the real on-chain index
-      // when it processes the WorkSubmitted event. Until the event is indexed (typically
-      // a few seconds), submission_index may show 0 incorrectly. This is cosmetic only —
-      // business logic (winner selection, dispute resolution) uses the on-chain state
-      // directly and is not affected by the temporary desync.
-      await createSubmission({
-        task_id: input.taskId,
-        agent_address: context.callerAddress,
-        submission_cid: uploadResult.cid,
-        submission_index: 0, // Temporary placeholder; corrected by indexer on WorkSubmitted event
-        submitted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
+    // Create new submission with a temporary submission_index=0 placeholder.
+    // The indexer's WorkSubmitted handler will update this with the real on-chain index.
+    await createSubmission({
+      task_id: input.taskId,
+      agent_address: context.callerAddress,
+      submission_cid: uploadResult.cid,
+      submission_index: 0, // Temporary placeholder; corrected by indexer on WorkSubmitted event
+      submitted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     return {
-      message: isUpdate ? 'Submission updated successfully' : 'Work submitted successfully',
+      message: 'Work submitted successfully',
       taskId: input.taskId,
       submissionCid: uploadResult.cid,
-      isUpdate,
-      nextStep: 'Call the TaskManager contract to submit the work on-chain with this CID',
+      slotsRemaining: requiredWorkers
+        ? requiredWorkers - (submissionCount ?? 0) - 1
+        : undefined,
+      nextStep: 'Call the TaskManagerV2 contract to submit the work on-chain with this CID',
     };
   },
 };

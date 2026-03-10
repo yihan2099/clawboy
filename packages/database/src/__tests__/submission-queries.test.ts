@@ -14,10 +14,8 @@ const { resetSupabaseClient } = await import('../client');
 const {
   getSubmissionsByTaskId,
   getSubmissionByTaskAndAgent,
-  getWinningSubmission,
   getSubmissionsByAgent,
   createSubmission,
-  markSubmissionAsWinner,
 } = await import('../queries/submission-queries');
 
 const mockSubmission = {
@@ -26,7 +24,8 @@ const mockSubmission = {
   agent_address: '0xagent1',
   submission_index: 0,
   submission_cid: 'QmSub1',
-  is_winner: false,
+  consensus_rank: null as number | null,
+  is_consensus_winner: false as boolean | null,
   ipfs_fetch_failed: false,
   submitted_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-01-01T00:00:00Z',
@@ -112,33 +111,6 @@ describe('submission-queries', () => {
     });
   });
 
-  describe('getWinningSubmission', () => {
-    test('returns winning submission', async () => {
-      const winner = { ...mockSubmission, is_winner: true };
-      const builder = createMockQueryBuilder(winner);
-      supabaseMock.setBuilder(builder);
-      const result = await getWinningSubmission('task-1');
-      expect(result).toEqual(winner);
-      expect(builder.eq).toHaveBeenCalledWith('task_id', 'task-1');
-      expect(builder.eq).toHaveBeenCalledWith('is_winner', true);
-    });
-
-    test('returns null when no winner (PGRST116)', async () => {
-      supabaseMock.setBuilder(
-        createMockQueryBuilder(null, { code: 'PGRST116', message: 'not found' })
-      );
-      const result = await getWinningSubmission('task-1');
-      expect(result).toBeNull();
-    });
-
-    test('throws on other errors', async () => {
-      supabaseMock.setBuilder(createMockQueryBuilder(null, { code: 'OTHER', message: 'DB error' }));
-      await expect(getWinningSubmission('task-1')).rejects.toThrow(
-        'Failed to get winning submission'
-      );
-    });
-  });
-
   describe('getSubmissionsByAgent', () => {
     test('returns submissions by agent', async () => {
       const builder = createMockQueryBuilder([mockSubmission], null, 1);
@@ -203,46 +175,4 @@ describe('submission-queries', () => {
     });
   });
 
-  describe('markSubmissionAsWinner', () => {
-    test('uses RPC when available', async () => {
-      supabaseMock.setRpcHandler(() => Promise.resolve({ data: null, error: null }));
-      const builder = createMockQueryBuilder(mockSubmission);
-      supabaseMock.setBuilder(builder);
-      await markSubmissionAsWinner('task-1', '0xAgent1');
-      expect(supabaseMock.mockRpc).toHaveBeenCalledWith('mark_submission_winner', {
-        p_task_id: 'task-1',
-        p_agent_address: '0xagent1',
-      });
-    });
-
-    test('falls back when RPC function missing (42883)', async () => {
-      supabaseMock.setRpcHandler(() =>
-        Promise.resolve({ data: null, error: { code: '42883', message: 'function not found' } })
-      );
-      const builder = createMockQueryBuilder(mockSubmission);
-      supabaseMock.setBuilder(builder);
-      const result = await markSubmissionAsWinner('task-1', '0xAgent1');
-      expect(result).toEqual(mockSubmission);
-    });
-
-    test('throws on other RPC errors', async () => {
-      supabaseMock.setRpcHandler(() =>
-        Promise.resolve({ data: null, error: { code: 'OTHER', message: 'RPC error' } })
-      );
-      await expect(markSubmissionAsWinner('task-1', '0xagent')).rejects.toThrow(
-        'Failed to mark winner'
-      );
-    });
-
-    test('lowercases address', async () => {
-      supabaseMock.setRpcHandler(() => Promise.resolve({ data: null, error: null }));
-      const builder = createMockQueryBuilder(mockSubmission);
-      supabaseMock.setBuilder(builder);
-      await markSubmissionAsWinner('task-1', '0xABCDEF');
-      expect(supabaseMock.mockRpc).toHaveBeenCalledWith('mark_submission_winner', {
-        p_task_id: 'task-1',
-        p_agent_address: '0xabcdef',
-      });
-    });
-  });
 });

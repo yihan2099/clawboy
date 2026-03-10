@@ -1,4 +1,5 @@
 import { describe, test, expect, mock, beforeEach } from 'bun:test';
+import type { TaskPhase } from '@pactprotocol/shared-types';
 import { setupViemMock } from '../helpers/mock-viem';
 
 const viemMock = setupViemMock();
@@ -9,7 +10,6 @@ mock.module('@pactprotocol/contracts', () => ({
   PactAgentAdapterABI: [],
   ERC8004IdentityRegistryABI: [],
   ERC8004ReputationRegistryABI: [],
-  DisputeResolverABI: [],
   getContractAddresses: mock(() => ({
     taskManager: '0xTaskManager' as `0x${string}`,
     escrowVault: '0xEscrowVault' as `0x${string}`,
@@ -19,7 +19,7 @@ mock.module('@pactprotocol/contracts', () => ({
   })),
 }));
 
-const { getTaskManagerAddress, getTaskCount, getTask, contractStatusToTaskStatus } =
+const { getTaskManagerAddress, getTaskCount, getTask, contractPhaseToTaskPhase } =
   await import('../../contracts/task-manager');
 
 describe('task-manager contract', () => {
@@ -61,80 +61,59 @@ describe('task-manager contract', () => {
   });
 
   describe('getTask', () => {
-    test('returns parsed task data', async () => {
-      const taskTuple = [
-        1n,
-        '0xCreator',
-        0,
-        1000000000000000000n,
-        '0x0000000000000000000000000000000000000000',
-        'QmSpec123',
-        100n,
-        0n,
-        '0x0000000000000000000000000000000000000000',
-        0n,
-        0n,
-      ];
-      viemMock.setReadContractResult(taskTuple);
+    test('returns parsed task data (V2 struct)', async () => {
+      const taskStruct = {
+        creator: '0xCreator',
+        specCid: 'QmSpec123',
+        bounty: 1000000000000000000n,
+        bountyToken: '0x0000000000000000000000000000000000000000',
+        requiredWorkers: 3,
+        requiredJudges: 2,
+        workDeadline: 100n,
+        judgeDeadline: 200n,
+        phase: 0,
+        submissionCount: 0,
+        judgmentCount: 0,
+      };
+      viemMock.setReadContractResult(taskStruct);
 
       const task = await getTask(1n);
-      expect(task.id).toBe(1n);
       expect(task.creator).toBe('0xCreator');
-      expect(task.status).toBe(0);
-      expect(task.bountyAmount).toBe(1000000000000000000n);
-      expect(task.specificationCid).toBe('QmSpec123');
-    });
-
-    test('handles task with winner selected', async () => {
-      const taskTuple = [
-        2n,
-        '0xCreator',
-        1,
-        500n,
-        '0xToken',
-        'QmSpec',
-        50n,
-        0n,
-        '0xWinner',
-        12345n,
-        99999n,
-      ];
-      viemMock.setReadContractResult(taskTuple);
-
-      const task = await getTask(2n);
-      expect(task.selectedWinner).toBe('0xWinner');
-      expect(task.selectedAt).toBe(12345n);
-      expect(task.challengeDeadline).toBe(99999n);
+      expect(task.specCid).toBe('QmSpec123');
+      expect(task.bounty).toBe(1000000000000000000n);
+      expect(task.phase).toBe(0);
+      expect(task.requiredWorkers).toBe(3);
+      expect(task.requiredJudges).toBe(2);
     });
   });
 
-  describe('contractStatusToTaskStatus', () => {
+  describe('contractPhaseToTaskPhase', () => {
     test('maps 0 to open', () => {
-      expect(contractStatusToTaskStatus(0)).toBe('open' as any);
+      expect(contractPhaseToTaskPhase(0)).toBe('open' as TaskPhase);
     });
 
-    test('maps 1 to in_review', () => {
-      expect(contractStatusToTaskStatus(1)).toBe('in_review' as any);
+    test('maps 1 to work_phase', () => {
+      expect(contractPhaseToTaskPhase(1)).toBe('work_phase' as TaskPhase);
     });
 
-    test('maps 2 to completed', () => {
-      expect(contractStatusToTaskStatus(2)).toBe('completed' as any);
+    test('maps 2 to judge_phase', () => {
+      expect(contractPhaseToTaskPhase(2)).toBe('judge_phase' as TaskPhase);
     });
 
-    test('maps 3 to disputed', () => {
-      expect(contractStatusToTaskStatus(3)).toBe('disputed' as any);
+    test('maps 3 to resolved', () => {
+      expect(contractPhaseToTaskPhase(3)).toBe('resolved' as TaskPhase);
     });
 
-    test('maps 4 to refunded', () => {
-      expect(contractStatusToTaskStatus(4)).toBe('refunded' as any);
+    test('maps 4 to cancelled', () => {
+      expect(contractPhaseToTaskPhase(4)).toBe('cancelled' as TaskPhase);
     });
 
-    test('maps 5 to cancelled', () => {
-      expect(contractStatusToTaskStatus(5)).toBe('cancelled' as any);
+    test('maps 5 to failed', () => {
+      expect(contractPhaseToTaskPhase(5)).toBe('failed' as TaskPhase);
     });
 
-    test('defaults unknown status to open', () => {
-      expect(contractStatusToTaskStatus(99)).toBe('open' as any);
+    test('throws on unknown phase', () => {
+      expect(() => contractPhaseToTaskPhase(99)).toThrow('Unknown contract task phase: 99');
     });
   });
 });

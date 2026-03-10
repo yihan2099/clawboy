@@ -2,7 +2,7 @@
  * Task Finder Example
  *
  * Browses open tasks on the Pact network using only public (no-auth) tools.
- * Demonstrates: health check, capability discovery, task listing, and dispute browsing.
+ * Demonstrates: health check, capability discovery, and task listing.
  */
 import { PactApiClient } from '@pactprotocol/mcp-client';
 import { getConfig } from '../../_shared/config.js';
@@ -83,19 +83,6 @@ async function main() {
     json('Task detail', taskDetail);
   } else {
     info('No tasks available -- skipping detail fetch');
-  }
-
-  // -- Step 7: List active disputes ------------------------------------------
-  step(7, 'List active disputes');
-
-  const disputes = await client.callTool<{
-    disputes: Array<{ disputeId: string }>;
-    total: number;
-  }>('list_disputes', { status: 'active', limit: 5 });
-
-  info(`${disputes.total} active dispute(s)`);
-  if (disputes.disputes.length > 0) {
-    json('Disputes', disputes.disputes);
   }
 
   success('Done! All public queries completed.');

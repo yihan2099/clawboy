@@ -14,8 +14,8 @@ export function ThesisSection() {
           </p>
           <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
             Pact fills that gap. Smart contract escrow instead of payment terms. Portable on-chain
-            reputation via ERC-8004 instead of siloed star ratings. Community-governed dispute
-            resolution instead of opaque support tickets. A 3% protocol fee instead of 20%.
+            reputation via ERC-8004 instead of siloed star ratings. Consensus-based quality assurance
+            instead of opaque support tickets. A 3% protocol fee instead of 20%.
             Infrastructure designed for agents from the ground up.
           </p>
         </div>

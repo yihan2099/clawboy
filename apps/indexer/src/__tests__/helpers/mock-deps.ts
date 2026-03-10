@@ -70,16 +70,20 @@ function _createMockDatabase() {
   const updateAgent = createResettableMock(() => Promise.resolve());
   const getAgentsWithFailedIpfs = createResettableMock(() => Promise.resolve([]));
   const incrementTasksWon = createResettableMock(() => Promise.resolve());
-  const incrementDisputesWon = createResettableMock(() => Promise.resolve());
-  const incrementDisputesLost = createResettableMock(() => Promise.resolve());
+  const updateAgentReputation = createResettableMock(() => Promise.resolve());
 
-  // Dispute operations
-  const createDispute = createResettableMock(() => Promise.resolve({ id: 'dispute-1' }));
-  const updateDispute = createResettableMock(() => Promise.resolve());
-  const getDisputeByChainId = createResettableMock(() =>
-    Promise.resolve({ id: 'db-dispute-1', disputer_address: '0xdisputer' })
-  );
-  const createDisputeVote = createResettableMock(() => Promise.resolve());
+  // Task phase operations (V2)
+  const updateTaskPhase = createResettableMock(() => Promise.resolve());
+  const updateTaskJudgmentCount = createResettableMock(() => Promise.resolve());
+  const updateTaskSubmissionCount = createResettableMock(() => Promise.resolve());
+
+  // Judgment operations (V2)
+  const createJudgment = createResettableMock(() => Promise.resolve({ id: 'judgment-1' }));
+  const hasJudgedTask = createResettableMock(() => Promise.resolve(false));
+  const getJudgmentsByTask = createResettableMock(() => Promise.resolve([]));
+
+  // Task payout operations (V2)
+  const createTaskPayout = createResettableMock(() => Promise.resolve({ id: 'payout-1' }));
 
   // Sync state
   const getLastSyncedBlock = createResettableMock(() => Promise.resolve(null));
@@ -99,6 +103,9 @@ function _createMockDatabase() {
     getTaskByChainId,
     getTaskById,
     getTasksWithFailedIpfs,
+    updateTaskPhase,
+    updateTaskJudgmentCount,
+    updateTaskSubmissionCount,
     createSubmission,
     updateSubmission,
     getSubmissionByTaskAndAgent,
@@ -109,12 +116,11 @@ function _createMockDatabase() {
     updateAgent,
     getAgentsWithFailedIpfs,
     incrementTasksWon,
-    incrementDisputesWon,
-    incrementDisputesLost,
-    createDispute,
-    updateDispute,
-    getDisputeByChainId,
-    createDisputeVote,
+    updateAgentReputation,
+    createJudgment,
+    hasJudgedTask,
+    getJudgmentsByTask,
+    createTaskPayout,
     getLastSyncedBlock,
     updateSyncState,
     getAgentsWithWebhooks,
@@ -186,13 +192,17 @@ function _createMockCache() {
   const invalidateTaskCaches = createResettableMock(() => Promise.resolve());
   const invalidateSubmissionCaches = createResettableMock(() => Promise.resolve());
   const invalidateAgentCaches = createResettableMock(() => Promise.resolve());
-  const invalidateDisputeCaches = createResettableMock(() => Promise.resolve());
+  const invalidatePhaseCaches = createResettableMock(() => Promise.resolve());
+  const invalidateJudgmentCaches = createResettableMock(() => Promise.resolve());
+  const invalidateStatsCaches = createResettableMock(() => Promise.resolve());
 
   const allExports = {
     invalidateTaskCaches,
     invalidateSubmissionCaches,
     invalidateAgentCaches,
-    invalidateDisputeCaches,
+    invalidatePhaseCaches,
+    invalidateJudgmentCaches,
+    invalidateStatsCaches,
   };
 
   return {
@@ -216,10 +226,10 @@ export function createMockCache() {
 let _typesInstance: ReturnType<typeof _createMockSharedTypes> | null = null;
 
 function _createMockSharedTypes() {
-  const assertValidStatusTransition = createResettableMock(() => {});
+  const assertValidPhaseTransition = createResettableMock(() => {});
 
   const allExports = {
-    assertValidStatusTransition,
+    assertValidPhaseTransition,
   };
 
   return {
@@ -353,7 +363,6 @@ function _createMockContracts() {
   const getContractAddresses = createResettableMock(() => ({
     taskManager: '0xTaskManager',
     agentAdapter: '0xAgentAdapter',
-    disputeResolver: '0xDisputeResolver',
   }));
 
   const allExports = { getContractAddresses };

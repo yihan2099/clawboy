@@ -44,12 +44,13 @@ export const getMySubmissionsTool = {
         return {
           taskId: submission.task_id,
           taskTitle: task?.title ?? 'Unknown Task',
-          taskStatus: task?.status ?? 'unknown',
+          taskPhase: task?.phase ?? 'unknown',
           submissionCid: submission.submission_cid,
+          submissionIndex: submission.submission_index,
           submittedAt: submission.submitted_at,
-          updatedAt: submission.updated_at,
-          isWinner: submission.is_winner,
-          bountyAmount: task?.bounty_amount ?? '0',
+          consensusRank: submission.consensus_rank,
+          isConsensusWinner: submission.is_consensus_winner ?? false,
+          bountyAmount: String(task?.bounty_amount ?? 0),
         };
       })
     );

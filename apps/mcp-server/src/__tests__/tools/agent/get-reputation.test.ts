@@ -7,9 +7,8 @@ const mockGetReputationHandler = mock(
       walletAddress: '0xaabbccddaabbccddaabbccddaabbccddaabbccdd',
       agentId: '1',
       reputation: {
-        taskWins: '5',
-        disputeWins: '2',
-        disputeLosses: '1',
+        workerConsensusWins: '5',
+        judgeConsensusWins: '2',
         totalReputation: '100',
       },
     })
@@ -37,9 +36,8 @@ describe('get_reputation tool', () => {
       walletAddress: '0xaabbccddaabbccddaabbccddaabbccddaabbccdd',
       agentId: '1',
       reputation: {
-        taskWins: '5',
-        disputeWins: '2',
-        disputeLosses: '1',
+        workerConsensusWins: '5',
+        judgeConsensusWins: '2',
         totalReputation: '100',
       },
     });
@@ -80,9 +78,8 @@ describe('get_reputation tool', () => {
       walletAddress: context.callerAddress,
       agentId: '1',
       reputation: {
-        taskWins: '5',
-        disputeWins: '2',
-        disputeLosses: '1',
+        workerConsensusWins: '5',
+        judgeConsensusWins: '2',
         totalReputation: '100',
       },
       filteredFeedback: {

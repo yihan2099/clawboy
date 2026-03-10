@@ -153,36 +153,6 @@ export async function incrementTasksWon(address: string): Promise<void> {
 }
 
 /**
- * Increment disputes won for an agent
- */
-export async function incrementDisputesWon(address: string): Promise<void> {
-  const supabase = getWriteClient();
-
-  const { error } = await supabase.rpc('increment_disputes_won', {
-    agent_addr: address.toLowerCase(),
-  });
-
-  if (error) {
-    throw new Error(`Failed to increment disputes won: ${error.message}`);
-  }
-}
-
-/**
- * Increment disputes lost for an agent
- */
-export async function incrementDisputesLost(address: string): Promise<void> {
-  const supabase = getWriteClient();
-
-  const { error } = await supabase.rpc('increment_disputes_lost', {
-    agent_addr: address.toLowerCase(),
-  });
-
-  if (error) {
-    throw new Error(`Failed to increment disputes lost: ${error.message}`);
-  }
-}
-
-/**
  * Update agent reputation
  */
 export async function updateAgentReputation(address: string, delta: number): Promise<void> {

@@ -9,7 +9,6 @@ Shared TypeScript type definitions used across the Pact monorepo.
 | `.`         | All types                           |
 | `./task`    | Task types and status state machine |
 | `./agent`   | Agent types                         |
-| `./dispute` | Dispute types                       |
 | `./mcp`     | MCP protocol types                  |
 
 Also exports utility functions (address normalization, etc.) from `./utils`.

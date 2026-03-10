@@ -4,7 +4,8 @@ pragma solidity ^0.8.24;
 /**
  * @title IPactAgentAdapter
  * @notice Interface for the Pact to ERC-8004 adapter
- * @dev Bridges Pact's TaskManager and DisputeResolver to ERC-8004 registries
+ * @dev Bridges Pact's TaskManagerV2 to ERC-8004 registries.
+ *      V2: Worker/Judge consensus reputation replaces dispute-based reputation.
  */
 interface IPactAgentAdapter {
     /// @notice Emitted when an agent is registered
@@ -13,21 +14,11 @@ interface IPactAgentAdapter {
     /// @notice Emitted when an agent's profile is updated
     event AgentProfileUpdated(address indexed wallet, uint256 indexed agentId, string newURI);
 
-    /// @notice Emitted when a task win is recorded
-    event TaskWinRecorded(address indexed wallet, uint256 indexed agentId, uint256 indexed taskId);
+    /// @notice Emitted when a worker consensus win is recorded
+    event WorkerConsensusRecorded(address indexed wallet, uint256 indexed agentId);
 
-    /// @notice Emitted when a dispute win is recorded
-    event DisputeWinRecorded(
-        address indexed wallet, uint256 indexed agentId, uint256 indexed disputeId
-    );
-
-    /// @notice Emitted when a dispute loss is recorded
-    event DisputeLossRecorded(
-        address indexed wallet, uint256 indexed agentId, uint256 indexed disputeId
-    );
-
-    /// @notice Emitted when reputation is updated (for voters)
-    event VoterReputationUpdated(address indexed wallet, uint256 indexed agentId, int256 delta);
+    /// @notice Emitted when a judge consensus win is recorded
+    event JudgeConsensusRecorded(address indexed wallet, uint256 indexed agentId);
 
     /**
      * @notice Check if a wallet is registered as an agent
@@ -57,53 +48,42 @@ interface IPactAgentAdapter {
     function updateProfile(string calldata newURI) external;
 
     /**
-     * @notice Record a task win for an agent (called by TaskManager)
-     * @param agent The agent's wallet address
-     * @param taskId The task ID
+     * @notice Record a worker consensus win (called by TaskManagerV2)
+     * @param agent The worker's wallet address
      */
-    function recordTaskWin(address agent, uint256 taskId) external;
+    function recordWorkerConsensus(address agent) external;
 
     /**
-     * @notice Record a dispute win for an agent (called by DisputeResolver)
-     * @param agent The agent's wallet address
-     * @param disputeId The dispute ID
+     * @notice Record a judge consensus win (called by TaskManagerV2)
+     * @param agent The judge's wallet address
      */
-    function recordDisputeWin(address agent, uint256 disputeId) external;
+    function recordJudgeConsensus(address agent) external;
 
     /**
-     * @notice Record a dispute loss for an agent (called by DisputeResolver)
+     * @notice Check if an agent can serve as a judge (requires reputation > 0)
      * @param agent The agent's wallet address
-     * @param disputeId The dispute ID
+     * @return True if the agent can judge
      */
-    function recordDisputeLoss(address agent, uint256 disputeId) external;
+    function canJudge(address agent) external view returns (bool);
 
     /**
-     * @notice Update voter reputation (called by DisputeResolver)
-     * @param voter The voter's wallet address
-     * @param delta The reputation change (+3 for correct vote, -2 for incorrect)
-     */
-    function updateVoterReputation(address voter, int256 delta) external;
-
-    /**
-     * @notice Get the vote weight for an agent in disputes
-     * @dev Calculated from feedback: weight = log2(reputation + 1)
+     * @notice Get the total reputation for an agent
      * @param agent The agent's wallet address
-     * @return The vote weight (minimum 1 for registered agents)
+     * @return Total reputation score
      */
-    function getVoteWeight(address agent) external view returns (uint256);
+    function getReputation(address agent) external view returns (int256);
 
     /**
      * @notice Get reputation summary for an agent
      * @param agent The agent's wallet address
-     * @return taskWins Number of tasks won
-     * @return disputeWins Number of disputes won
-     * @return disputeLosses Number of disputes lost
+     * @return workerConsensusWins Number of worker consensus wins
+     * @return judgeConsensusWins Number of judge consensus wins
      * @return totalReputation Calculated total reputation
      */
     function getReputationSummary(address agent)
         external
         view
-        returns (uint64 taskWins, uint64 disputeWins, uint64 disputeLosses, int256 totalReputation);
+        returns (uint64 workerConsensusWins, uint64 judgeConsensusWins, int256 totalReputation);
 
     /**
      * @notice Get the ERC-8004 Identity Registry address

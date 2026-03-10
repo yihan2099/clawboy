@@ -1,4 +1,6 @@
 /**
+ * TODO: Update for V2 — uses V1 field names (status vs phase, winner_address, etc.)
+ *
  * End-to-End Task Lifecycle Test
  *
  * Tests the complete task lifecycle on Base Sepolia testnet:

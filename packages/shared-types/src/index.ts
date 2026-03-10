@@ -3,14 +3,11 @@
 // This would let UI components detect when data was served from cache and show a "refresh"
 // indicator, improving perceived reliability for on-chain data that changes frequently.
 
-// Task types (includes task status state machine)
+// Task types (includes task phase state machine, judgments, payouts)
 export * from './task';
 
 // Agent types
 export * from './agent';
-
-// Dispute types
-export * from './dispute';
 
 // MCP types
 export * from './mcp';

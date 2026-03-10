@@ -10,10 +10,10 @@
 /** Patterns that are safe to expose to clients (validation, not-found, auth errors) */
 const SAFE_ERROR_PATTERNS: RegExp[] = [
   /^Task not found/i,
-  /^Dispute not found/i,
+  /^Judgment not found/i,
   /^Agent not found/i,
   /^Submission not found/i,
-  /^Invalid (wallet address|task ID|dispute ID|agent ID|session ID|bounty|CID|token|signature|deadline) format/i,
+  /^Invalid (wallet address|task ID|judgment ID|agent ID|session ID|bounty|CID|token|signature|deadline|ranking) format/i,
   /^Missing required/i,
   /^Bounty amount must be/i,
   /^You (are not|have not|must be|cannot|already)/i,

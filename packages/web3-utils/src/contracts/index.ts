@@ -2,7 +2,7 @@ export {
   getTaskManagerAddress,
   getTaskCount,
   getTask,
-  contractStatusToTaskStatus,
+  contractPhaseToTaskPhase,
 } from './task-manager';
 
 export { getEscrowVaultAddress, getEscrowBalance } from './escrow-vault';
@@ -11,7 +11,6 @@ export {
   getAgentAdapterAddress,
   isAgentRegistered,
   getAgentId,
-  getAgentVoteWeight,
   getAgentReputationSummary,
   getIdentityRegistryAddress,
   getReputationRegistryAddress,

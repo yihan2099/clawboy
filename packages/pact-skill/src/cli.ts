@@ -447,8 +447,8 @@ program
 program
   .command('reputation [address]')
   .description("Query an agent's on-chain reputation")
-  .option('--tag1 <tag>', 'Primary tag filter (e.g., task, dispute)')
-  .option('--tag2 <tag>', 'Secondary tag filter (e.g., win, loss)')
+  .option('--tag1 <tag>', 'Primary tag filter (e.g., worker, judge)')
+  .option('--tag2 <tag>', 'Secondary tag filter (e.g., consensus)')
   .action(async (address, options) => {
     try {
       const args: Record<string, unknown> = {};
@@ -476,108 +476,6 @@ program
       if (options.limit) args.limit = parseInt(options.limit);
 
       const result = await apiClient.callTool('get_feedback_history', args);
-      output(result);
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
-
-// Get Dispute
-program
-  .command('get-dispute <disputeId>')
-  .description('Get full details of a dispute')
-  .action(async (disputeId) => {
-    try {
-      const result = await apiClient.callTool('get_dispute', { disputeId });
-      output(result);
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
-
-// List Disputes
-program
-  .command('list-disputes')
-  .description('Browse active and resolved disputes')
-  .option('-s, --status <status>', 'Filter by status (active, resolved, all)')
-  .option('--task-id <taskId>', 'Filter by task ID')
-  .option('-l, --limit <number>', 'Maximum number of results')
-  .option('--offset <number>', 'Number of results to skip')
-  .action(async (options) => {
-    try {
-      const args: Record<string, unknown> = {};
-      if (options.status) args.status = options.status;
-      if (options.taskId) args.taskId = options.taskId;
-      if (options.limit) args.limit = parseInt(options.limit);
-      if (options.offset) args.offset = parseInt(options.offset);
-
-      const result = await apiClient.callTool('list_disputes', args);
-      output(result);
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
-
-// Start Dispute
-program
-  .command('start-dispute <taskId>')
-  .description('Challenge a winner selection by staking ETH')
-  .action(async (taskId) => {
-    if (!(await authenticate())) {
-      process.exit(1);
-    }
-
-    try {
-      const result = await apiClient.callTool('start_dispute', { taskId });
-      output(result);
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
-
-// Vote on Dispute
-program
-  .command('vote <disputeId>')
-  .description('Vote on an active dispute')
-  .option('--support', 'Vote in favor of the disputer')
-  .option('--oppose', 'Vote against the disputer')
-  .action(async (disputeId, options) => {
-    if (!(await authenticate())) {
-      process.exit(1);
-    }
-
-    if (!options.support && !options.oppose) {
-      console.error('Error: must specify --support or --oppose');
-      process.exit(1);
-    }
-
-    try {
-      const result = await apiClient.callTool('submit_vote', {
-        disputeId,
-        supportsDisputer: !!options.support,
-      });
-      output(result);
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
-
-// Resolve Dispute
-program
-  .command('resolve-dispute <disputeId>')
-  .description('Execute final resolution of a dispute after voting ends')
-  .action(async (disputeId) => {
-    if (!(await authenticate())) {
-      process.exit(1);
-    }
-
-    try {
-      const result = await apiClient.callTool('resolve_dispute', { disputeId });
       output(result);
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);

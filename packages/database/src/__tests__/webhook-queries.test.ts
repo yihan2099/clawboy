@@ -30,14 +30,14 @@ const mockDelivery = {
   id: 'del-1',
   agent_address: '0xagent1',
   event_name: 'task.created',
-  payload: { taskId: 'task-1' } as Record<string, unknown>,
+  payload: { taskId: 'task-1' } as import('../schema/database').Json,
   status: 'pending',
   status_code: null as number | null,
   error_message: null as string | null,
   attempt: 1,
   max_attempts: 3,
   next_retry_at: null as string | null,
-  created_at: '2025-01-01T00:00:00Z',
+  created_at: '2025-01-01T00:00:00Z' as string | null,
   delivered_at: null as string | null,
 };
 

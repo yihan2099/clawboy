@@ -38,8 +38,8 @@ export const cancelTaskTool = {
       throw new Error('Only the task creator can cancel the task');
     }
 
-    if (task.status !== 'open') {
-      throw new Error(`Cannot cancel task with status: ${task.status}`);
+    if (task.phase !== 'open') {
+      throw new Error(`Cannot cancel task with phase: ${task.phase}`);
     }
 
     return {

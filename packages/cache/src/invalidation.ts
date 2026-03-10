@@ -15,9 +15,9 @@ import {
   submissionPattern,
   submissionKey,
   submissionListKey,
+  judgmentPattern,
+  payoutPattern,
   statsPattern,
-  disputeKey,
-  disputeListKey,
 } from './key-builder';
 
 /**
@@ -29,9 +29,11 @@ export async function invalidateTaskCaches(taskId?: string): Promise<number> {
   let count = 0;
 
   if (taskId) {
-    // Invalidate specific task
+    // Invalidate specific task and its judgment/payout caches
     const deleted = await cache.delete(taskKey(taskId));
     if (deleted) count++;
+    // Also clear judgment and payout caches for this task
+    count += await cache.deleteByPattern(`task:${taskId}:*`);
   } else {
     // Invalidate all tasks
     count += await cache.deleteByPattern(taskPattern());
@@ -58,6 +60,8 @@ export async function invalidateAgentCaches(address?: string): Promise<number> {
     // Invalidate specific agent
     const deleted = await cache.delete(agentByAddressKey(address));
     if (deleted) count++;
+    // Also clear agent judgment/payout caches
+    count += await cache.deleteByPattern(`agent:${address.toLowerCase()}:*`);
   } else {
     // Invalidate all agents
     count += await cache.deleteByPattern(agentPattern());
@@ -110,34 +114,50 @@ export async function invalidateSubmissionCaches(
 }
 
 /**
- * Invalidate dispute-related caches
- * @param disputeId Optional specific dispute ID to invalidate
+ * Invalidate judgment-related caches
  * @param taskId Optional task ID to scope invalidation
  */
-export async function invalidateDisputeCaches(
-  disputeId?: string,
-  taskId?: string
-): Promise<number> {
+export async function invalidateJudgmentCaches(taskId?: string): Promise<number> {
   const cache = getCache();
   let count = 0;
 
-  if (disputeId) {
-    // Invalidate specific dispute
-    const deleted = await cache.delete(disputeKey(disputeId));
-    if (deleted) count++;
+  if (taskId) {
+    count += await cache.deleteByPattern(`task:${taskId}:judgments`);
+  } else {
+    count += await cache.deleteByPattern(judgmentPattern());
   }
+
+  return count;
+}
+
+/**
+ * Invalidate payout-related caches
+ * @param taskId Optional task ID to scope invalidation
+ */
+export async function invalidatePayoutCaches(taskId?: string): Promise<number> {
+  const cache = getCache();
+  let count = 0;
 
   if (taskId) {
-    // Invalidate dispute lists for this task
-    count += await cache.deleteByPattern(disputeListKey({ taskId }) + '*');
-  } else if (!disputeId) {
-    // Invalidate all disputes
-    count += await cache.deleteByPattern(disputeKey('') + '*');
+    count += await cache.deleteByPattern(`task:${taskId}:payouts`);
+  } else {
+    count += await cache.deleteByPattern(payoutPattern());
   }
 
-  // Invalidate dispute lists
-  count += await cache.deleteByPattern(disputeListKey({}) + '*');
+  return count;
+}
 
+/**
+ * Invalidate phase-related caches (task lists filtered by phase)
+ *
+ * Clears both dedicated phase keys (`tasks:phase:*` from tasksByPhaseKey)
+ * and task list keys that include a phase filter (`tasks:p:*` from taskListKey).
+ */
+export async function invalidatePhaseCaches(): Promise<number> {
+  const cache = getCache();
+  let count = 0;
+  count += await cache.deleteByPattern('tasks:phase:*');
+  count += await cache.deleteByPattern('tasks:p:*');
   return count;
 }
 
@@ -161,6 +181,8 @@ export async function invalidateAllCaches(): Promise<number> {
   count += await cache.deleteByPattern(taskListPattern());
   count += await cache.deleteByPattern(agentPattern());
   count += await cache.deleteByPattern(submissionPattern());
+  count += await cache.deleteByPattern(judgmentPattern());
+  count += await cache.deleteByPattern(payoutPattern());
   count += await cache.deleteByPattern(statsPattern());
 
   return count;

@@ -35,13 +35,6 @@ export {
   type AgentStats,
 } from './statistics-cache';
 
-// Dispute caching
-export {
-  getCachedDispute,
-  getCachedDisputeList,
-  type DisputeListData,
-} from './dispute-cache';
-
 // Batch utilities
 export {
   batchFetchWithCache,

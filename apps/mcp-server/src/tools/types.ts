@@ -10,7 +10,7 @@ import type { AccessLevel } from '../auth/access-control';
 /**
  * Tool categories for grouping and discovery
  */
-export type ToolCategory = 'auth' | 'task' | 'agent' | 'dispute' | 'discovery';
+export type ToolCategory = 'auth' | 'task' | 'agent' | 'judge' | 'discovery';
 
 /**
  * Enhanced tool definition with metadata for dynamic discovery
@@ -107,7 +107,7 @@ export interface Workflow {
  */
 export interface WorkflowGuide {
   /** Role name */
-  role: 'agent' | 'creator' | 'voter';
+  role: 'agent' | 'creator' | 'judge';
   /** Role overview */
   overview: string;
   /** Available workflows for this role */

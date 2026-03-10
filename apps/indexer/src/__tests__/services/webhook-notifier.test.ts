@@ -8,9 +8,8 @@ mockDb.setupMock();
 const {
   notifyTaskCreated,
   notifyWorkSubmitted,
-  notifyWinnerSelected,
-  notifyTaskCompleted,
-  notifyVoteSubmitted,
+  notifyJudgmentSubmitted,
+  notifyTaskResolved,
   processWebhookRetries,
 } = await import('../../services/webhook-notifier');
 
@@ -74,12 +73,24 @@ describe('notifyWorkSubmitted', () => {
   });
 });
 
-describe('notifyWinnerSelected', () => {
+describe('notifyJudgmentSubmitted', () => {
   beforeEach(() => {
     mockDb.resetAll();
   });
 
-  test('notifies all submitters about winner selection', async () => {
+  test('notifies creator about judgment', async () => {
+    mockDb.getAgentWebhookInfo.mockImplementation(() => Promise.resolve(mockAgent));
+    await notifyJudgmentSubmitted('1', '0xcreator', '0xjudge', 0);
+    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xcreator');
+  });
+});
+
+describe('notifyTaskResolved', () => {
+  beforeEach(() => {
+    mockDb.resetAll();
+  });
+
+  test('notifies all submitters about task resolution', async () => {
     mockDb.getSubmissionsByTaskId.mockImplementation(() =>
       Promise.resolve({
         submissions: [{ agent_address: '0xagent1' }, { agent_address: '0xagent2' }],
@@ -87,33 +98,8 @@ describe('notifyWinnerSelected', () => {
       })
     );
     mockDb.getAgentsWebhookInfoByAddresses.mockImplementation(() => Promise.resolve([mockAgent]));
-    await notifyWinnerSelected('1', 'db-task-1', '0xwinner');
+    await notifyTaskResolved('1', 'db-task-1', ['0xwinner'], ['0xjudge']);
     expect(mockDb.getSubmissionsByTaskId).toHaveBeenCalledWith('db-task-1');
-    expect(mockDb.getAgentsWebhookInfoByAddresses).toHaveBeenCalledWith(['0xagent1', '0xagent2']);
-  });
-});
-
-describe('notifyTaskCompleted', () => {
-  beforeEach(() => {
-    mockDb.resetAll();
-  });
-
-  test('notifies winner about task completion', async () => {
-    mockDb.getAgentWebhookInfo.mockImplementation(() => Promise.resolve(mockAgent));
-    await notifyTaskCompleted('1', '0xwinner', '5000');
-    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xwinner');
-  });
-});
-
-describe('notifyVoteSubmitted', () => {
-  beforeEach(() => {
-    mockDb.resetAll();
-  });
-
-  test('notifies disputer about a new vote', async () => {
-    mockDb.getAgentWebhookInfo.mockImplementation(() => Promise.resolve(mockAgent));
-    await notifyVoteSubmitted('1', '10', '0xdisputer', '0xvoter', true);
-    expect(mockDb.getAgentWebhookInfo).toHaveBeenCalledWith('0xdisputer');
   });
 });
 

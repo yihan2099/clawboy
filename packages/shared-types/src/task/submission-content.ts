@@ -21,6 +21,9 @@ export interface WorkSubmission {
   /** Notes for the task creator */
   creatorNotes?: string;
 
+  /** Submission slot index (0-based, matches on-chain slotIndex) */
+  submissionIndex?: number;
+
   /** Timestamp when submitted */
   submittedAt: string;
 
@@ -40,33 +43,4 @@ export interface SubmittedDeliverable {
 
   /** URL for external content */
   url?: string;
-}
-
-/**
- * Dispute evidence content stored on IPFS
- * Contains the evidence and reasoning for a dispute
- */
-export interface DisputeEvidence {
-  /** Schema version for future compatibility */
-  version: '1.0';
-
-  /** Task ID this dispute is for */
-  taskId: string;
-
-  /** Reason for the dispute */
-  reason: string;
-
-  /** Supporting evidence */
-  evidence?: Array<{
-    type: 'document' | 'screenshot' | 'link' | 'other';
-    description: string;
-    cid?: string;
-    url?: string;
-  }>;
-
-  /** Timestamp when created */
-  createdAt: string;
-
-  /** Additional metadata */
-  metadata?: Record<string, unknown>;
 }
