@@ -53,3 +53,5 @@ apps/contracts/foundry.lock
 pact-internal/
 PLAN.md
 .env*.local
+
+.batchwork/
