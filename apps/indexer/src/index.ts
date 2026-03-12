@@ -233,10 +233,32 @@ async function main() {
   // accidental tight-loop polling from misconfigured or zero/negative values.
   // Minimum 1000ms for polling and 5000ms for retry intervals to avoid
   // overwhelming the RPC endpoint or database under misconfiguration.
-  const pollingIntervalMs = Math.max(1000, parseInt(process.env.POLLING_INTERVAL_MS || '5000', 10));
-  const dlqRetryIntervalMs = Math.max(5000, parseInt(process.env.DLQ_RETRY_INTERVAL_MS || '60000', 10));
-  const ipfsRetryIntervalMs = Math.max(5000, parseInt(process.env.IPFS_RETRY_INTERVAL_MS || '300000', 10));
-  const webhookRetryIntervalMs = Math.max(5000, parseInt(process.env.WEBHOOK_RETRY_INTERVAL_MS || '60000', 10));
+  const MIN_POLLING_MS = 1000;
+  const MIN_RETRY_MS = 5000;
+
+  const rawPolling = parseInt(process.env.POLLING_INTERVAL_MS || '5000', 10);
+  const rawDlqRetry = parseInt(process.env.DLQ_RETRY_INTERVAL_MS || '60000', 10);
+  const rawIpfsRetry = parseInt(process.env.IPFS_RETRY_INTERVAL_MS || '300000', 10);
+  const rawWebhookRetry = parseInt(process.env.WEBHOOK_RETRY_INTERVAL_MS || '60000', 10);
+
+  const pollingIntervalMs = Math.max(MIN_POLLING_MS, rawPolling);
+  const dlqRetryIntervalMs = Math.max(MIN_RETRY_MS, rawDlqRetry);
+  const ipfsRetryIntervalMs = Math.max(MIN_RETRY_MS, rawIpfsRetry);
+  const webhookRetryIntervalMs = Math.max(MIN_RETRY_MS, rawWebhookRetry);
+
+  // Warn if any configured value was clamped to the minimum
+  if (rawPolling < MIN_POLLING_MS && process.env.POLLING_INTERVAL_MS) {
+    console.warn(`POLLING_INTERVAL_MS=${rawPolling} is below minimum ${MIN_POLLING_MS}ms, using ${pollingIntervalMs}ms`);
+  }
+  if (rawDlqRetry < MIN_RETRY_MS && process.env.DLQ_RETRY_INTERVAL_MS) {
+    console.warn(`DLQ_RETRY_INTERVAL_MS=${rawDlqRetry} is below minimum ${MIN_RETRY_MS}ms, using ${dlqRetryIntervalMs}ms`);
+  }
+  if (rawIpfsRetry < MIN_RETRY_MS && process.env.IPFS_RETRY_INTERVAL_MS) {
+    console.warn(`IPFS_RETRY_INTERVAL_MS=${rawIpfsRetry} is below minimum ${MIN_RETRY_MS}ms, using ${ipfsRetryIntervalMs}ms`);
+  }
+  if (rawWebhookRetry < MIN_RETRY_MS && process.env.WEBHOOK_RETRY_INTERVAL_MS) {
+    console.warn(`WEBHOOK_RETRY_INTERVAL_MS=${rawWebhookRetry} is below minimum ${MIN_RETRY_MS}ms, using ${webhookRetryIntervalMs}ms`);
+  }
 
   console.log(`Chain ID: ${chainId}`);
   console.log(`Polling interval: ${pollingIntervalMs}ms`);

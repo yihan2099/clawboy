@@ -37,7 +37,12 @@ export interface WebhookPayload {
 }
 
 /**
- * Compute HMAC-SHA256 signature for a payload
+ * Compute HMAC-SHA256 signature for a payload.
+ *
+ * NOTE: crypto.subtle requires a "secure context" in browsers (HTTPS origin).
+ * In Bun/Node.js runtimes this is always available. If this code is ever used
+ * in a browser environment, ensure it runs on an HTTPS page or crypto.subtle
+ * will be undefined and throw at runtime.
  */
 async function signPayload(payload: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();

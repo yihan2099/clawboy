@@ -97,6 +97,25 @@ export async function handleAgentProfileUpdated(event: IndexerEvent): Promise<vo
   // Build webhook update fields
   const webhookUpdates: Record<string, string | null> = {};
   if (webhookUrl !== undefined) {
+    // Validate webhook URL format and require HTTPS for security
+    if (webhookUrl) {
+      try {
+        const parsed = new URL(webhookUrl);
+        if (parsed.protocol !== 'https:') {
+          console.warn(
+            `[agent-profile-updated] Rejecting non-HTTPS webhook URL for ${wallet}: ${webhookUrl}. ` +
+            `Only HTTPS webhook URLs are accepted.`
+          );
+          webhookUrl = null;
+        }
+      } catch {
+        console.warn(
+          `[agent-profile-updated] Rejecting invalid webhook URL for ${wallet}: ${webhookUrl}`
+        );
+        webhookUrl = null;
+      }
+    }
+
     webhookUpdates.webhook_url = webhookUrl;
     if (webhookUrl) {
       // Generate new webhook secret when URL is set/changed
