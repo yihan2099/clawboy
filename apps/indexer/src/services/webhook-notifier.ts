@@ -284,8 +284,16 @@ export async function processWebhookRetries(): Promise<void> {
 
   console.log(`Processing ${deliveries.length} webhook retries`);
 
+  // Batch-fetch all agent webhook info to avoid N+1 DB queries
+  const uniqueAddresses = [...new Set(deliveries.map((d) => d.agent_address))];
+  const agentInfoList = await getAgentsWebhookInfoByAddresses(uniqueAddresses);
+  const agentInfoMap = new Map<string, AgentWebhookInfo>();
+  for (const agent of agentInfoList) {
+    agentInfoMap.set(agent.address, agent);
+  }
+
   for (const delivery of deliveries) {
-    const agentInfo = await getAgentWebhookInfo(delivery.agent_address);
+    const agentInfo = agentInfoMap.get(delivery.agent_address) ?? null;
     if (!agentInfo) {
       // Agent no longer has a webhook, mark as failed
       await updateWebhookDelivery(delivery.id, {
