@@ -42,6 +42,30 @@ export function createEventListener(
     // When viem decodes a log with an ABI (via getContractEvents), it adds `args` to the
     // log object at runtime. We access it via a type-safe extension cast rather than `any`.
     const decodedLog = log as Log & { args?: Record<string, unknown> };
+
+    // SECURITY: Validate that the log address matches expected contract addresses.
+    // Although viem filters by address in the query, this guards against RPC misbehavior.
+    const logAddress = log.address?.toLowerCase();
+    const expectedAddresses = [
+      addresses.taskManager.toLowerCase(),
+      addresses.agentAdapter.toLowerCase(),
+    ];
+    if (logAddress && !expectedAddresses.includes(logAddress)) {
+      console.error(
+        `[listener] Unexpected contract address ${logAddress} in ${name} event. ` +
+        `Expected one of: ${expectedAddresses.join(', ')}. Skipping event.`
+      );
+      // Return event with empty args so it gets skipped by handlers
+      return {
+        name: '__INVALID__',
+        chainId,
+        blockNumber: log.blockNumber ?? 0n,
+        transactionHash: log.transactionHash ?? '0x0',
+        logIndex: log.logIndex ?? 0,
+        args: {},
+      };
+    }
+
     return {
       name,
       chainId,
@@ -262,22 +286,40 @@ export function createEventListener(
         return a.logIndex - b.logIndex;
       });
 
-      // Process events
+      // Process events and persist checkpoint per-block to minimize re-processing on crash.
+      // If the process crashes after handling events but before the checkpoint, only the
+      // events in the last un-checkpointed block need to be re-processed (idempotently).
+      let lastCheckpointedBlock = lastProcessedBlock;
       for (const event of allEvents) {
         await eventHandler(event);
+
+        // Persist checkpoint when we finish all events in a block
+        if (event.blockNumber > lastCheckpointedBlock) {
+          try {
+            await Promise.all([
+              updateSyncState(chainId, addresses.taskManager, event.blockNumber),
+              updateSyncState(chainId, addresses.agentAdapter, event.blockNumber),
+            ]);
+            lastCheckpointedBlock = event.blockNumber;
+          } catch (error) {
+            console.warn(`Failed to save checkpoint at block ${event.blockNumber}:`, error);
+          }
+        }
       }
 
       lastProcessedBlock = currentBlock;
       completedInitialSync = true;
 
-      // Persist checkpoint to database for all contracts
-      try {
-        await Promise.all([
-          updateSyncState(chainId, addresses.taskManager, currentBlock),
-          updateSyncState(chainId, addresses.agentAdapter, currentBlock),
-        ]);
-      } catch (error) {
-        console.warn('Failed to save checkpoint:', error);
+      // Final checkpoint to currentBlock (may be ahead of last event block)
+      if (currentBlock > lastCheckpointedBlock) {
+        try {
+          await Promise.all([
+            updateSyncState(chainId, addresses.taskManager, currentBlock),
+            updateSyncState(chainId, addresses.agentAdapter, currentBlock),
+          ]);
+        } catch (error) {
+          console.warn('Failed to save final checkpoint:', error);
+        }
       }
 
       if (allEvents.length > 0) {

@@ -61,6 +61,7 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
     maxAttempts: 3,
     initialDelayMs: 1000,
     maxDelayMs: 10000,
+    totalTimeoutMs: 60000, // Cap total retry time to prevent blocking indexer
     onRetry: (attempt, error, delayMs) => {
       console.warn(
         `IPFS fetch attempt ${attempt} failed for CID ${specCid}: ${error.message}. Retrying in ${delayMs}ms...`

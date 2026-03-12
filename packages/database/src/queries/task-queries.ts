@@ -134,6 +134,29 @@ export async function getTaskById(id: string): Promise<TaskRow | null> {
 }
 
 /**
+ * Get multiple tasks by their database IDs in a single query.
+ * Returns a Map for O(1) lookup by task ID.
+ */
+export async function getTasksByIds(ids: string[]): Promise<Map<string, TaskRow>> {
+  if (ids.length === 0) return new Map();
+
+  const supabase = getSupabaseClient();
+  const uniqueIds = [...new Set(ids)];
+
+  const { data, error } = await supabase.from('tasks').select('*').in('id', uniqueIds);
+
+  if (error) {
+    throw new Error(`Failed to get tasks by IDs: ${error.message}`);
+  }
+
+  const map = new Map<string, TaskRow>();
+  for (const task of (data ?? []) as TaskRow[]) {
+    map.set(task.id, task);
+  }
+  return map;
+}
+
+/**
  * Get a task by its on-chain task ID
  */
 export async function getTaskByChainId(

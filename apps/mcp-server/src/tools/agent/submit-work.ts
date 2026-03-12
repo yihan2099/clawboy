@@ -137,13 +137,14 @@ export const submitWorkTool = {
     // Upload to IPFS
     const uploadResult = await uploadWorkSubmission(submission);
 
-    // Create new submission with a temporary submission_index=0 placeholder.
+    // Create new submission with a temporary submission_index=-1 sentinel.
+    // Using -1 instead of 0 avoids confusion with the real first submission index (0).
     // The indexer's WorkSubmitted handler will update this with the real on-chain index.
     await createSubmission({
       task_id: input.taskId,
       agent_address: context.callerAddress,
       submission_cid: uploadResult.cid,
-      submission_index: 0, // Temporary placeholder; corrected by indexer on WorkSubmitted event
+      submission_index: -1, // Sentinel placeholder; corrected by indexer on WorkSubmitted event
       submitted_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });

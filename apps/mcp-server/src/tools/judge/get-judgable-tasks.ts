@@ -43,6 +43,12 @@ export const getJudgableTasksTool = {
 
     const formattedTasks = tasks.map((task) => {
       const tokenConfig = getTokenByAddress(chainId, task.bounty_token);
+      if (!tokenConfig) {
+        console.warn(
+          `[get-judgable-tasks] Unknown token address ${task.bounty_token} on chain ${chainId} ` +
+          `for task ${task.id}. Falling back to 18 decimals / ETH symbol.`
+        );
+      }
       const decimals = tokenConfig?.decimals ?? 18;
       const symbol = tokenConfig?.symbol ?? 'ETH';
       const formatted = formatTokenAmount(BigInt(task.bounty_amount), decimals) + ' ' + symbol;

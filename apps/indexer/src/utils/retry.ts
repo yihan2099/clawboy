@@ -7,6 +7,12 @@ export interface RetryOptions {
   initialDelayMs?: number;
   maxDelayMs?: number;
   backoffMultiplier?: number;
+  /**
+   * Maximum total time (ms) across all attempts including delays.
+   * When exceeded, the last error is thrown immediately without further retries.
+   * Undefined means no total timeout (only per-attempt limits apply).
+   */
+  totalTimeoutMs?: number;
   onRetry?: (attempt: number, error: Error, delayMs: number) => void;
   /**
    * Optional predicate to determine if an error is retryable.
@@ -45,7 +51,7 @@ export function isTransientError(error: Error): boolean {
   );
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'shouldRetry'>> = {
+const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'shouldRetry' | 'totalTimeoutMs'>> = {
   maxAttempts: 3,
   initialDelayMs: 1000,
   maxDelayMs: 30000,
@@ -86,11 +92,17 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
     ...DEFAULT_OPTIONS,
     ...options,
   };
-  const { onRetry, shouldRetry } = options;
+  const { onRetry, shouldRetry, totalTimeoutMs } = options;
 
   let lastError: Error;
+  const startTime = Date.now();
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Check total timeout before each attempt (after the first)
+    if (totalTimeoutMs !== undefined && attempt > 1 && Date.now() - startTime >= totalTimeoutMs) {
+      break;
+    }
+
     try {
       return await fn();
     } catch (error) {
@@ -110,6 +122,11 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       }
 
       const delayMs = calculateDelay(attempt, initialDelayMs, maxDelayMs, backoffMultiplier);
+
+      // Check if sleeping would exceed total timeout
+      if (totalTimeoutMs !== undefined && Date.now() - startTime + delayMs >= totalTimeoutMs) {
+        break;
+      }
 
       if (onRetry) {
         onRetry(attempt, lastError, delayMs);

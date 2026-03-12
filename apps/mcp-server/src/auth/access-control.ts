@@ -148,17 +148,33 @@ export async function checkAccessWithRegistrationRefresh(
   // Session says not registered - re-check on-chain
   // This handles the case where an agent registered mid-session
   try {
+    const REGISTRATION_REFRESH_TIMEOUT_MS = 5000;
     const chainId = getChainId();
-    const isNowRegistered = await isAgentRegistered(context.callerAddress, chainId);
 
-    if (isNowRegistered && context.sessionId) {
-      // Get the ERC-8004 agentId for the wallet
-      const agentIdBigInt = await getAgentId(context.callerAddress, chainId);
-      const agentId = agentIdBigInt > 0n ? agentIdBigInt.toString() : undefined;
+    // Wrap on-chain query in a timeout to prevent stalls from blocking the request
+    const registrationCheck = (async () => {
+      const isNowRegistered = await isAgentRegistered(context.callerAddress, chainId);
 
-      // Update the session to reflect new registration status and agentId
-      await updateSessionRegistration(context.sessionId, true, agentId);
+      if (isNowRegistered && context.sessionId) {
+        // Get the ERC-8004 agentId for the wallet
+        const agentIdBigInt = await getAgentId(context.callerAddress, chainId);
+        const agentId = agentIdBigInt > 0n ? agentIdBigInt.toString() : undefined;
 
+        // Update the session to reflect new registration status and agentId
+        await updateSessionRegistration(context.sessionId, true, agentId);
+
+        return true;
+      }
+      return false;
+    })();
+
+    const timeout = new Promise<false>((resolve) =>
+      setTimeout(() => resolve(false), REGISTRATION_REFRESH_TIMEOUT_MS)
+    );
+
+    const isNowRegistered = await Promise.race([registrationCheck, timeout]);
+
+    if (isNowRegistered) {
       return {
         allowed: true,
         registrationUpdated: true,
