@@ -148,22 +148,30 @@ export const createTaskTool = {
     let currentAllowance: bigint | undefined;
     if (!isNativeToken(tokenConfig.address)) {
       const publicClient = getPublicClient(chainId);
-      const hasAllowance = await hasEnoughAllowance(
-        publicClient,
-        tokenConfig.address,
-        context.callerAddress,
-        addresses.escrowVault,
-        bountyAmountWei
-      );
-      requiresApproval = !hasAllowance;
-
-      if (requiresApproval) {
-        const { getTokenAllowance } = await import('@pactprotocol/web3-utils');
-        currentAllowance = await getTokenAllowance(
+      try {
+        const hasAllowance = await hasEnoughAllowance(
           publicClient,
           tokenConfig.address,
           context.callerAddress,
-          addresses.escrowVault
+          addresses.escrowVault,
+          bountyAmountWei
+        );
+        requiresApproval = !hasAllowance;
+
+        if (requiresApproval) {
+          const { getTokenAllowance } = await import('@pactprotocol/web3-utils');
+          currentAllowance = await getTokenAllowance(
+            publicClient,
+            tokenConfig.address,
+            context.callerAddress,
+            addresses.escrowVault
+          );
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to check ERC20 allowance for ${tokenConfig.symbol}: ${msg}. ` +
+            `Ensure the token contract is accessible and try again.`
         );
       }
     }

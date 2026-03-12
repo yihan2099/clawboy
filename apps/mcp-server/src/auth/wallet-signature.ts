@@ -228,6 +228,12 @@ export async function generateChallenge(address: `0x${string}`): Promise<{
   nonce: string;
   expiresAt: number;
 }> {
+  // SECURITY: Validate address format before any rate-limit counting.
+  // This prevents invalid addresses from consuming rate-limit quota.
+  if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+    throw new Error('Invalid Ethereum address format');
+  }
+
   const normalizedAddress = address.toLowerCase();
 
   // SECURITY: Check hourly sliding window rate limit

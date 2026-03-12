@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getTaskHandler } from '../../services/task-service';
-import { hasJudgedTask } from '@pactprotocol/database';
+import { hasJudgedTask, getSubmissionsByTaskId } from '@pactprotocol/database';
 
 export const submitJudgmentSchema = z.object({
   taskId: z.string().min(1).max(100),
@@ -62,11 +62,18 @@ export const submitJudgmentTool = {
       throw new Error('You have already submitted a judgment for this task.');
     }
 
-    // Validate ranking covers all submissions
-    const submissionCount = task.submissionCount;
-    if (submissionCount && input.ranking.length !== submissionCount) {
+    // Validate ranking covers all submissions by checking actual DB count.
+    // The task.submissionCount field may be stale; cross-check against actual submissions.
+    const { submissions: actualSubmissions } = await getSubmissionsByTaskId(input.taskId);
+    const actualCount = actualSubmissions.length;
+
+    if (actualCount === 0) {
+      throw new Error('No submissions found for this task. Cannot submit a judgment.');
+    }
+
+    if (input.ranking.length !== actualCount) {
       throw new Error(
-        `Ranking must cover all ${submissionCount} submissions. Got ${input.ranking.length} entries.`
+        `Ranking must cover all ${actualCount} submissions. Got ${input.ranking.length} entries.`
       );
     }
 
