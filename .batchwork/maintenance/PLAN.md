@@ -37,7 +37,7 @@ Deployment blockers: #002, #003, #004
 - [x] #013 [Reliability] Ensure all callers of `listTasks()` check the `isEstimate` flag from `packages/database/src/queries/task-queries.ts:78` and display appropriate UI for estimated counts. (Ref: A2-04)
 - [x] #014 [Environment] Verify local Anvil addresses in `packages/contracts/src/addresses/local.ts` match current deploy script output. Remove stale TODO or add CI verification. (Ref: A2-05)
 - [x] #015 [Security] Document that `supabase/config.toml` network restrictions (`0.0.0.0/0`) are local-dev only. If self-hosting, restrict CIDRs. Verify hosted Supabase dashboard has proper network restrictions. (Ref: A3-01)
-- [ ] #016 [Reliability] Add rollback script for V2 consensus migration `supabase/migrations/20260310000001_v2_consensus_model.sql`. Document manual recovery steps for partial migration failure. (Ref: A3-02)
+- [x] #016 [Reliability] Add rollback script for V2 consensus migration `supabase/migrations/20260310000001_v2_consensus_model.sql`. Document manual recovery steps for partial migration failure. (Ref: A3-02)
 - [ ] #017 [Data Integrity] Implement audit trail for financial mutations per TODO(#129) in `supabase/migrations/20250201000002_rls_policies.sql:17`. Minimum: enable `pg_audit` or add `updated_by` trigger. (Ref: A3-03)
 - [ ] #018 [Reliability] Document that V2 migration (20260310000001) must run as part of full migration set, not standalone. Statistics functions in 20250203000002 reference dropped `status` column until V2 migration replaces them. (Ref: A3-04)
 - [ ] #019 [Data Integrity] Review status-to-phase mapping in V2 migration: `in_review -> resolved` loses review state. If migrating production data, add manual handling for `in_review` tasks before migration. (Ref: A3-05)
