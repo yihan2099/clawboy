@@ -29,6 +29,11 @@ const BATCH_TIMEOUT_MS = Number.isFinite(_batchTimeoutEnv) && _batchTimeoutEnv >
   ? _batchTimeoutEnv
   : 30_000;
 
+// Circuit breaker: track consecutive batch timeouts to detect systemic delivery failures.
+// After CIRCUIT_BREAKER_THRESHOLD consecutive timeouts, escalate to error-level logging.
+const CIRCUIT_BREAKER_THRESHOLD = 5;
+let consecutiveTimeouts = 0;
+
 export interface WebhookPayload {
   event: string;
   taskId: string;
@@ -158,12 +163,24 @@ function notifyAgents(agents: AgentWebhookInfo[], payload: WebhookPayload): void
   // Fire-and-forget: don't await, just log errors.
   Promise.race([batch, timeout]).then((results) => {
     if (results === null) {
-      console.warn(
-        `[webhook] Batch timeout: ${payload.event} batch exceeded ${BATCH_TIMEOUT_MS}ms ` +
-          `(${agents.length} agents). Some deliveries may still be in-flight.`
-      );
+      consecutiveTimeouts++;
+      if (consecutiveTimeouts >= CIRCUIT_BREAKER_THRESHOLD) {
+        console.error(
+          `[webhook] CIRCUIT BREAKER: ${consecutiveTimeouts} consecutive batch timeouts detected. ` +
+            `Webhook delivery system may be failing systemically. ` +
+            `Latest: ${payload.event} batch exceeded ${BATCH_TIMEOUT_MS}ms (${agents.length} agents).`
+        );
+      } else {
+        console.warn(
+          `[webhook] Batch timeout: ${payload.event} batch exceeded ${BATCH_TIMEOUT_MS}ms ` +
+            `(${agents.length} agents). Some deliveries may still be in-flight. ` +
+            `(${consecutiveTimeouts}/${CIRCUIT_BREAKER_THRESHOLD} consecutive timeouts)`
+        );
+      }
       return;
     }
+    // Batch completed normally -- reset consecutive timeout counter
+    consecutiveTimeouts = 0;
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length > 0) {
       console.warn(
