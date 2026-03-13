@@ -99,7 +99,7 @@ export async function handleTaskResolved(event: IndexerEvent): Promise<void> {
   // consensusRanking[i] = rank of submission at index i (0 = best)
   const { submissions } = await getSubmissionsByTaskId(task.id);
   for (const submission of submissions) {
-    if (submission.submission_index != null && submission.submission_index < consensusRanking.length) {
+    if (submission.submission_index != null && submission.submission_index >= 0 && submission.submission_index < consensusRanking.length) {
       const rank = consensusRanking[submission.submission_index];
       const isWinner = winnerSet.has(submission.agent_address.toLowerCase());
       await updateSubmissionConsensus(
