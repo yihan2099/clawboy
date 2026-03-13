@@ -54,15 +54,15 @@ Deployment blockers: #002, #003, #004
 - [x] #027 [Data Integrity] No action needed -- TTL drift between memory and Redis in `packages/cache/src/cache-client.ts:131` is correct by design (stores are never simultaneously authoritative). Close this item. (Ref: A2-08) — CLOSED.
 - [x] #028 [API Contracts] Add `p_bounty_token` parameter to `list_tasks_with_bounty_filter` and `count_tasks_with_bounty_filter` RPC functions. Pass `bountyToken` filter from `packages/database/src/queries/task-queries.ts:86`. (Ref: A2-09)
 - [x] #029 [Code Quality] Document that `deleteByPattern` in `packages/cache/src/cache-client.ts:201` only supports `*` glob in memory fallback, not `?` or `[]`. Or implement full glob-to-regex conversion. (Ref: A2-10)
-- [ ] #030 [Type Safety] Low priority -- `verifySignature` in `packages/web3-utils/src/utils/signature.ts:6` is safe as-is. Could add `isAddress()` check for better error messages. (Ref: A2-11)
+- [x] #030 [Type Safety] Low priority -- `verifySignature` in `packages/web3-utils/src/utils/signature.ts:6` is safe as-is. Could add `isAddress()` check for better error messages. (Ref: A2-11) — CLOSED: Function is safe; invalid addresses simply fail comparison. Nice-to-have improvement deferred.
 - [x] #031 [Performance] No action needed -- `getMany` sequential fallback in `packages/cache/src/cache-client.ts:268` is O(n) same as Redis `mget`. Close this item. (Ref: A2-12) — CLOSED.
 - [x] #032 [Data Integrity] No action needed -- creator address casing in `packages/database/src/queries/task-queries.ts:92` is consistent (lowercased at both write and read time). Close this item. (Ref: A2-13) — CLOSED.
-- [ ] #033 [Environment] Increase local dev email rate limit from 2/hour to 100/hour in `supabase/config.toml:176`. Only affects local Inbucket testing. (Ref: A3-07)
-- [ ] #034 [Environment] Consider reducing `max_rows` from 1000 to 500 in `supabase/config.toml:18` for defense-in-depth. Low priority -- current pagination uses 20-50 limits. (Ref: A3-08)
-- [ ] #035 [Data Integrity] Consider dropping legacy `claims` and `verdicts` tables via cleanup migration. Circular FK in `supabase/migrations/20250201000001_initial_schema.sql:14` is in unused legacy tables. (Ref: A3-09)
-- [ ] #036 [Code Quality] Add composite webhook index `(agent_address, status, created_at DESC)` per TODO(#118) in `supabase/migrations/20250206000001_webhook_support.sql:26`. (Ref: A3-10)
-- [ ] #037 [Code Quality] No action needed at current scale -- CASE sort in `supabase/migrations/20250201000003_bounty_numeric_comparison.sql:73` is acceptable for thousands of tasks. Revisit at 100k+. (Ref: A3-11)
-- [ ] #038 [Environment] Add root-level `.env.example` or document per-app `.env.example` locations in project README. CLAUDE.md already covers this. (Ref: A3-12)
+- [x] #033 [Environment] Increase local dev email rate limit from 2/hour to 100/hour in `supabase/config.toml:176`. Only affects local Inbucket testing. (Ref: A3-07)
+- [x] #034 [Environment] Consider reducing `max_rows` from 1000 to 500 in `supabase/config.toml:18` for defense-in-depth. Low priority -- current pagination uses 20-50 limits. (Ref: A3-08) — CLOSED: 1000 is Supabase default and acceptable. Pagination limits of 20-50 prevent actual over-fetching.
+- [ ] #035 [Data Integrity] Consider dropping legacy `claims` and `verdicts` tables via cleanup migration. Circular FK in `supabase/migrations/20250201000001_initial_schema.sql:14` is in unused legacy tables. (Ref: A3-09) — SKIPPED: Dropping tables is a destructive DDL change better handled in a dedicated cleanup PR.
+- [x] #036 [Code Quality] Add composite webhook index `(agent_address, status, created_at DESC)` per TODO(#118) in `supabase/migrations/20250206000001_webhook_support.sql:26`. (Ref: A3-10)
+- [x] #037 [Code Quality] No action needed at current scale -- CASE sort in `supabase/migrations/20250201000003_bounty_numeric_comparison.sql:73` is acceptable for thousands of tasks. Revisit at 100k+. (Ref: A3-11) — CLOSED.
+- [x] #038 [Environment] Add root-level `.env.example` or document per-app `.env.example` locations in project README. CLAUDE.md already covers this. (Ref: A3-12) — CLOSED: CLAUDE.md's "Environment Variables" section documents per-app locations comprehensively.
 
 ## P3 -- Low
 
