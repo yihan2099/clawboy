@@ -28,7 +28,49 @@ import {
  * and update judgments with their consensus status.
  */
 export async function handleTaskResolved(event: IndexerEvent): Promise<void> {
-  const { taskId, consensusRanking, winningWorkers, consensusJudges } = event.args as {
+  // Runtime validation: viem decodes event args dynamically; incorrect ABI or a chain
+  // reorg could produce unexpected types. Validate before use to prevent silent corruption
+  // of consensus data (wrong workers paid, wrong judges marked as in-consensus).
+  const raw = event.args;
+  if (
+    typeof raw.taskId !== 'bigint' ||
+    !Array.isArray(raw.consensusRanking) ||
+    !Array.isArray(raw.winningWorkers) ||
+    !Array.isArray(raw.consensusJudges)
+  ) {
+    throw new Error(
+      `TaskResolved event has unexpected arg types: ${JSON.stringify(
+        Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k, typeof v])
+        )
+      )}`
+    );
+  }
+
+  // Validate array element types
+  for (const rank of raw.consensusRanking) {
+    if (typeof rank !== 'number') {
+      throw new Error(
+        `TaskResolved consensusRanking contains non-number element: ${typeof rank}`
+      );
+    }
+  }
+  for (const addr of raw.winningWorkers) {
+    if (typeof addr !== 'string') {
+      throw new Error(
+        `TaskResolved winningWorkers contains non-string element: ${typeof addr}`
+      );
+    }
+  }
+  for (const addr of raw.consensusJudges) {
+    if (typeof addr !== 'string') {
+      throw new Error(
+        `TaskResolved consensusJudges contains non-string element: ${typeof addr}`
+      );
+    }
+  }
+
+  const { taskId, consensusRanking, winningWorkers, consensusJudges } = raw as {
     taskId: bigint;
     consensusRanking: readonly number[];
     winningWorkers: readonly `0x${string}`[];
