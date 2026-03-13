@@ -21,9 +21,21 @@ import {
   type AgentWebhookInfo,
 } from '@pactprotocol/database';
 
-const WEBHOOK_TIMEOUT_MS = 5000;
-const MAX_ATTEMPTS = 3;
-// Overall batch timeout prevents the whole batch from blocking indefinitely.
+/** Per-delivery timeout (ms). Short to prevent slow endpoints from blocking other deliveries.
+ * Configurable via WEBHOOK_TIMEOUT_MS env var. Default: 5000ms. */
+const _timeoutEnv = parseInt(process.env.WEBHOOK_TIMEOUT_MS ?? '', 10);
+const WEBHOOK_TIMEOUT_MS = Number.isFinite(_timeoutEnv) && _timeoutEnv > 0
+  ? _timeoutEnv
+  : 5000;
+
+/** Max delivery attempts per webhook (initial + retries). Configurable via WEBHOOK_MAX_ATTEMPTS env var. Default: 3. */
+const _maxAttemptsEnv = parseInt(process.env.WEBHOOK_MAX_ATTEMPTS ?? '', 10);
+const MAX_ATTEMPTS = Number.isFinite(_maxAttemptsEnv) && _maxAttemptsEnv > 0
+  ? _maxAttemptsEnv
+  : 3;
+
+/** Overall batch timeout (ms). Prevents the whole batch from blocking indefinitely
+ * when many agents have slow/unresponsive endpoints. Configurable via WEBHOOK_BATCH_TIMEOUT_MS env var. Default: 30000ms. */
 const _batchTimeoutEnv = parseInt(process.env.WEBHOOK_BATCH_TIMEOUT_MS ?? '', 10);
 const BATCH_TIMEOUT_MS = Number.isFinite(_batchTimeoutEnv) && _batchTimeoutEnv > 0
   ? _batchTimeoutEnv
