@@ -27,7 +27,7 @@ Deployment blockers: #002, #003, #004
 ## P1 -- High
 
 - [x] #005 [Reliability] Add circuit breaker or consecutive-timeout tracking to `notifyAgents()` in `apps/indexer/src/services/webhook-notifier.ts:159`. Escalate to error-level after N consecutive batch timeouts. (Ref: A1-04)
-- [ ] #006 [Reliability] Extract shared `calculateBackoff(attempt)` function and use in both `deliverWebhook` (line 118) and `processWebhookRetries` (line 356) in `apps/indexer/src/services/webhook-notifier.ts`. (Ref: A1-05)
+- [x] #006 [Reliability] Extract shared `calculateBackoff(attempt)` function and use in both `deliverWebhook` (line 118) and `processWebhookRetries` (line 356) in `apps/indexer/src/services/webhook-notifier.ts`. (Ref: A1-05)
 - [ ] #007 [Type Safety] Add runtime type validation to `handleWorkSubmitted` in `apps/indexer/src/handlers/work-submitted.ts:22`, matching the pattern in `handleTaskCreated`. (Ref: A1-06)
 - [ ] #008 [Type Safety] Audit `TaskInsert` type in `packages/database/` to ensure JSON columns have proper runtime validation. Review `unknown as Json` patterns. (Ref: A1-07)
 - [ ] #009 [Error Handling] Integrate Sentry reporting into webhook dispatch in `apps/indexer/src/services/webhook-dispatch.ts:106`. Add structured error logging with delivery success/failure counters. (Ref: A1-08)
