@@ -57,11 +57,17 @@ export async function handleTaskCreated(event: IndexerEvent): Promise<void> {
   let tags: string[] = [];
   let ipfsFetchFailed = false;
 
+  // IPFS retry config: configurable via environment variables with sensible defaults.
+  const ipfsMaxAttempts = parseInt(process.env.IPFS_MAX_ATTEMPTS ?? '', 10) || 3;
+  const ipfsInitialDelayMs = parseInt(process.env.IPFS_INITIAL_DELAY_MS ?? '', 10) || 1000;
+  const ipfsMaxDelayMs = parseInt(process.env.IPFS_MAX_DELAY_MS ?? '', 10) || 10000;
+  const ipfsTotalTimeoutMs = parseInt(process.env.IPFS_TOTAL_TIMEOUT_MS ?? '', 10) || 60000;
+
   const fetchResult = await withRetryResult(() => fetchTaskSpecification(specCid), {
-    maxAttempts: 3,
-    initialDelayMs: 1000,
-    maxDelayMs: 10000,
-    totalTimeoutMs: 60000, // Cap total retry time to prevent blocking indexer
+    maxAttempts: ipfsMaxAttempts,
+    initialDelayMs: ipfsInitialDelayMs,
+    maxDelayMs: ipfsMaxDelayMs,
+    totalTimeoutMs: ipfsTotalTimeoutMs, // Cap total retry time to prevent blocking indexer
     onRetry: (attempt, error, delayMs) => {
       console.warn(
         `IPFS fetch attempt ${attempt} failed for CID ${specCid}: ${error.message}. Retrying in ${delayMs}ms...`
