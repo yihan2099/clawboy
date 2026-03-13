@@ -26,13 +26,23 @@ async function main() {
   console.error('Starting Pact MCP Server...');
   console.error(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  // SECURITY: Warn if running in production without Redis
+  // SECURITY: Enforce Redis in production unless explicitly opted out
   if (process.env.NODE_ENV === 'production' && !process.env.UPSTASH_REDIS_REST_URL) {
-    console.error(
-      '⚠️  WARNING: Running in production without Redis (UPSTASH_REDIS_REST_URL not set). ' +
-        'Session and challenge data will use in-memory fallback, which is NOT suitable for ' +
-        'multi-instance deployments. Sessions will be lost on restart.'
-    );
+    if (process.env.ALLOW_MEMORY_SESSIONS === 'true') {
+      console.error(
+        'WARNING: Running in production without Redis (UPSTASH_REDIS_REST_URL not set). ' +
+          'ALLOW_MEMORY_SESSIONS=true is set -- using in-memory fallback. ' +
+          'Sessions will be lost on restart and multi-instance deployments will have disjoint session stores.'
+      );
+    } else {
+      console.error(
+        'FATAL: Running in production without Redis (UPSTASH_REDIS_REST_URL not set). ' +
+          'In-memory session fallback is NOT suitable for production. ' +
+          'Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, ' +
+          'or set ALLOW_MEMORY_SESSIONS=true to explicitly opt in to memory-only mode.'
+      );
+      process.exit(1);
+    }
   }
 
   const httpPort = parseInt(process.env.PORT || '3001');
