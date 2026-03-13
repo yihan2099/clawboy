@@ -4,8 +4,11 @@ import {
   createJudgment,
   hasJudgedTask,
   updateTaskJudgmentCount,
+  updateJudgmentRanking,
 } from '@pactprotocol/database';
 import { invalidateJudgmentCaches, invalidateTaskCaches } from '@pactprotocol/cache';
+import { getPublicClient } from '@pactprotocol/web3-utils';
+import { TaskManagerABI, getContractAddresses } from '@pactprotocol/contracts';
 
 /**
  * Handle JudgmentSubmitted event (V2)
@@ -42,13 +45,36 @@ export async function handleJudgmentSubmitted(event: IndexerEvent): Promise<void
     return;
   }
 
-  // Create judgment record (ranking is empty here; will be populated when TaskResolved
-  // fires with full consensus data, or on-demand via contract read)
+  // Fetch ranking from on-chain getJudgment() view function.
+  // The JudgmentSubmitted event omits the ranking array to save gas,
+  // but the data is available on-chain immediately after the event.
+  let ranking: number[] = [];
+  try {
+    const publicClient = getPublicClient(event.chainId);
+    const addresses = getContractAddresses(event.chainId);
+    const judgment = await publicClient.readContract({
+      address: addresses.taskManager,
+      abi: TaskManagerABI,
+      functionName: 'getJudgment',
+      args: [taskId, BigInt(judgmentIndex)],
+    }) as { judge: `0x${string}`; rankings: readonly number[] };
+    ranking = [...judgment.rankings];
+    console.log(`Fetched on-chain ranking for judgment ${judgmentIndex}: [${ranking.join(',')}]`);
+  } catch (err) {
+    // Non-fatal: ranking can be backfilled later via on-demand contract read.
+    // Store empty array now and log the failure for monitoring.
+    console.warn(
+      `Failed to fetch on-chain ranking for task ${taskId} judgment ${judgmentIndex}: ` +
+      `${err instanceof Error ? err.message : 'Unknown error'}. Ranking will be empty.`
+    );
+  }
+
+  // Create judgment record with ranking from on-chain data
   await createJudgment({
     task_id: task.id,
     judge_address: judge.toLowerCase(),
     judgment_index: judgmentIndex,
-    ranking: [], // Will be backfilled on TaskResolved or on-demand
+    ranking,
     submitted_at: new Date().toISOString(),
   });
 

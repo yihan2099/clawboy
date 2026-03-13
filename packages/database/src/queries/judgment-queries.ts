@@ -69,6 +69,34 @@ export async function getJudgmentsByTask(taskId: string): Promise<JudgmentRow[]>
 }
 
 /**
+ * Update judgment ranking array (backfill from on-chain data)
+ */
+export async function updateJudgmentRanking(
+  taskId: string,
+  judgmentIndex: number,
+  ranking: number[]
+): Promise<JudgmentRow> {
+  const supabase = getWriteClient();
+
+  const { data, error } = await supabase
+    .from('judgments')
+    .update({
+      ranking,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('task_id', taskId)
+    .eq('judgment_index', judgmentIndex)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update judgment ranking: ${error.message}`);
+  }
+
+  return data as JudgmentRow;
+}
+
+/**
  * Update judgment consensus status after resolution
  */
 export async function updateJudgmentConsensus(
