@@ -20,6 +20,7 @@ export interface VerifySignatureOutput {
   walletAddress?: string;
   agentId?: string;
   isRegistered?: boolean;
+  registrationCheckFailed?: boolean;
   expiresAt?: number;
   error?: string;
 }
@@ -86,6 +87,7 @@ export async function verifySignatureHandler(args: unknown): Promise<VerifySigna
   // Check on-chain registration status and get agentId
   let isRegistered = false;
   let agentId: string | undefined;
+  let registrationCheckFailed = false;
 
   try {
     isRegistered = await isAgentRegistered(walletAddress);
@@ -97,7 +99,9 @@ export async function verifySignatureHandler(args: unknown): Promise<VerifySigna
       }
     }
   } catch (error) {
-    // If chain query fails, continue with unregistered status
+    // If chain query fails, continue with unregistered status but flag it
+    // so the agent knows to retry via updateSessionRegistration
+    registrationCheckFailed = true;
     console.error('Failed to check on-chain registration:', error);
   }
 
@@ -110,6 +114,7 @@ export async function verifySignatureHandler(args: unknown): Promise<VerifySigna
     walletAddress: session.walletAddress,
     agentId: session.agentId,
     isRegistered: session.isRegistered,
+    ...(registrationCheckFailed && { registrationCheckFailed: true }),
     expiresAt: session.expiresAt,
   };
 }
