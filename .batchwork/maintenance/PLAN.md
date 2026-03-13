@@ -49,7 +49,7 @@ Deployment blockers: #002, #003, #004
 - [x] #022 [Code Quality] Document magic timeout constants in `apps/indexer/src/services/webhook-notifier.ts:24`. Make `WEBHOOK_TIMEOUT_MS` and `MAX_ATTEMPTS` configurable via env vars. (Ref: A1-12)
 - [x] #023 [Data Integrity] Add `submission.submission_index >= 0` guard to bounds check in `apps/indexer/src/handlers/task-resolved.ts:60`. (Ref: A1-13)
 - [x] #024 [Code Quality] Classify HTTP status codes in `deliverWebhook` in `apps/indexer/src/services/webhook-notifier.ts:65`: retry on 5xx/timeout, fail permanently on 4xx (except 429), respect `Retry-After`. (Ref: A1-14)
-- [ ] #025 [Reliability] Log all Redis pipeline errors before throwing in `packages/cache/src/cache-client.ts:95`, not just the first one. (Ref: A2-06)
+- [x] #025 [Reliability] Log all Redis pipeline errors before throwing in `packages/cache/src/cache-client.ts:95`, not just the first one. (Ref: A2-06)
 - [ ] #026 [Performance] Document that callers of `listTasks()` with bounty filters must use `cacheThrough()` in `packages/database/src/queries/task-queries.ts:47`. (Ref: A2-07)
 - [ ] #027 [Data Integrity] No action needed -- TTL drift between memory and Redis in `packages/cache/src/cache-client.ts:131` is correct by design (stores are never simultaneously authoritative). Close this item. (Ref: A2-08)
 - [ ] #028 [API Contracts] Add `p_bounty_token` parameter to `list_tasks_with_bounty_filter` and `count_tasks_with_bounty_filter` RPC functions. Pass `bountyToken` filter from `packages/database/src/queries/task-queries.ts:86`. (Ref: A2-09)
