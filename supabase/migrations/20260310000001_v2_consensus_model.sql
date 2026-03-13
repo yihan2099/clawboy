@@ -43,7 +43,11 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS judgment_count integer NOT NULL DEFAU
 -- Step 3: Migrate existing task data
 -- ============================================================
 
--- Map old status values to new phases for existing rows
+-- Map old status values to new phases for existing rows.
+-- NOTE: 'in_review' -> 'resolved' loses review state. The V2 model has no 'in_review'
+-- equivalent (it uses judge_phase instead). For testnet data this is acceptable.
+-- If migrating production data with active in_review tasks, handle them manually
+-- before running this migration (e.g., move to 'open' or resolve them first).
 UPDATE tasks SET phase = CASE
   WHEN status = 'open' THEN 'open'
   WHEN status = 'in_review' THEN 'resolved'
