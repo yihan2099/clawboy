@@ -19,7 +19,25 @@ import { invalidateSubmissionCaches, invalidateTaskCaches } from '@pactprotocol/
  * on-chain submission index.
  */
 export async function handleWorkSubmitted(event: IndexerEvent): Promise<void> {
-  const { taskId, worker, submissionCid, slotIndex } = event.args as {
+  // Runtime validation: viem decodes event args dynamically; incorrect ABI or a chain
+  // reorg could produce unexpected types. Validate before use to prevent silent corruption.
+  const raw = event.args;
+  if (
+    typeof raw.taskId !== 'bigint' ||
+    typeof raw.worker !== 'string' ||
+    typeof raw.submissionCid !== 'string' ||
+    typeof raw.slotIndex !== 'bigint'
+  ) {
+    throw new Error(
+      `WorkSubmitted event has unexpected arg types: ${JSON.stringify(
+        Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k, typeof v])
+        )
+      )}`
+    );
+  }
+
+  const { taskId, worker, submissionCid, slotIndex } = raw as {
     taskId: bigint;
     worker: `0x${string}`;
     submissionCid: string;
