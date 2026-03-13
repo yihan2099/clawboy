@@ -66,8 +66,8 @@ Deployment blockers: #002, #003, #004
 
 ## P3 -- Low
 
-- [ ] #039 [Code Quality] Move IPFS retry config in `apps/indexer/src/handlers/task-created.ts:60` to environment variables with sensible defaults. (Ref: A1-16)
-- [ ] #040 [Reliability] Session cleanup interval in `apps/mcp-server/src/auth/session-manager.ts:393` runs unconditionally -- could conditionally start only when memory fallback is active. Harmless as-is. (Ref: A1-10)
+- [x] #039 [Code Quality] Move IPFS retry config in `apps/indexer/src/handlers/task-created.ts:60` to environment variables with sensible defaults. (Ref: A1-16)
+- [x] #040 [Reliability] Session cleanup interval in `apps/mcp-server/src/auth/session-manager.ts:393` runs unconditionally -- could conditionally start only when memory fallback is active. Harmless as-is. (Ref: A1-10) — CLOSED: Harmless (<1ms overhead); cleanup returns 0 immediately when Redis is available. Optimization not worth the complexity.
 
 ## Auto-Close (No Action Needed)
 
