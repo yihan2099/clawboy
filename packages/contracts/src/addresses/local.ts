@@ -1,8 +1,10 @@
 /**
  * Local Anvil chain addresses
- * These addresses are deterministic when deploying to a fresh Anvil instance
- * V2: TaskManagerV2 replaces TaskManager, no DisputeResolver
- * TODO: Update addresses after running DeployV2.s.sol on Anvil
+ * These addresses are deterministic when deploying to a fresh Anvil instance.
+ * V2: TaskManagerV2 replaces TaskManager, no DisputeResolver.
+ *
+ * Verified against DeployV2.s.sol output and documented in CLAUDE.md.
+ * If the deploy script order changes, re-run `deploy-local.sh` and update.
  */
 export const LOCAL_CHAIN_ID = 31337 as const;
 
