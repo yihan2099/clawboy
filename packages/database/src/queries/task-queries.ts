@@ -182,6 +182,10 @@ export async function getTaskByChainId(
 
 /**
  * Create a new task
+ *
+ * @remarks **Admin/Indexer only** — uses the admin client which bypasses RLS.
+ * This function should only be called from the indexer service. Do not call
+ * from the MCP server or web app; use the indexer's event-driven flow instead.
  */
 export async function createTask(task: TaskInsert): Promise<TaskRow> {
   const supabase = getWriteClient();
@@ -197,6 +201,9 @@ export async function createTask(task: TaskInsert): Promise<TaskRow> {
 
 /**
  * Update a task
+ *
+ * @remarks **Admin/Indexer only** — uses the admin client which bypasses RLS.
+ * This function should only be called from the indexer service.
  */
 export async function updateTask(id: string, updates: TaskUpdate): Promise<TaskRow> {
   const supabase = getWriteClient();
@@ -244,6 +251,8 @@ export async function getTasksByPhase(
 
 /**
  * Update task phase
+ *
+ * @remarks **Admin/Indexer only** — uses the admin client which bypasses RLS.
  */
 export async function updateTaskPhase(id: string, phase: string): Promise<TaskRow> {
   return updateTask(id, { phase } as TaskUpdate);
@@ -251,6 +260,8 @@ export async function updateTaskPhase(id: string, phase: string): Promise<TaskRo
 
 /**
  * Update task judgment count
+ *
+ * @remarks **Admin/Indexer only** — uses the admin client which bypasses RLS.
  */
 export async function updateTaskJudgmentCount(
   id: string,
@@ -261,6 +272,8 @@ export async function updateTaskJudgmentCount(
 
 /**
  * Update task submission count
+ *
+ * @remarks **Admin/Indexer only** — uses the admin client which bypasses RLS.
  */
 export async function updateTaskSubmissionCount(
   id: string,
