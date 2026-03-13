@@ -175,6 +175,14 @@ class CacheClient implements ICache {
     return false;
   }
 
+  /**
+   * Delete cache entries matching a glob pattern.
+   *
+   * @param pattern - Glob pattern (e.g., "tasks:*"). Only `*` wildcard is supported
+   *   in the in-memory fallback. Redis SCAN supports `*`, `?`, and `[]`, but the
+   *   memory fallback converts only `*` to `.*` regex. Avoid `?` and `[]` in patterns
+   *   unless Redis is guaranteed to be available.
+   */
   async deleteByPattern(pattern: string): Promise<number> {
     const redis = getRedisClient();
 
