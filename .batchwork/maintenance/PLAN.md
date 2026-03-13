@@ -22,7 +22,7 @@ Deployment blockers: #002, #003, #004
 - [x] #001 [Environment] ~~Deploy V2 contracts to Base mainnet~~ — NOT A BUG: Pact is deliberately testnet-only (Base Sepolia). Zero mainnet addresses are by design. (Ref: A2-01) **CLOSED**
 - [x] #002 [Data Integrity] Enforce Redis in production: change `apps/mcp-server/src/index.ts:30` warning to `process.exit(1)` unless explicit `--allow-memory-sessions` flag is set. Prevents silent session data loss. (Ref: A1-01, A1-09)
 - [x] #003 [Type Safety] Add runtime type validation to `handleTaskResolved` in `apps/indexer/src/handlers/task-resolved.ts:31`, matching the pattern in `handleTaskCreated`. Throw on type mismatch to route to DLQ. (Ref: A1-02)
-- [ ] #004 [Data Integrity] Fix empty judgment ranking backfill: either fetch ranking from contract `getJudgment()` view during `handleJudgmentSubmitted`, or add a background job to backfill `ranking` arrays in `apps/indexer/src/handlers/judgment-submitted.ts:51`. (Ref: A1-03)
+- [x] #004 [Data Integrity] Fix empty judgment ranking backfill: either fetch ranking from contract `getJudgment()` view during `handleJudgmentSubmitted`, or add a background job to backfill `ranking` arrays in `apps/indexer/src/handlers/judgment-submitted.ts:51`. (Ref: A1-03)
 
 ## P1 -- High
 
