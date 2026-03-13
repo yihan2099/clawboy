@@ -3,6 +3,17 @@
 -- redundant execution + consensus (N workers + M judges)
 --
 -- This is a breaking migration. Run against a backed-up database.
+--
+-- ROLLBACK PROCEDURE:
+-- Supabase migrations run inside a transaction by default. If any statement
+-- fails, the entire migration is rolled back automatically (PostgreSQL DDL
+-- is transactional). For manual rollback after a successful migration:
+--   1. Restore the `status` column: ALTER TABLE tasks ADD COLUMN status text;
+--   2. Restore `winner_address`, `claimed_at`, `claimed_by` columns
+--   3. Restore `disputes` and `dispute_votes` tables from `archived_*` copies
+--   4. Re-create dropped V1 functions (sum_completed_bounties, count_tasks_by_status, etc.)
+--   5. Drop new V2 columns: required_workers, required_judges, judge_deadline, submission_count, judgment_count
+-- In practice, restore from the backup taken before running this migration.
 
 -- ============================================================
 -- Step 1: Archive old dispute tables
