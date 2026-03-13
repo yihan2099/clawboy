@@ -4,6 +4,12 @@
 --
 -- This is a breaking migration. Run against a backed-up database.
 --
+-- ORDERING REQUIREMENT:
+-- This migration MUST run as part of the full migration set (all prior migrations
+-- applied first). It replaces statistics functions from 20250203000002 that reference
+-- the `status` column which this migration drops. Running migrations out of order or
+-- partially will cause function errors referencing non-existent columns.
+--
 -- ROLLBACK PROCEDURE:
 -- Supabase migrations run inside a transaction by default. If any statement
 -- fails, the entire migration is rolled back automatically (PostgreSQL DDL
