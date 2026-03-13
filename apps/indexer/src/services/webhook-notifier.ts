@@ -34,6 +34,15 @@ const BATCH_TIMEOUT_MS = Number.isFinite(_batchTimeoutEnv) && _batchTimeoutEnv >
 const CIRCUIT_BREAKER_THRESHOLD = 5;
 let consecutiveTimeouts = 0;
 
+/**
+ * Calculate exponential backoff delay for webhook retries.
+ * Formula: 30s * 4^(attempt - 1) => 30s, 120s, 480s, ...
+ * Used by both initial delivery failure and retry processing for consistency.
+ */
+function calculateBackoff(attempt: number): number {
+  return 30_000 * Math.pow(4, attempt - 1);
+}
+
 export interface WebhookPayload {
   event: string;
   taskId: string;
@@ -119,8 +128,8 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
           delivered_at: new Date().toISOString(),
         }).catch(() => {});
       } else {
-        // Schedule retry with exponential backoff
-        const nextRetryAt = new Date(Date.now() + 30_000).toISOString(); // 30s for first retry
+        // Schedule retry with exponential backoff (attempt 1 = first retry)
+        const nextRetryAt = new Date(Date.now() + calculateBackoff(1)).toISOString();
         await updateWebhookDelivery(deliveryId, {
           status: 'pending',
           status_code: response.status,
@@ -138,7 +147,7 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
     console.warn(`Webhook delivery to ${agent.address} failed: ${errorMessage}`);
 
     if (deliveryId) {
-      const nextRetryAt = new Date(Date.now() + 30_000).toISOString();
+      const nextRetryAt = new Date(Date.now() + calculateBackoff(1)).toISOString();
       await updateWebhookDelivery(deliveryId, {
         status: 'pending',
         error_message: errorMessage,
@@ -369,9 +378,7 @@ export async function processWebhookRetries(): Promise<void> {
           delivered_at: new Date().toISOString(),
         }).catch(() => {});
       } else {
-        // Exponential backoff: 30s, 120s, 480s
-        const backoffMs = 30_000 * Math.pow(4, nextAttempt - 1);
-        const nextRetryAt = new Date(Date.now() + backoffMs).toISOString();
+        const nextRetryAt = new Date(Date.now() + calculateBackoff(nextAttempt)).toISOString();
 
         await updateWebhookDelivery(delivery.id, {
           status: nextAttempt >= delivery.max_attempts ? 'failed' : 'pending',
@@ -383,8 +390,7 @@ export async function processWebhookRetries(): Promise<void> {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      const backoffMs = 30_000 * Math.pow(4, nextAttempt - 1);
-      const nextRetryAt = new Date(Date.now() + backoffMs).toISOString();
+      const nextRetryAt = new Date(Date.now() + calculateBackoff(nextAttempt)).toISOString();
 
       await updateWebhookDelivery(delivery.id, {
         status: nextAttempt >= delivery.max_attempts ? 'failed' : 'pending',
