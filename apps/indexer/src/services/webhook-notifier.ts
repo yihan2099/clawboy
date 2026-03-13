@@ -139,8 +139,26 @@ async function deliverWebhook(agent: AgentWebhookInfo, payload: WebhookPayload):
           status_code: response.status,
           delivered_at: new Date().toISOString(),
         }).catch(() => {});
+      } else if (response.status === 429) {
+        // Rate limited: respect Retry-After header if present, else use backoff
+        const retryAfter = response.headers.get('Retry-After');
+        const retryMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : calculateBackoff(1);
+        const nextRetryAt = new Date(Date.now() + (Number.isFinite(retryMs) && retryMs > 0 ? retryMs : calculateBackoff(1))).toISOString();
+        await updateWebhookDelivery(deliveryId, {
+          status: 'pending',
+          status_code: response.status,
+          error_message: `HTTP 429 Too Many Requests`,
+          next_retry_at: nextRetryAt,
+        }).catch(() => {});
+      } else if (response.status >= 400 && response.status < 500) {
+        // Client errors (4xx except 429): permanent failure, do not retry
+        await updateWebhookDelivery(deliveryId, {
+          status: 'failed',
+          status_code: response.status,
+          error_message: `HTTP ${response.status} (permanent failure, not retryable)`,
+        }).catch(() => {});
       } else {
-        // Schedule retry with exponential backoff (attempt 1 = first retry)
+        // Server errors (5xx) and other: schedule retry with exponential backoff
         const nextRetryAt = new Date(Date.now() + calculateBackoff(1)).toISOString();
         await updateWebhookDelivery(deliveryId, {
           status: 'pending',
