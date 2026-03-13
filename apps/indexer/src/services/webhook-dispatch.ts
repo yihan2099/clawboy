@@ -7,6 +7,7 @@
  * Updated for V2 consensus model.
  */
 
+import * as Sentry from '@sentry/bun';
 import type { IndexerEvent } from '../listener';
 import { getTaskByChainId } from '@pactprotocol/database';
 import {
@@ -104,7 +105,18 @@ export function dispatchWebhookNotifications(event: IndexerEvent): void {
           break;
       }
     } catch (err) {
-      console.warn(`Webhook dispatch error for ${event.name}:`, err);
+      console.error(`[webhook-dispatch] Error dispatching ${event.name}:`, err);
+      Sentry.captureException(err, {
+        tags: {
+          component: 'webhook-dispatch',
+          eventName: event.name,
+        },
+        extra: {
+          chainId: event.chainId,
+          blockNumber: event.blockNumber.toString(),
+          transactionHash: event.transactionHash,
+        },
+      });
     }
   })();
 }
