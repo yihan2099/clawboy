@@ -41,7 +41,7 @@ Deployment blockers: #002, #003, #004
 - [ ] #017 [Data Integrity] Implement audit trail for financial mutations per TODO(#129) in `supabase/migrations/20250201000002_rls_policies.sql:17`. Minimum: enable `pg_audit` or add `updated_by` trigger. (Ref: A3-03) — SKIPPED: Requires new migration with audit trigger or pg_audit extension. Too risky for maintenance batch; should be a dedicated feature PR with proper testing.
 - [x] #018 [Reliability] Document that V2 migration (20260310000001) must run as part of full migration set, not standalone. Statistics functions in 20250203000002 reference dropped `status` column until V2 migration replaces them. (Ref: A3-04)
 - [x] #019 [Data Integrity] Review status-to-phase mapping in V2 migration: `in_review -> resolved` loses review state. If migrating production data, add manual handling for `in_review` tasks before migration. (Ref: A3-05)
-- [ ] #020 [Reliability] Confirm exponential backoff overflow fix in `supabase/migrations/20250204000001_event_processing_tables.sql:232` -- already addressed with `LEAST(..., 1440)` cap. Close this item. (Ref: A3-06)
+- [x] #020 [Reliability] Confirm exponential backoff overflow fix in `supabase/migrations/20250204000001_event_processing_tables.sql:232` -- already addressed with `LEAST(..., 1440)` cap. Close this item. (Ref: A3-06) — CONFIRMED: LEAST cap already in place, no action needed.
 
 ## P2 -- Medium
 
