@@ -37,6 +37,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     tags,
     minBounty,
     maxBounty,
+    bountyToken,
     limit = 20,
     offset = 0,
     sortBy = 'created_at',
@@ -58,6 +59,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
       p_offset: offset,
       p_sort_by: sortBy,
       p_sort_order: sortOrder,
+      p_bounty_token: bountyToken?.toLowerCase() || null,
     });
 
     if (error) {
@@ -74,6 +76,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
         p_phase: phase || null,
         p_creator_address: creatorAddress?.toLowerCase() || null,
         p_tags: tags && tags.length > 0 ? tags : null,
+        p_bounty_token: bountyToken?.toLowerCase() || null,
       }
     );
 
@@ -100,8 +103,8 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
     query = query.overlaps('tags', tags);
   }
 
-  if (options.bountyToken) {
-    query = query.eq('bounty_token', options.bountyToken.toLowerCase());
+  if (bountyToken) {
+    query = query.eq('bounty_token', bountyToken.toLowerCase());
   }
 
   query = query.order(sortBy, { ascending: sortOrder === 'asc' }).range(offset, offset + limit - 1);
