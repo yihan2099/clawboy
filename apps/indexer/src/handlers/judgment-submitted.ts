@@ -22,7 +22,24 @@ import { TaskManagerABI, getContractAddresses } from '@pactprotocol/contracts';
  * on-demand by the MCP server or web app.
  */
 export async function handleJudgmentSubmitted(event: IndexerEvent): Promise<void> {
-  const { taskId, judge, judgmentIndex } = event.args as {
+  // Runtime validation: viem decodes event args dynamically; incorrect ABI or a chain
+  // reorg could produce unexpected types. Validate before use to prevent silent corruption.
+  const raw = event.args;
+  if (
+    typeof raw.taskId !== 'bigint' ||
+    typeof raw.judge !== 'string' ||
+    typeof raw.judgmentIndex !== 'number'
+  ) {
+    throw new Error(
+      `JudgmentSubmitted event has unexpected arg types: ${JSON.stringify(
+        Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k, typeof v])
+        )
+      )}`
+    );
+  }
+
+  const { taskId, judge, judgmentIndex } = raw as {
     taskId: bigint;
     judge: `0x${string}`;
     judgmentIndex: number;
