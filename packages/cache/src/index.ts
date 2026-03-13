@@ -23,7 +23,7 @@
  */
 
 // Core cache client
-export { getCache, cacheThrough, clearAllCache, getCacheStats } from './cache-client';
+export { getCache, cacheThrough, clearAllCache, clearCleanupInterval, getCacheStats } from './cache-client';
 
 // Types
 export type { CacheOptions, CacheResult, ICache, CacheDataType } from './types';

@@ -400,6 +400,17 @@ export async function cacheThrough<T>(
 }
 
 /**
+ * Clear the cleanup interval for graceful shutdown and test cleanup.
+ * Prevents "open handle" warnings in test runners (e.g., Vitest --detectOpenHandles).
+ */
+export function clearCleanupInterval(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+
+/**
  * Clear all cache data (primarily for testing)
  */
 export function clearAllCache(): void {
