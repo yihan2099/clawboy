@@ -64,6 +64,10 @@ sql_paths = ["./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
+# NOTE: These settings only apply to local development (supabase start).
+# For production, Supabase hosted platform manages network restrictions via
+# the Supabase dashboard — these values are NOT applied in production.
+# If self-hosting Supabase, enable this and restrict CIDRs to known IPs.
 enabled = false
 # List of IPv4 CIDR blocks allowed to connect to the database.
 # Defaults to allow all IPv4 connections. Set empty array to block all IPs.
