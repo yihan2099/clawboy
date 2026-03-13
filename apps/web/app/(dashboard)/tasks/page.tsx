@@ -26,6 +26,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   let tasks: Awaited<ReturnType<typeof listTasks>>['tasks'] = [];
   let total = 0;
+  let isEstimate = false;
   let error: string | null = null;
 
   try {
@@ -39,6 +40,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     });
     tasks = result.tasks;
     total = result.total;
+    isEstimate = result.isEstimate ?? false;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load tasks';
   }
@@ -74,6 +76,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           currentStatus={params.status || ''}
           currentSort={params.sort || 'created_at'}
           currentOrder={params.order || 'desc'}
+          isEstimate={isEstimate}
         />
       )}
     </div>

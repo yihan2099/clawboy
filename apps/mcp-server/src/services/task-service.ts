@@ -101,7 +101,7 @@ export async function listTasksHandler(
   const { data } = await cacheThrough(
     cacheKey,
     async () => {
-      const { tasks, total } = await listTasks({
+      const { tasks, total, isEstimate } = await listTasks({
         phase: input.phase as TaskPhase | undefined,
         tags: input.tags,
         minBounty: minBountyWei,
@@ -112,6 +112,10 @@ export async function listTasksHandler(
         sortBy,
         sortOrder: input.sortOrder,
       });
+
+      if (isEstimate) {
+        console.warn('[task-service] listTasks returned estimated count; pagination may be inaccurate');
+      }
 
       const taskItems: TaskListItemWithFormatted[] = tasks.map((task) => {
         // Get token info for formatting

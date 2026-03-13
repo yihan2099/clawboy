@@ -39,6 +39,7 @@ interface TaskListProps {
   currentStatus: string;
   currentSort: string;
   currentOrder: string;
+  isEstimate?: boolean;
 }
 
 export function TaskList({
@@ -49,6 +50,7 @@ export function TaskList({
   currentStatus,
   currentSort,
   currentOrder,
+  isEstimate,
 }: TaskListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,7 +110,7 @@ export function TaskList({
 
       {/* Results count */}
       <p className="text-xs text-muted-foreground">
-        {total} task{total !== 1 ? 's' : ''} found
+        {isEstimate ? `~${total}` : total} task{total !== 1 ? 's' : ''} found
       </p>
 
       {/* Task Grid */}
