@@ -17,6 +17,15 @@ export function getConfig() {
     );
   }
 
+  // Warn if using default server URL with a non-local chain
+  if (!process.env.PACT_SERVER_URL && chainId !== 31337) {
+    console.warn(
+      'WARNING: PACT_SERVER_URL not set. Defaulting to http://localhost:3001.\n' +
+      `This is likely incorrect for chain ID ${chainId}. ` +
+      'Set PACT_SERVER_URL to your deployed MCP server (e.g., https://pact.yihan.app).'
+    );
+  }
+
   return { serverUrl, privateKey, chainId };
 }
 
