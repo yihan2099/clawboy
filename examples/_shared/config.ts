@@ -2,10 +2,20 @@
  * Shared configuration for Pact examples
  */
 
+/** Supported chain IDs: 31337 (Anvil local), 84532 (Base Sepolia), 8453 (Base Mainnet) */
+const SUPPORTED_CHAIN_IDS = new Set([31337, 84532, 8453]);
+
 export function getConfig() {
   const serverUrl = process.env.PACT_SERVER_URL || 'http://localhost:3001';
   const privateKey = process.env.PACT_WALLET_PRIVATE_KEY;
   const chainId = parseInt(process.env.CHAIN_ID || '31337', 10);
+
+  if (isNaN(chainId) || !SUPPORTED_CHAIN_IDS.has(chainId)) {
+    throw new Error(
+      `Invalid CHAIN_ID: "${process.env.CHAIN_ID}". ` +
+      `Supported values: ${[...SUPPORTED_CHAIN_IDS].join(', ')} (Anvil, Base Sepolia, Base Mainnet).`
+    );
+  }
 
   return { serverUrl, privateKey, chainId };
 }
