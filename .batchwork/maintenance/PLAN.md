@@ -10,20 +10,20 @@ Generated: 2026-03-15 | Items: 40 | P0: 4 | P1: 14 | P2: 18 | P3: 4
 
 ## P1 — Likely Bug
 
-- [ ] #001 [Financial Calculations] Validate minimum participant counts before payout distribution
-- [ ] #002 [Reliability] Enforce minimum quorum of 2 for worker consensus threshold
-- [ ] #003 [Reliability] Enforce minimum quorum of 2 for judge consensus threshold
-- [ ] #004 [Financial Calculations] Implement remainder wei handling in payout logic
-- [ ] #013 [Code Quality] Remove deprecated PactClient from exports
-- [ ] #014 [Data Integrity] Make isEstimate required in count return type
-- [ ] #015 [Security] Add private key format validation before viem usage
-- [ ] #016 [Performance] Verify/create GIN index on tasks.tags column
-- [ ] #028 [Data Integrity] Evaluate migrating TEXT[] to JSONB or junction tables
-- [ ] #029 [Database] Verify legacy claims/verdicts tables have migration plan
-- [ ] #030 [Data Integrity] Add DB-level idempotency key for submissions
-- [ ] #031 [Security] Add audit trail (updated_by, updated_at) to tasks table
-- [ ] #032 [Security] Verify webhook_deliveries RLS in production
-- [ ] #033 [Data Integrity] Add NOT NULL to chain_id, tx_hash, log_index
+- [x] #001 [Financial Calculations] Validate minimum participant counts before payout distribution
+- [x] #002 [Reliability] Enforce minimum quorum of 2 for worker consensus threshold — NEEDS MANUAL REVIEW: documented risk in resolve() timeout path, did not modify contract logic
+- [x] #003 [Reliability] Enforce minimum quorum of 2 for judge consensus threshold — NEEDS MANUAL REVIEW: documented risk in resolve() timeout path, did not modify contract logic
+- [x] #004 [Financial Calculations] Implement remainder wei handling in payout logic — ALREADY IMPLEMENTED: workerRemainder goes to top-ranked worker, judgeRemainder goes to first consensus judge, and total always equals bounty
+- [x] #013 [Code Quality] Remove deprecated PactClient from exports
+- [x] #014 [Data Integrity] Make isEstimate required in count return type
+- [x] #015 [Security] Add private key format validation before viem usage
+- [x] #016 [Performance] Verify/create GIN index on tasks.tags column — ALREADY EXISTS: idx_tasks_tags created in 20250201000001_initial_schema.sql
+- [x] #028 [Data Integrity] Evaluate migrating TEXT[] to JSONB or junction tables — EVALUATED: TEXT[] with GIN index is appropriate for tasks.tags and agents.skills (simple flat arrays, no nesting). Junction tables would add unnecessary complexity for current scale.
+- [x] #029 [Database] Verify legacy claims/verdicts tables have migration plan
+- [x] #030 [Data Integrity] Add DB-level idempotency key for submissions — ALREADY EXISTS: UNIQUE(task_id, agent_address) constraint prevents duplicate submissions at DB level
+- [x] #031 [Security] Add audit trail (updated_by, updated_at) to tasks table
+- [x] #032 [Security] Verify webhook_deliveries RLS in production — VERIFIED: RLS enabled with service_role-only policies (INSERT/SELECT/UPDATE/DELETE) in migration 20250228100000_webhook_rls.sql
+- [x] #033 [Data Integrity] Add NOT NULL to chain_id, tx_hash, log_index — ALREADY EXISTS: NOT NULL constraints on chain_id, tx_hash, log_index in both processed_events and failed_events tables
 
 ## P2 — Code Smell
 
