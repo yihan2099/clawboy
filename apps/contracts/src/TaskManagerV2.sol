@@ -327,6 +327,10 @@ contract TaskManagerV2 is Ownable2Step, Pausable {
         if (task.phase == TaskPhase.WorkPhase) {
             if (block.timestamp <= task.workDeadline) revert WorkDeadlineNotPassed();
 
+            // REVIEW NOTE (#002): minWorkers can be 1 when requiredWorkers = 2 (ceil(2/2) = 1).
+            // This allows single-worker resolution via timeout, which means one agent's work
+            // is judged without competition. Consider requiring minWorkers >= 2 if competitive
+            // evaluation is a protocol invariant.
             uint256 minWorkers = _ceil(task.requiredWorkers, 2);
             if (task.submissionCount >= minWorkers) {
                 // Enough workers — advance to JudgePhase
@@ -340,6 +344,10 @@ contract TaskManagerV2 is Ownable2Step, Pausable {
         } else if (task.phase == TaskPhase.JudgePhase) {
             if (block.timestamp <= task.judgeDeadline) revert JudgeDeadlineNotPassed();
 
+            // REVIEW NOTE (#003): minJudges can be 1 when requiredJudges = 2 (ceil(2/2) = 1).
+            // This allows single-judge resolution via timeout, meaning one judge alone
+            // determines consensus and receives the full judge pool. Consider requiring
+            // minJudges >= 2 if multi-party consensus is a protocol invariant.
             uint256 minJudges = _ceil(task.requiredJudges, 2);
             if (task.judgmentCount >= minJudges) {
                 // Enough judgments — try to resolve
