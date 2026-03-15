@@ -68,6 +68,22 @@ describe('Key Builder', () => {
       );
     });
 
+    test('includes tags sorted alphabetically', () => {
+      expect(taskListKey({ tags: ['defi', 'ai'] })).toBe('tasks:t:ai,defi');
+    });
+
+    test('includes minBounty in key', () => {
+      expect(taskListKey({ minBounty: '1000000000000000000' })).toBe('tasks:mn:1000000000000000000');
+    });
+
+    test('includes maxBounty in key', () => {
+      expect(taskListKey({ maxBounty: '5000000000000000000' })).toBe('tasks:mx:5000000000000000000');
+    });
+
+    test('includes bountyToken normalized to lowercase', () => {
+      expect(taskListKey({ bountyToken: '0xABC123' })).toBe('tasks:bt:0xabc123');
+    });
+
     test('combines all params correctly', () => {
       const key = taskListKey({
         phase: 'completed',
@@ -78,6 +94,19 @@ describe('Key Builder', () => {
         sortOrder: 'asc',
       });
       expect(key).toBe('tasks:p:completedc:0xdef456l:50o:100sb:bountyso:asc');
+    });
+
+    test('combines all params including bounty filters', () => {
+      const key = taskListKey({
+        phase: 'open',
+        tags: ['defi'],
+        minBounty: '100',
+        maxBounty: '999',
+        bountyToken: '0xToken',
+        limit: 10,
+        offset: 0,
+      });
+      expect(key).toBe('tasks:p:opent:defimn:100mx:999bt:0xtokenl:10');
     });
   });
 

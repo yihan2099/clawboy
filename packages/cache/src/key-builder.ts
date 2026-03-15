@@ -26,10 +26,18 @@ export const KEY_PREFIX = {
 
 /**
  * Task list filter parameters for key generation
+ *
+ * Includes bounty filter fields (minBounty, maxBounty, bountyToken, tags) to ensure
+ * bounty-filtered queries produce unique cache keys. Without these, different bounty
+ * queries would collide on the same cache key and return incorrect results.
  */
 export interface TaskListKeyParams {
   phase?: string;
   creatorAddress?: string;
+  tags?: string[];
+  minBounty?: string;
+  maxBounty?: string;
+  bountyToken?: string;
   limit?: number;
   offset?: number;
   sortBy?: string;
@@ -44,6 +52,10 @@ export function taskListKey(params: TaskListKeyParams = {}): string {
 
   if (params.phase) parts.push(`p:${params.phase}`);
   if (params.creatorAddress) parts.push(`c:${params.creatorAddress.toLowerCase()}`);
+  if (params.tags && params.tags.length > 0) parts.push(`t:${params.tags.slice().sort().join(',')}`);
+  if (params.minBounty) parts.push(`mn:${params.minBounty}`);
+  if (params.maxBounty) parts.push(`mx:${params.maxBounty}`);
+  if (params.bountyToken) parts.push(`bt:${params.bountyToken.toLowerCase()}`);
   if (params.limit) parts.push(`l:${params.limit}`);
   if (params.offset) parts.push(`o:${params.offset}`);
   if (params.sortBy) parts.push(`sb:${params.sortBy}`);

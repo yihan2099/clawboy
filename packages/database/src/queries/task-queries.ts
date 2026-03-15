@@ -45,9 +45,9 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   } = options;
 
   // When bounty filters are provided, use RPC function for proper numeric comparison.
-  // NOTE: This RPC path bypasses the Supabase query builder and is not cached at this
-  // layer. Callers MUST wrap bounty-filtered queries in cacheThrough() to avoid
-  // hitting the database on every request.
+  // NOTE: This RPC path bypasses the Supabase query builder. Callers should use
+  // getCachedTaskList() with bounty filter params for caching (TaskListKeyParams
+  // supports minBounty, maxBounty, bountyToken, and tags).
   if (minBounty || maxBounty) {
     const { data, error } = await supabase.rpc('list_tasks_with_bounty_filter', {
       p_min_bounty: minBounty || null,
