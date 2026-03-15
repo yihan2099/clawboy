@@ -90,6 +90,15 @@ class CacheClient implements ICache {
     const tags = options.tags ?? [];
     const redis = getRedisClient();
 
+    // Runtime tag validation — prevents non-string tags from corrupting the tag index
+    if (process.env.NODE_ENV !== 'production') {
+      for (const tag of tags) {
+        if (typeof tag !== 'string' || tag.length === 0) {
+          console.warn(`Cache set: invalid tag "${tag}" (type: ${typeof tag}) for key "${key}". Tags must be non-empty strings.`);
+        }
+      }
+    }
+
     if (redis) {
       try {
         const pipeline = redis.pipeline();
