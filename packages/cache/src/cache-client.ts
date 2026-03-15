@@ -95,7 +95,14 @@ class CacheClient implements ICache {
         const pipeline = redis.pipeline();
 
         // Set the value with TTL
-        pipeline.set(key, JSON.stringify(value), { ex: ttl });
+        let serialized: string;
+        try {
+          serialized = JSON.stringify(value);
+        } catch (serializeError) {
+          console.warn('Cache set: JSON.stringify failed, falling back to memory:', serializeError);
+          throw serializeError; // Fall through to memory fallback
+        }
+        pipeline.set(key, serialized, { ex: ttl });
 
         // Add to tag indexes
         for (const tag of tags) {
@@ -329,7 +336,14 @@ class CacheClient implements ICache {
           const ttl = entry.options?.ttl ?? TTL_CONFIG.DEFAULT;
           const tags = entry.options?.tags ?? [];
 
-          pipeline.set(entry.key, JSON.stringify(entry.value), { ex: ttl });
+          let serialized: string;
+          try {
+            serialized = JSON.stringify(entry.value);
+          } catch (serializeError) {
+            console.warn(`Cache setMany: JSON.stringify failed for key ${entry.key}, falling back to memory:`, serializeError);
+            throw serializeError; // Fall through to memory fallback
+          }
+          pipeline.set(entry.key, serialized, { ex: ttl });
 
           for (const tag of tags) {
             const tagKey = tagIndexKey(tag);
