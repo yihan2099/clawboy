@@ -40,7 +40,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     });
     tasks = result.tasks;
     total = result.total;
-    isEstimate = result.isEstimate ?? false;
+    isEstimate = result.isEstimate;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load tasks';
   }

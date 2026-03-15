@@ -28,7 +28,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   tasks: TaskRow[];
   total: number;
   /** True when total is an estimate (count RPC unavailable); pagination may be inaccurate */
-  isEstimate?: boolean;
+  isEstimate: boolean;
 }> {
   const supabase = getSupabaseClient();
   const {
@@ -85,7 +85,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
       return { tasks, total: tasks.length, isEstimate: true };
     }
 
-    return { tasks, total: (countData as number) ?? tasks.length };
+    return { tasks, total: (countData as number) ?? tasks.length, isEstimate: false };
   }
 
   // Standard query without bounty filtering
@@ -118,6 +118,7 @@ export async function listTasks(options: ListTasksOptions = {}): Promise<{
   return {
     tasks: (data ?? []) as TaskRow[],
     total: count ?? 0,
+    isEstimate: false,
   };
 }
 

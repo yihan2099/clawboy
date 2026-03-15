@@ -58,7 +58,7 @@ describe('task-queries', () => {
   describe('listTasks', () => {
     test('returns tasks with defaults', async () => {
       const result = await listTasks();
-      expect(result).toEqual({ tasks: [mockTask], total: 1 });
+      expect(result).toEqual({ tasks: [mockTask], total: 1, isEstimate: false });
       expect(supabaseMock.mockFrom).toHaveBeenCalledWith('tasks');
     });
 
