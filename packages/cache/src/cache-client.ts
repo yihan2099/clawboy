@@ -394,11 +394,13 @@ export async function cacheThrough<T>(
 ): Promise<CacheResult<T>> {
   const cache = getCache();
 
+  const now = new Date().toISOString();
+
   // Check cache unless skipRead is set
   if (!options.skipRead) {
     const cached = await cache.get<T>(key);
     if (cached !== null) {
-      return { data: cached, hit: true };
+      return { data: cached, hit: true, _cachedAt: now };
     }
   }
 
@@ -410,7 +412,7 @@ export async function cacheThrough<T>(
     await cache.set(key, data, options);
   }
 
-  return { data, hit: false };
+  return { data, hit: false, _cachedAt: now };
 }
 
 /**

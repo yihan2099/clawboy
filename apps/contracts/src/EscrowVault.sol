@@ -196,6 +196,11 @@ contract EscrowVault is IEscrowVault, ReentrancyGuard, Ownable, Pausable {
         nonReentrant
         whenNotPaused
     {
+        // NOTE (#008): No explicit address(0) check on recipient. This is safe because:
+        // - release() is onlyTaskManager
+        // - TaskManagerV2 only passes task.creator (which is msg.sender from createTask,
+        //   and msg.sender cannot be address(0))
+        // If release() is ever opened to arbitrary callers, add: if (recipient == address(0)) revert ZeroAddress();
         Escrow storage escrow = _escrows[taskId];
         if (escrow.amount == 0) revert EscrowNotFound();
         if (escrow.released) revert EscrowAlreadyReleased();

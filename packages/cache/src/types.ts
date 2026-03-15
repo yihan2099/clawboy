@@ -24,6 +24,8 @@ export interface CacheResult<T> {
   data: T;
   /** Whether data was served from cache */
   hit: boolean;
+  /** ISO timestamp when data was cached or fetched. Useful for debugging staleness. */
+  _cachedAt: string;
 }
 
 /**
