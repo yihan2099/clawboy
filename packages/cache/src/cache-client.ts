@@ -125,19 +125,20 @@ class CacheClient implements ICache {
         // Check per-command results: Upstash pipeline.exec() returns an array of results
         // where each entry may be an Error if that individual command failed. A pipeline
         // exec() itself doesn't throw on per-command errors, so we inspect each result.
-        // Log ALL errors before throwing the first one for complete debugging context.
         if (Array.isArray(results)) {
-          let firstError: Error | null = null;
+          const errors: Error[] = [];
           for (let i = 0; i < results.length; i++) {
             const result = results[i];
             if (result instanceof Error) {
               console.warn(`Redis pipeline command [${i}] failed in cache set:`, result.message);
-              if (!firstError) firstError = result;
+              errors.push(result);
             }
           }
-          if (firstError) {
+          if (errors.length > 0) {
             // Fall through to memory fallback below
-            throw firstError;
+            throw errors.length === 1
+              ? errors[0]
+              : new AggregateError(errors, `${errors.length} Redis pipeline commands failed in cache set`);
           }
         }
 
