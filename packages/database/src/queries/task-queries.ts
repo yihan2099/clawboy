@@ -143,6 +143,11 @@ export async function getTaskById(id: string): Promise<TaskRow | null> {
 /**
  * Get multiple tasks by their database IDs in a single query.
  * Returns a Map for O(1) lookup by task ID.
+ *
+ * NOTE: The returned Map does NOT preserve the input `ids` order.
+ * Supabase/PostgreSQL `IN` queries return rows in arbitrary order.
+ * If order matters, iterate `ids` and look up each in the returned Map.
+ * Missing IDs (deleted or non-existent) will simply be absent from the Map.
  */
 export async function getTasksByIds(ids: string[]): Promise<Map<string, TaskRow>> {
   if (ids.length === 0) return new Map();
