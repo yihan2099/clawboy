@@ -28,6 +28,7 @@ import {
 import { startIpfsRetryJob } from './jobs';
 import { startHealthServer } from './health';
 import { processWebhookRetries } from './services/webhook-notifier';
+import { clearCleanupInterval } from '@pactprotocol/cache';
 
 const chainId = parseInt(process.env.CHAIN_ID || '84532', 10);
 
@@ -306,6 +307,7 @@ async function main() {
     clearInterval(dlqRetryInterval);
     clearInterval(webhookRetryInterval);
     stopIpfsRetryJob();
+    clearCleanupInterval();
     healthServer.stop();
     process.exit(0);
   };

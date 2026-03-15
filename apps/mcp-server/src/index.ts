@@ -21,6 +21,7 @@ if (process.env.SENTRY_DSN) {
 
 import { startServer } from './server';
 import { startHttpServer } from './http-server';
+import { clearCleanupInterval } from '@pactprotocol/cache';
 
 async function main() {
   console.error('Starting Pact MCP Server...');
@@ -70,5 +71,14 @@ async function main() {
     process.exit(1);
   }
 }
+
+// Graceful shutdown: clear cache cleanup interval to prevent open handles
+const shutdown = () => {
+  clearCleanupInterval();
+  process.exit(0);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 main();
