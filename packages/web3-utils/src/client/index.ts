@@ -13,4 +13,5 @@ export {
   getAddressFromPrivateKey,
   signMessage,
   signTypedData,
+  validatePrivateKeyFormat,
 } from './wallet-client';
