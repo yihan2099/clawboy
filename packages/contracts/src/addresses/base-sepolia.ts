@@ -12,6 +12,8 @@ export const BASE_SEPOLIA_ADDRESSES = {
   // Core Pact contracts (V2)
   escrowVault: '0x9Ccc9D800A886cA6767696959383bd2a85d1F8d9' as `0x${string}`,
   taskManager: '0x08eAEaf9adbeccc0d6eC9Ec125F2fe1078D3Ac4e' as `0x${string}`,
+  // ERC-8183 Compatibility Layer
+  erc8183Adapter: '0xEb267894efdBAFec97571Df11BB16d9289B14F69' as `0x${string}`,
 } as const;
 
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
