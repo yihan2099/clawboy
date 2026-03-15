@@ -459,6 +459,14 @@ contract TaskManagerV2 is Ownable2Step, Pausable {
 
     /**
      * @dev Resolve a task: compute consensus, determine payouts, release funds
+     *
+     * MINIMUM PARTICIPANT INVARIANTS:
+     * - subCount >= 1: guaranteed because JudgePhase requires submissionCount == requiredWorkers
+     *   (auto path) or submissionCount >= ceil(requiredWorkers/2) >= 1 (timeout path).
+     * - judgCount >= 1: guaranteed because auto-resolve triggers at judgmentCount == requiredJudges
+     *   (>= 2), and timeout path requires judgmentCount >= ceil(requiredJudges/2) >= 1.
+     * - k = ceil(subCount/2) >= 1: ensures no division by zero in perWorker calculation.
+     * - If consensusJudgeCount == 0, task fails and refunds (no payout division occurs).
      */
     function _resolve(uint256 taskId) internal {
         Task storage task = tasks[taskId];
