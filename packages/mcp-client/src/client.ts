@@ -12,6 +12,10 @@ export interface PactClientConfig {
 /**
  * Pact MCP Client
  * Wraps the MCP SDK client with Pact-specific configuration
+ *
+ * @deprecated PactClient is non-functional (connect() always throws).
+ * Use {@link PactApiClient} from `./api-client.js` for all HTTP-based tool calls.
+ * This class is retained to avoid a breaking change and will be removed in the next major version.
  */
 export class PactClient {
   private client: Client;
@@ -86,6 +90,8 @@ export class PactClient {
 
 /**
  * Create a Pact client from environment variables
+ *
+ * @deprecated Use PactApiClient instead. See packages/mcp-client/README.md for migration guidance.
  */
 export function createPactClient(): PactClient {
   const privateKey = process.env.PACT_WALLET_PRIVATE_KEY;
