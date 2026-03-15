@@ -21,8 +21,17 @@ export interface ListTasksOptions {
 
 /**
  * List tasks with filtering and pagination.
- * Uses PostgreSQL RPC function for proper numeric bounty comparison when
- * bounty filters are provided, otherwise uses standard Supabase query.
+ *
+ * TWO QUERY PATHS:
+ * 1. **RPC path** (when minBounty or maxBounty is provided): Uses `list_tasks_with_bounty_filter`
+ *    and `count_tasks_with_bounty_filter` PostgreSQL functions. Required because bounty_amount is
+ *    stored as TEXT and needs `::NUMERIC` casts for proper comparison. The count RPC may fail
+ *    independently, in which case `isEstimate: true` is returned.
+ * 2. **Standard path** (all other queries): Uses Supabase query builder with `.select('*', { count: 'exact' })`.
+ *    Supports phase, creatorAddress, tags, bountyToken filters natively.
+ *
+ * Both paths return the same shape. Callers should check `isEstimate` to handle
+ * approximate counts gracefully (e.g., disable exact page numbers in pagination UI).
  */
 export async function listTasks(options: ListTasksOptions = {}): Promise<{
   tasks: TaskRow[];
