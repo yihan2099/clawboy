@@ -27,28 +27,28 @@ Generated: 2026-03-15 | Items: 40 | P0: 4 | P1: 14 | P2: 18 | P3: 4
 
 ## P2 — Code Smell
 
-- [ ] #005 [Reliability] Add require(requiredWorkers > 0) in createTask()
-- [ ] #006 [Financial Calculations] Document fee rounding direction in EscrowVault
-- [ ] #007 [Data Integrity] Add percentage sum validation in releaseSplit()
-- [ ] #008 [Reliability] Add address(0) check in release()
-- [ ] #009 [Security] Add deadline future validation in createTask()
-- [ ] #010 [Reliability] Add duplicate submission prevention mappings
-- [ ] #017 [API Contracts] Add _cachedAt metadata to response types
-- [ ] #018 [Environment & Config] Document env variable naming; deprecate legacy
-- [ ] #019 [Reliability] Remove indefinite Redis check caching
-- [ ] #020 [Type Safety] Add try-catch around JSON.stringify in cache
-- [ ] #021 [Performance] Document glob pattern limitations in memory fallback
-- [ ] #022 [Data Integrity] Document getTasksByIds() return order
-- [ ] #034 [Security] Create submissions_summary vs submissions_detail views
-- [ ] #035 [Security] Add rate limiting for anonymous task reads
-- [ ] #036 [Database] Document retry backoff magic numbers
-- [ ] #037 [Auth] Add runtime chain ID validation in examples
-- [ ] #038 [Environment & Config] Require PACT_SERVER_URL in production
-- [ ] #040 [Data Integrity] Add max_retries and dead-letter table for failed events
+- [x] #005 [Reliability] Add require(requiredWorkers > 0) in createTask() — ALREADY ENFORCED: createTask() requires requiredWorkers >= 2 (line 194)
+- [x] #006 [Financial Calculations] Document fee rounding direction in EscrowVault — ALREADY DOCUMENTED: release() NatSpec explains truncation toward zero is recipient-favorable
+- [x] #007 [Data Integrity] Add percentage sum validation in releaseSplit() — ALREADY EXISTS: releaseSplit() validates totalPayout (amounts + fee) == escrow.amount (line 302)
+- [x] #008 [Reliability] Add address(0) check in release() — documented safety rationale; actual check not needed due to onlyTaskManager + msg.sender invariant
+- [x] #009 [Security] Add deadline future validation in createTask() — ALREADY EXISTS: line 196 checks workDeadline > block.timestamp
+- [x] #010 [Reliability] Add duplicate submission prevention mappings — ALREADY EXISTS: hasSubmittedWork mapping (contract) + UNIQUE(task_id, agent_address) (DB)
+- [x] #017 [API Contracts] Add _cachedAt metadata to response types
+- [x] #018 [Environment & Config] Document env variable naming; deprecate legacy — ALREADY DOCUMENTED: PACT_SERVER_URL is canonical, PACT_MCP_SERVER_URL accepted for backwards compatibility with inline comments
+- [x] #019 [Reliability] Remove indefinite Redis check caching — BY DESIGN: redisChecked prevents log spam; resetRedisClient() available for testing; env vars don't change post-startup in production
+- [x] #020 [Type Safety] Add try-catch around JSON.stringify in cache
+- [x] #021 [Performance] Document glob pattern limitations in memory fallback — ALREADY DOCUMENTED: deleteByPattern() JSDoc explains only '*' is supported in memory fallback
+- [x] #022 [Data Integrity] Document getTasksByIds() return order
+- [x] #034 [Security] Create submissions_summary vs submissions_detail views
+- [x] #035 [Security] Add rate limiting for anonymous task reads — ALREADY EXISTS: MCP middleware rate limits by IP for anonymous and by session for authenticated (100 read/min, 10 write/min)
+- [x] #036 [Database] Document retry backoff magic numbers — ALREADY DOCUMENTED: exponential backoff (2^retry_count min, cap 1440) with overflow protection notes in migration SQL
+- [x] #037 [Auth] Add runtime chain ID validation in examples
+- [x] #038 [Environment & Config] Require PACT_SERVER_URL in production
+- [x] #040 [Data Integrity] Add max_retries and dead-letter table for failed events — ALREADY EXISTS: failed_events table has max_retries, retry_count, and status (pending/retrying/failed/resolved)
 
 ## P3 — Nice to Have
 
-- [ ] #023 [Type Safety] Add tag type validation in memory cache
-- [ ] #024 [API Contracts] Document/unify RPC vs standard query paths
-- [ ] #025 [Reliability] Use AggregateError for pipeline multi-errors
-- [ ] #039 [Code Quality] Add retry logic to example error handling
+- [x] #023 [Type Safety] Add tag type validation in memory cache
+- [x] #024 [API Contracts] Document/unify RPC vs standard query paths
+- [x] #025 [Reliability] Use AggregateError for pipeline multi-errors
+- [x] #039 [Code Quality] Add retry logic to example error handling
