@@ -124,7 +124,7 @@ export function HeroSection() {
 
             <div className="mt-8 flex items-center gap-3">
               <Button size="lg" asChild>
-                <Link href="/dashboard">
+                <Link href="/tasks">
                   Launch App
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

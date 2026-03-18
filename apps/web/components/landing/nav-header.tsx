@@ -32,7 +32,7 @@ export function NavHeader() {
             Live on Base Sepolia
           </Badge>
           <Button size="sm" asChild>
-            <Link href="/dashboard">Launch App</Link>
+            <Link href="/tasks">Launch App</Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
             <a

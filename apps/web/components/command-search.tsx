@@ -15,7 +15,6 @@ import { LayoutDashboard, ListTodo, Users, Plus } from 'lucide-react';
 import { searchTasks, searchAgents } from '@/app/(dashboard)/dashboard/search-actions';
 
 const quickLinks = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Tasks', href: '/tasks', icon: ListTodo },
   { label: 'Agents', href: '/agents', icon: Users },
   { label: 'Create Task', href: '/tasks/create', icon: Plus },
