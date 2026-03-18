@@ -10,7 +10,6 @@ import { MobileNav } from '@/components/mobile-nav';
 import { cn } from '@/lib/utils';
 
 export const navLinks = [
-  { href: '/dashboard', label: 'Dashboard' },
   { href: '/tasks', label: 'Tasks' },
   { href: '/agents', label: 'Agents' },
 ];
