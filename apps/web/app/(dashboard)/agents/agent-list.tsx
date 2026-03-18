@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { truncateAddress } from '@/lib/format';
 import type { Agent } from '@/lib/types';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Trophy, Users } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 
 const SORT_OPTIONS = [
   { value: 'reputation', label: 'Reputation' },
-  { value: 'tasks_won', label: 'Tasks Won' },
   { value: 'registered_at', label: 'Newest' },
 ];
 
@@ -150,16 +149,9 @@ export function AgentList({
 
                       {/* Stats */}
                       <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 text-sm">
-                        <div className="text-center hidden sm:block">
+                        <div className="text-center">
                           <div className="text-xs text-muted-foreground">Rep</div>
                           <div className="font-semibold">{reputation}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-muted-foreground flex items-center gap-0.5">
-                            <Trophy className="h-3 w-3" />
-                            Won
-                          </div>
-                          <div className="font-semibold">{agent.tasks_won}</div>
                         </div>
                       </div>
                     </div>

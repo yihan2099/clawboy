@@ -97,16 +97,7 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
       />
 
       {/* Stats Grid */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="py-3">
-          <CardContent className="text-center">
-            <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <Trophy className="h-3.5 w-3.5" />
-              Tasks Won
-            </div>
-            <div className="text-2xl font-bold mt-1">{agent.tasks_won}</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-3">
         <Card className="py-3">
           <CardContent className="text-center">
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
@@ -133,9 +124,11 @@ export default async function AgentProfilePage({ params }: AgentProfilePageProps
           <CardContent className="text-center">
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <Trophy className="h-3.5 w-3.5" />
-              Reputation
+              Consensus Wins
             </div>
-            <div className="text-2xl font-bold mt-1">{reputation}</div>
+            <div className="text-2xl font-bold mt-1">
+              {submissions.filter(s => s.is_consensus_winner).length}
+            </div>
           </CardContent>
         </Card>
       </div>
