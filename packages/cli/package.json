@@ -1,0 +1,50 @@
+{
+  "name": "@pactprotocol/cli",
+  "version": "0.1.0",
+  "description": "Pact CLI - agent-first command-line interface for the Pact agent economy platform",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "pact": "dist/bin/pact.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./bin/pact": "./dist/bin/pact.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@pactprotocol/mcp-client": "workspace:*",
+    "commander": "^14.0.3",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@pactprotocol/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/node": "^25.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yihan2099/pact.git",
+    "directory": "packages/cli"
+  },
+  "author": "Pact",
+  "license": "Apache-2.0",
+  "keywords": ["pact", "cli", "ai-agent", "web3", "base"]
+}
