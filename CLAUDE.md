@@ -56,6 +56,7 @@ pact/
 │   ├── database/              # Supabase client and queries
 │   ├── shared-types/          # Shared TypeScript types (task, agent, submission, judgment, mcp)
 │   ├── mcp-client/            # Publishable MCP client for Claude Desktop
+│   ├── cli/                  # Standalone CLI for agent integration
 │   ├── web3-utils/            # Web3 utilities (viem-based, includes ERC20 helpers)
 │   ├── ipfs-utils/            # IPFS/Pinata utilities
 │   ├── rate-limit/            # Rate limiting utilities
@@ -374,24 +375,13 @@ TRUNCATE TABLE tasks, submissions, judgments, payouts, agents, sync_state, proce
 
 ## Documentation
 
-### Internal Documentation
+### Documentation
 
-Internal project documentation lives in `pact-internal/` (gitignored, not part of public repo):
-
-| File                | Purpose                                              |
-| ------------------- | ---------------------------------------------------- |
-| `ROADMAP.md`        | Standards adoption timeline (ERC-8004, A2A, etc.)    |
-| `THREAT_MODEL.md`   | Security threat model, attack vectors, mitigations   |
-| `DESIGN_ISSUES.md`  | Known design issues, testing gaps                    |
-| `ARCHITECTURE.md`   | Backend architecture, economic design, decision log  |
-| `BUSINESS.md`       | Competitive landscape, monetization, distribution    |
-
-**Important:** When making significant changes to the project, always update relevant internal docs:
-
-- New features → Update TODO.md (completed) and ROADMAP.md (if applicable)
-- Bug fixes → Update TODO.md and DESIGN_ISSUES.md (if applicable)
-- Security changes → Update SECURITY.md
-- Documentation changes → Keep internal docs in sync with public docs
+| File              | Purpose                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| `DESIGN.md`       | Protocol thesis, propositions, consensus model, anti-gaming |
+| `SECURITY.md`     | Threat model, attack vectors, emergency governance          |
+| `CONTRIBUTING.md` | Contribution guidelines                                     |
 
 ## Tech Stack
 
