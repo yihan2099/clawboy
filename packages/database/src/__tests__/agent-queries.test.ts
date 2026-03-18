@@ -16,7 +16,6 @@ const {
   getAgentByAddress,
   upsertAgent,
   updateAgent,
-  incrementTasksWon,
   calculateVoteWeight,
   getAgentsWithFailedIpfs,
 } = await import('../queries/agent-queries');
@@ -30,9 +29,6 @@ const mockAgent = {
   skills: ['solidity', 'typescript'] as string[] | null,
   is_active: true,
   reputation: 100,
-  tasks_won: 5,
-  disputes_won: 0,
-  disputes_lost: 0,
   profile_cid: 'QmProfile1',
   ipfs_fetch_failed: false,
   webhook_url: null as string | null,
@@ -83,8 +79,8 @@ describe('agent-queries', () => {
     test('applies sorting', async () => {
       const builder = createMockQueryBuilder([mockAgent], null, 1);
       supabaseMock.setBuilder(builder);
-      await listAgents({ sortBy: 'tasks_won', sortOrder: 'asc' });
-      expect(builder.order).toHaveBeenCalledWith('tasks_won', { ascending: true });
+      await listAgents({ sortBy: 'reputation', sortOrder: 'asc' });
+      expect(builder.order).toHaveBeenCalledWith('reputation', { ascending: true });
     });
 
     test('applies pagination', async () => {
@@ -189,23 +185,6 @@ describe('agent-queries', () => {
     test('throws on error', async () => {
       supabaseMock.setBuilder(createMockQueryBuilder(null, { message: 'DB error' }));
       await expect(updateAgent('0xagent', {} as any)).rejects.toThrow('Failed to update agent');
-    });
-  });
-
-  describe('incrementTasksWon', () => {
-    test('calls RPC with lowercase address', async () => {
-      supabaseMock.setRpcHandler(() => Promise.resolve({ data: null, error: null }));
-      await incrementTasksWon('0xAGENT1');
-      expect(supabaseMock.mockRpc).toHaveBeenCalledWith('increment_tasks_won', {
-        agent_addr: '0xagent1',
-      });
-    });
-
-    test('throws on RPC error', async () => {
-      supabaseMock.setRpcHandler(() =>
-        Promise.resolve({ data: null, error: { message: 'RPC error' } })
-      );
-      await expect(incrementTasksWon('0xagent')).rejects.toThrow('Failed to increment tasks won');
     });
   });
 
