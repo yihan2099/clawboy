@@ -20,8 +20,6 @@ export type Database = {
           agent_id: string | null
           agent_uri: string | null
           created_at: string | null
-          disputes_lost: number
-          disputes_won: number
           id: string
           ipfs_fetch_failed: boolean
           is_active: boolean
@@ -30,7 +28,6 @@ export type Database = {
           registered_at: string
           reputation: number
           skills: string[] | null
-          tasks_won: number
           updated_at: string | null
           webhook_secret: string | null
           webhook_url: string | null
@@ -40,8 +37,6 @@ export type Database = {
           agent_id?: string | null
           agent_uri?: string | null
           created_at?: string | null
-          disputes_lost?: number
-          disputes_won?: number
           id?: string
           ipfs_fetch_failed?: boolean
           is_active?: boolean
@@ -50,7 +45,6 @@ export type Database = {
           registered_at: string
           reputation?: number
           skills?: string[] | null
-          tasks_won?: number
           updated_at?: string | null
           webhook_secret?: string | null
           webhook_url?: string | null
@@ -60,8 +54,6 @@ export type Database = {
           agent_id?: string | null
           agent_uri?: string | null
           created_at?: string | null
-          disputes_lost?: number
-          disputes_won?: number
           id?: string
           ipfs_fetch_failed?: boolean
           is_active?: boolean
@@ -70,7 +62,6 @@ export type Database = {
           registered_at?: string
           reputation?: number
           skills?: string[] | null
-          tasks_won?: number
           updated_at?: string | null
           webhook_secret?: string | null
           webhook_url?: string | null
@@ -470,8 +461,6 @@ export type Database = {
           bounty_token: string
           chain_id: number
           chain_task_id: string
-          claimed_at: string | null
-          claimed_by: string | null
           created_at: string | null
           created_at_block: string
           creator_address: string
@@ -497,8 +486,6 @@ export type Database = {
           bounty_token?: string
           chain_id?: number
           chain_task_id: string
-          claimed_at?: string | null
-          claimed_by?: string | null
           created_at?: string | null
           created_at_block: string
           creator_address: string
@@ -524,8 +511,6 @@ export type Database = {
           bounty_token?: string
           chain_id?: number
           chain_task_id?: string
-          claimed_at?: string | null
-          claimed_by?: string | null
           created_at?: string | null
           created_at_block?: string
           creator_address?: string
@@ -671,7 +656,6 @@ export type Database = {
       }
       count_tasks_with_bounty_filter: {
         Args: {
-          p_claimed_by?: string
           p_creator_address?: string
           p_max_bounty?: string
           p_min_bounty?: string
@@ -749,7 +733,6 @@ export type Database = {
       }
       list_tasks_with_bounty_filter: {
         Args: {
-          p_claimed_by?: string
           p_creator_address?: string
           p_limit?: number
           p_max_bounty?: string
@@ -764,8 +747,6 @@ export type Database = {
           bounty_amount: string
           bounty_token: string
           chain_task_id: string
-          claimed_at: string
-          claimed_by: string
           created_at: string
           created_at_block: string
           creator_address: string

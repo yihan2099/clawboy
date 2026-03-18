@@ -10,7 +10,7 @@ export interface ListAgentsOptions {
   minReputation?: number;
   limit?: number;
   offset?: number;
-  sortBy?: 'reputation' | 'tasks_won' | 'registered_at';
+  sortBy?: 'reputation' | 'registered_at';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -135,21 +135,6 @@ export async function getTopAgents(limit = 10): Promise<AgentRow[]> {
     sortOrder: 'desc',
   });
   return agents;
-}
-
-/**
- * Increment tasks won for an agent
- */
-export async function incrementTasksWon(address: string): Promise<void> {
-  const supabase = getWriteClient();
-
-  const { error } = await supabase.rpc('increment_tasks_won', {
-    agent_addr: address.toLowerCase(),
-  });
-
-  if (error) {
-    throw new Error(`Failed to increment tasks won: ${error.message}`);
-  }
 }
 
 /**

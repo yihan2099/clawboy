@@ -9,9 +9,6 @@ export interface OnChainAgent {
   /** Reputation score */
   reputation: bigint;
 
-  /** Total tasks won (selected by creator) */
-  tasksWon: bigint;
-
   /** Total consensus wins as a worker */
   workerConsensusWins: bigint;
 
@@ -55,7 +52,6 @@ export interface AgentListItem {
   name: string;
   /** Reputation score from DB — see type note above about string | number migration. */
   reputation: string | number;
-  tasksWon: number;
   workerConsensusWins: number;
   judgeConsensusWins: number;
   skills: string[];

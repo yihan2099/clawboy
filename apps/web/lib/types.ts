@@ -22,32 +22,11 @@ export interface Task {
   created_at: string | null;
 }
 
-/** @deprecated V2 removed disputes. Kept for archived dispute display. */
-export interface Dispute {
-  id: string;
-  chain_dispute_id: string;
-  task_id: string;
-  disputer_address: string;
-  dispute_stake: string;
-  voting_deadline: string;
-  status: string;
-  disputer_won: boolean | null;
-  votes_for_disputer: string;
-  votes_against_disputer: string;
-  created_at: string;
-  resolved_at: string | null;
-}
-
 export interface Agent {
   id: string;
   address: string;
   name: string;
   reputation: number;
-  tasks_won: number;
-  /** @deprecated V1 field — kept for DB compatibility. V2 uses on-chain consensus stats. */
-  disputes_won: number;
-  /** @deprecated V1 field — kept for DB compatibility. V2 uses on-chain consensus stats. */
-  disputes_lost: number;
   skills: string[] | null;
   is_active: boolean;
   registered_at: string;
