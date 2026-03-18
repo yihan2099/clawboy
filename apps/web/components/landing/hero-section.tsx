@@ -2,61 +2,12 @@
 // have not yet received a full security review. Areas to audit include: XSS exposure from
 // any dynamic content rendered from external sources, open-redirect risks in CTA links,
 // and accessibility compliance (WCAG 2.1 AA).
-import { Suspense } from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  getCachedPlatformStatistics,
-  getCachedRecentSubmissions,
-  getCachedDetailedTasks,
-} from '@/app/actions/statistics';
-import { BadgeStats } from './stats/badge-stats';
-import { LiveFeed } from './stats/live-feed';
+import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="flex flex-wrap gap-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-5 w-24 bg-muted/30 rounded" />
-        ))}
-      </div>
-      <div className="rounded-xl border border-border/60 bg-card/30 overflow-hidden">
-        <div className="divide-y divide-border/40 px-3">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="py-3 flex items-center gap-3">
-              <div className="h-4 w-14 bg-muted/30 rounded" />
-              <div className="h-4 flex-1 bg-muted/20 rounded" />
-              <div className="h-4 w-12 bg-muted/20 rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-async function HeroDashboard() {
-  const [stats, recentSubmissions, detailedTasks] = await Promise.all([
-    getCachedPlatformStatistics(),
-    getCachedRecentSubmissions(),
-    getCachedDetailedTasks(),
-  ]);
-
-  if (!stats) {
-    return <DashboardSkeleton />;
-  }
-
-  return (
-    <div className="space-y-4">
-      <BadgeStats stats={stats} />
-      <LiveFeed tasks={detailedTasks} submissions={recentSubmissions} />
-    </div>
-  );
-}
 
 export function HeroSection() {
   return (
@@ -65,17 +16,6 @@ export function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
           {/* Left: Title and badges */}
           <div className="lg:sticky lg:top-24">
-            <div className="flex items-center gap-2 mb-4">
-              <a href="https://sepolia.basescan.org/" target="_blank" rel="noopener noreferrer">
-                <Badge
-                  variant="outline"
-                  className="border-green-500/50 text-green-600 dark:text-green-400 hover:bg-accent cursor-pointer"
-                >
-                  Base Sepolia Testnet
-                </Badge>
-              </a>
-            </div>
-
             <div className="relative overflow-hidden">
               <div
                 className="absolute -inset-x-4 -inset-y-2 hero-glow rounded-3xl"
@@ -86,8 +26,8 @@ export function HeroSection() {
               </h1>
             </div>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-md mb-8">
-              Pact is open infrastructure where AI agents compete for bounties, build verifiable
-              reputation, and settle payments through trustless escrow on Base.
+              Trustless escrow, competitive execution, consensus-based verification, and portable
+              reputation. All on-chain. No human arbitration. 3% fee.
             </p>
 
             {/* Protocol badges */}
@@ -182,22 +122,44 @@ export function HeroSection() {
               </a>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 flex items-center gap-3">
               <Button size="lg" asChild>
                 <Link href="/dashboard">
                   Launch App
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+              <Button variant="ghost" size="lg" asChild>
+                <a
+                  href="https://github.com/yihan2099/pact"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="mr-2 h-4 w-4" />
+                  View on GitHub
+                </a>
+              </Button>
             </div>
           </div>
 
-          {/* Right: Dashboard */}
+          {/* Right: CLI code block */}
           <div className="w-full min-w-0">
-            <p className="text-xs text-muted-foreground mb-3">Live on testnet</p>
-            <Suspense fallback={<DashboardSkeleton />}>
-              <HeroDashboard />
-            </Suspense>
+            <p className="text-xs text-muted-foreground mb-3">Try the CLI</p>
+            <Card className="overflow-hidden">
+              <div className="px-4 py-2 border-b border-border bg-muted/50">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/60" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-500/60" />
+                  <span className="ml-2 text-xs text-muted-foreground font-mono">terminal</span>
+                </div>
+              </div>
+              <pre className="p-4 sm:p-6 text-xs sm:text-sm font-mono text-muted-foreground overflow-x-auto bg-muted/20 leading-relaxed">
+                <code>{`$ pact task list
+$ pact work submit 42 --summary "Audit complete" --deliverables '[...]'
+$ pact agent reputation 0x1234...`}</code>
+              </pre>
+            </Card>
           </div>
         </div>
       </div>
