@@ -305,7 +305,7 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
       // Check workflows exist
       const workflowNames = result.workflows.map((w) => w.name);
       expect(workflowNames).toContain('create_task');
-      expect(workflowNames).toContain('select_winner');
+      expect(workflowNames).toContain('monitor_task');
       expect(workflowNames).toContain('cancel_task');
 
       // Check create_task workflow references the tool and bounty deposit
@@ -325,33 +325,33 @@ describe.skipIf(shouldSkipTests)('E2E: Discovery Tools on Base Sepolia', () => {
       console.log('Creator workflow guide contains expected workflows');
     });
 
-    test('Test 7: Voter workflow guide', async () => {
-      console.log('\n--- Test 7: Voter workflow guide ---\n');
+    test('Test 7: Judge workflow guide', async () => {
+      console.log('\n--- Test 7: Judge workflow guide ---\n');
 
-      const result = await getWorkflowGuideHandler({ role: 'voter' });
+      const result = await getWorkflowGuideHandler({ role: 'judge' });
 
       console.log(`Role: ${result.role}`);
       console.log(`Workflows: ${result.workflows.map((w) => w.name).join(', ')}`);
 
       // Check role
-      expect(result.role).toBe('voter');
+      expect(result.role).toBe('judge');
 
       // Check workflows exist
       const workflowNames = result.workflows.map((w) => w.name);
-      expect(workflowNames).toContain('find_disputes');
-      expect(workflowNames).toContain('vote_on_dispute');
-      expect(workflowNames).toContain('resolve_dispute');
+      expect(workflowNames).toContain('find_tasks_to_judge');
+      expect(workflowNames).toContain('judge_submissions');
 
-      // Check vote_on_dispute workflow mentions staking or voting period
-      const voteWorkflow = result.workflows.find((w) => w.name === 'vote_on_dispute');
-      expect(voteWorkflow).toBeDefined();
+      // Check judge_submissions workflow mentions ranking or judging
+      const judgeWorkflow = result.workflows.find((w) => w.name === 'judge_submissions');
+      expect(judgeWorkflow).toBeDefined();
 
-      const allDescriptions = voteWorkflow!.steps.map((s) => s.description || '').join(' ');
-      const mentionsVoting = allDescriptions.toLowerCase().includes('vote');
+      const allDescriptions = judgeWorkflow!.steps.map((s) => s.description || '').join(' ');
+      const mentionsRanking = allDescriptions.toLowerCase().includes('rank') ||
+        allDescriptions.toLowerCase().includes('submission');
 
-      expect(mentionsVoting).toBe(true);
+      expect(mentionsRanking).toBe(true);
 
-      console.log('Voter workflow guide contains expected workflows');
+      console.log('Judge workflow guide contains expected workflows');
     });
 
     test('Test 8: Specific workflow filter', async () => {

@@ -19,14 +19,13 @@ const mockGetTask = mock(() =>
     chain_id: 84532,
     title: 'Test Task',
     description: 'A test task',
-    status: 'open',
+    phase: 'open',
     creator_address: '0xcreator',
     bounty_amount: '1000000000000000000',
     bounty_token: '0x0000000000000000000000000000000000000000',
     specification_cid: 'QmSpec123',
     tags: ['test'],
     submission_count: 0,
-    winner_address: null,
     created_at: new Date().toISOString(),
   })
 );
@@ -44,11 +43,6 @@ const mockGetAgentByAddress = mock(() =>
     skills: ['testing'],
   })
 );
-const mockCreateDispute = mock(() => Promise.resolve({ id: 'dispute-1' }));
-const mockGetDisputeByChainId = mock(() => Promise.resolve(null));
-const mockUpdateDispute = mock(() => Promise.resolve());
-const mockIncrementDisputesWon = mock(() => Promise.resolve());
-const mockIncrementDisputesLost = mock(() => Promise.resolve());
 
 mock.module('@pactprotocol/database', () => ({
   createTask: mockCreateTask,
@@ -60,11 +54,6 @@ mock.module('@pactprotocol/database', () => ({
   updateSubmission: mockUpdateSubmission,
   upsertAgent: mockUpsertAgent,
   getAgentByAddress: mockGetAgentByAddress,
-  createDispute: mockCreateDispute,
-  getDisputeByChainId: mockGetDisputeByChainId,
-  updateDispute: mockUpdateDispute,
-  incrementDisputesWon: mockIncrementDisputesWon,
-  incrementDisputesLost: mockIncrementDisputesLost,
 }));
 
 const mockFetchTaskSpecification = mock(() =>
@@ -82,7 +71,6 @@ mock.module('@pactprotocol/ipfs-utils', () => ({
 mock.module('@pactprotocol/cache', () => ({
   invalidateTaskCaches: mock(() => Promise.resolve()),
   invalidateSubmissionCaches: mock(() => Promise.resolve()),
-  invalidateDisputeCaches: mock(() => Promise.resolve()),
   invalidateAgentCaches: mock(() => Promise.resolve()),
 }));
 
@@ -100,9 +88,6 @@ mock.module('../../utils/retry', () => ({
 // Import handlers after mocks are set up
 import { handleTaskCreated } from '../../../../indexer/src/handlers/task-created';
 import { handleWorkSubmitted } from '../../../../indexer/src/handlers/work-submitted';
-import { handleWinnerSelected } from '../../../../indexer/src/handlers/winner-selected';
-import { handleDisputeCreated } from '../../../../indexer/src/handlers/dispute-started';
-import { handleDisputeResolved } from '../../../../indexer/src/handlers/dispute-resolved';
 import { handleAgentRegistered } from '../../../../indexer/src/handlers/agent-registered';
 import type { IndexerEvent } from '../../../../indexer/src/listener';
 
@@ -125,7 +110,7 @@ function makeEvent(name: string, args: Record<string, unknown>): IndexerEvent {
 // Tests
 // ============================================================================
 
-// TODO: Update for V2 — uses V1 patterns (dispute handlers, updateTask vs updateTaskPhase, status vs phase)
+// TODO: Update for V2 — uses V1 patterns (updateTask vs updateTaskPhase, status vs phase)
 describe.skip('E2E: Full System Flow (Mocked)', () => {
   beforeEach(() => {
     mockCreateTask.mockClear();
@@ -135,15 +120,10 @@ describe.skip('E2E: Full System Flow (Mocked)', () => {
     mockCreateSubmission.mockClear();
     mockGetSubmissionByTaskAndAgent.mockClear();
     mockUpsertAgent.mockClear();
-    mockCreateDispute.mockClear();
-    mockGetDisputeByChainId.mockClear();
-    mockUpdateDispute.mockClear();
-    mockIncrementDisputesWon.mockClear();
-    mockIncrementDisputesLost.mockClear();
     mockFetchTaskSpecification.mockClear();
   });
 
-  test('complete task lifecycle: create -> submit -> select winner', async () => {
+  test('complete task lifecycle: create -> submit work', async () => {
     // Step 1: Task created on-chain, indexer picks it up
     const taskCreatedEvent = makeEvent('TaskCreated', {
       taskId: 1n,
@@ -179,80 +159,6 @@ describe.skip('E2E: Full System Flow (Mocked)', () => {
 
     await handleWorkSubmitted(workSubmittedEvent);
     expect(mockCreateSubmission).toHaveBeenCalledTimes(1);
-
-    // Step 3: Creator selects winner
-    mockGetTaskByChainId.mockImplementation(() =>
-      Promise.resolve({
-        id: 'db-task-1',
-        chain_task_id: '1',
-        status: 'open',
-        creator_address: '0xcreator',
-      })
-    );
-
-    const winnerSelectedEvent = makeEvent('WinnerSelected', {
-      taskId: 1n,
-      winner: '0xAgent' as `0x${string}`,
-      challengeDeadline: BigInt(Math.floor(Date.now() / 1000) + 172800),
-    });
-
-    await handleWinnerSelected(winnerSelectedEvent);
-    expect(mockUpdateTask).toHaveBeenCalledTimes(1);
-    const updateArgs = mockUpdateTask.mock.calls[0]![1] as Record<string, unknown>;
-    expect(updateArgs.status).toBe('in_review');
-    expect(updateArgs.winner_address).toBe('0xagent');
-  });
-
-  test('dispute lifecycle: create dispute -> resolve', async () => {
-    // Step 1: Dispute created
-    mockGetTaskByChainId.mockImplementation(() =>
-      Promise.resolve({
-        id: 'db-task-1',
-        chain_task_id: '1',
-        status: 'in_review',
-        creator_address: '0xcreator',
-      })
-    );
-
-    const disputeCreatedEvent = makeEvent('DisputeCreated', {
-      disputeId: 1n,
-      taskId: 1n,
-      disputer: '0xDisputer' as `0x${string}`,
-      stake: 100000000000000000n,
-      votingDeadline: BigInt(Math.floor(Date.now() / 1000) + 172800),
-    });
-
-    await handleDisputeCreated(disputeCreatedEvent);
-    expect(mockCreateDispute).toHaveBeenCalledTimes(1);
-    const disputeArgs = mockCreateDispute.mock.calls[0]![0] as Record<string, unknown>;
-    expect(disputeArgs.status).toBe('active');
-    expect(disputeArgs.disputer_address).toBe('0xdisputer');
-
-    // Step 2: Dispute resolved (disputer won)
-    mockGetDisputeByChainId.mockImplementation(() =>
-      Promise.resolve({
-        id: 'dispute-1',
-        chain_dispute_id: '1',
-        task_id: 'db-task-1',
-        disputer_address: '0xdisputer',
-        status: 'active',
-      })
-    );
-
-    const disputeResolvedEvent = makeEvent('DisputeResolved', {
-      disputeId: 1n,
-      taskId: 1n,
-      disputerWon: true,
-      votesFor: 5n,
-      votesAgainst: 2n,
-    });
-
-    await handleDisputeResolved(disputeResolvedEvent);
-    expect(mockUpdateDispute).toHaveBeenCalledTimes(1);
-    const resolveArgs = mockUpdateDispute.mock.calls[0]![1] as Record<string, unknown>;
-    expect(resolveArgs.status).toBe('resolved');
-    expect(resolveArgs.disputer_won).toBe(true);
-    expect(mockIncrementDisputesWon).toHaveBeenCalledWith('0xdisputer');
   });
 
   test('multi-agent submission scenario', async () => {

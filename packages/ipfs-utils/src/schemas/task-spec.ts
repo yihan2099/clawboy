@@ -63,7 +63,7 @@ export function validateTaskSpecification(data: unknown): {
   // Optional requirements check
   if (spec.requirements && Array.isArray(spec.requirements)) {
     (spec.requirements as TaskRequirement[]).forEach((r, i) => {
-      if (!['skill', 'tier', 'reputation', 'stake'].includes(r.type)) {
+      if (!['skill', 'tier', 'reputation'].includes(r.type)) {
         errors.push(`Requirement ${i}: invalid type "${r.type}"`);
       }
     });

@@ -7,7 +7,6 @@
  * - Submit to non-existent task
  * - Unauthorized actions (wrong wallet)
  * - Double submission handling
- * - Invalid dispute scenarios
  *
  * Prerequisites:
  * - Two funded wallets on Base Sepolia
@@ -40,21 +39,6 @@ import { getBalance } from '@pactprotocol/web3-utils';
 import { registerAgentTool } from '../../tools/agent/register-agent';
 import { createTaskTool } from '../../tools/task/create-task';
 import { submitWorkTool } from '../../tools/agent/submit-work';
-import { startDisputeTool } from '../../tools/dispute/start-dispute';
-import { submitVoteTool } from '../../tools/dispute/submit-vote';
-import type { ServerContext } from '../../server';
-
-/**
- * Create a mock ServerContext for testing
- */
-function createMockContext(address: `0x${string}`, sessionId: string): ServerContext {
-  return {
-    callerAddress: address,
-    isAuthenticated: true,
-    isRegistered: true,
-    sessionId,
-  };
-}
 
 // Test configuration
 const TEST_BOUNTY_ETH = '0.001';
@@ -377,82 +361,6 @@ describe.skipIf(shouldSkipTests)('E2E: Error Scenarios on Base Sepolia', () => {
             errorMessage.includes('submit') ||
             errorMessage.includes('revert')
         ).toBe(true);
-      }
-    });
-  });
-
-  describe('Dispute Validation Errors', () => {
-    test(
-      'should fail to dispute task not in review',
-      async () => {
-        console.log('\n--- Test: Dispute task not in review ---\n');
-
-        // Create a fresh task (will be in Open status)
-        const taskResult = await createTaskTool.handler(
-          {
-            title: `Dispute Test Task ${Date.now()}`,
-            description: 'Task for testing dispute validation',
-            deliverables: [{ type: 'document' as const, description: 'Test' }],
-            bountyAmount: TEST_BOUNTY_ETH,
-            tags: ['test'],
-          },
-          { callerAddress: creatorWallet.address }
-        );
-
-        const { taskId } = await createTaskOnChain(
-          creatorWallet,
-          taskResult.specificationCid,
-          TEST_BOUNTY_ETH
-        );
-
-        // Wait for state to propagate
-        await new Promise((r) => setTimeout(r, 3000));
-
-        // Submit work so we can try to dispute
-        const dbTask = await waitForTaskInDB(taskId, INDEXER_SYNC_WAIT_MS);
-
-        const submitResult = await submitWorkTool.handler(
-          {
-            taskId: dbTask!.id,
-            summary: 'Submission',
-            description: 'Work',
-            deliverables: [
-              { type: 'document' as const, description: 'Output', url: 'https://test.com' },
-            ],
-          },
-          { callerAddress: agentWallet.address }
-        );
-        await submitWorkOnChain(agentWallet, taskId, submitResult.submissionCid);
-
-        // Try to start dispute (task is Open, not InReview)
-        try {
-          await startDisputeTool.handler(
-            { taskId: taskId.toString() },
-            createMockContext(agentWallet.address, agentSessionId)
-          );
-          expect(true).toBe(false);
-        } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.log(`Expected error: ${errorMessage}`);
-          expect(errorMessage.includes('review') || errorMessage.includes('status')).toBe(true);
-        }
-      },
-      TEST_TIMEOUT
-    );
-
-    test('should fail to vote on non-existent dispute', async () => {
-      console.log('\n--- Test: Vote on non-existent dispute ---\n');
-
-      try {
-        await submitVoteTool.handler(
-          { disputeId: '999999', supportsDisputer: true },
-          createMockContext(agentWallet.address, agentSessionId)
-        );
-        expect(true).toBe(false);
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.log(`Expected error: ${errorMessage}`);
-        expect(errorMessage.includes('not found') || errorMessage.includes('Dispute')).toBe(true);
       }
     });
   });

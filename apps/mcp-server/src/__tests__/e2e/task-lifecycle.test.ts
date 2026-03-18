@@ -1,6 +1,4 @@
 /**
- * TODO: Update for V2 — uses V1 field names (status vs phase, winner_address, etc.)
- *
  * End-to-End Task Lifecycle Test
  *
  * Tests the complete task lifecycle on Base Sepolia testnet:
@@ -270,12 +268,12 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       dbTaskId = dbTask!.id;
       console.log(`Database task ID: ${dbTaskId}`);
-      console.log(`Database status: ${dbTask!.status}`);
+      console.log(`Database phase: ${dbTask!.phase}`);
       console.log(`Database title: ${dbTask!.title}`);
 
       expect(dbTask).toBeDefined();
       expect(dbTask!.chain_task_id).toBe(chainTaskId.toString());
-      expect(dbTask!.status).toBe('open');
+      expect(dbTask!.phase).toBe('open');
       expect(dbTask!.creator_address.toLowerCase()).toBe(creatorWallet.address.toLowerCase());
     },
     TEST_TIMEOUT
@@ -355,11 +353,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
         2000,
         creatorWallet.address
       );
-      console.log(`Database status: ${dbTask!.status}`);
-      console.log(`Database winner: ${dbTask!.winner_address}`);
+      console.log(`Database phase: ${dbTask!.phase}`);
 
-      expect(dbTask!.status).toBe('in_review');
-      expect(dbTask!.winner_address?.toLowerCase()).toBe(agentWallet.address.toLowerCase());
+      expect(dbTask!.phase).toBe('in_review');
     },
     TEST_TIMEOUT
   );
@@ -384,9 +380,8 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
       console.log('\nDatabase state:');
       console.log(`  ID: ${dbTask!.id}`);
       console.log(`  Chain ID: ${dbTask!.chain_task_id}`);
-      console.log(`  Status: ${dbTask!.status}`);
+      console.log(`  Phase: ${dbTask!.phase}`);
       console.log(`  Title: ${dbTask!.title}`);
-      console.log(`  Winner: ${dbTask!.winner_address}`);
       console.log(`  Submission Count: ${dbTask!.submission_count}`);
 
       // Check challenge deadline
@@ -402,8 +397,7 @@ describe.skipIf(shouldSkipTests)('E2E: Task Lifecycle on Base Sepolia', () => {
 
       // Assertions
       expect(onChainTask.status).toBe(TaskStatus.InReview);
-      expect(dbTask!.status).toBe('in_review');
-      expect(dbTask!.winner_address?.toLowerCase()).toBe(agentWallet.address.toLowerCase());
+      expect(dbTask!.phase).toBe('in_review');
 
       console.log('\n========================================');
       console.log('E2E Test Complete!');
@@ -504,9 +498,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
         creatorWallet.address
       );
       console.log(`Database task ID: ${dbTask!.id}`);
-      console.log(`Database status: ${dbTask!.status}`);
+      console.log(`Database phase: ${dbTask!.phase}`);
 
-      expect(dbTask!.status).toBe('open');
+      expect(dbTask!.phase).toBe('open');
 
       // Call MCP cancel_task tool
       console.log('Calling MCP cancel_task tool...');
@@ -540,9 +534,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
         2000,
         creatorWallet.address
       );
-      console.log(`Database status after cancel: ${updatedDbTask!.status}`);
+      console.log(`Database phase after cancel: ${updatedDbTask!.phase}`);
 
-      expect(updatedDbTask!.status).toBe('cancelled');
+      expect(updatedDbTask!.phase).toBe('cancelled');
 
       console.log('Task successfully cancelled');
     },
@@ -747,9 +741,9 @@ describe.skipIf(shouldSkipTests)('E2E: Task Cancellation on Base Sepolia', () =>
       2000,
       creatorWallet.address
     );
-    console.log(`Database status: ${dbTask!.status}`);
+    console.log(`Database phase: ${dbTask!.phase}`);
 
-    expect(dbTask!.status).toBe('completed');
+    expect(dbTask!.phase).toBe('completed');
 
     console.log('\n========================================');
     console.log('Task Lifecycle Complete!');
@@ -939,8 +933,8 @@ describe.skipIf(shouldSkipFinalizationTests)(
           2000,
           creatorWallet.address
         );
-        console.log(`Database status: ${completedTask!.status}`);
-        expect(completedTask!.status).toBe('completed');
+        console.log(`Database phase: ${completedTask!.phase}`);
+        expect(completedTask!.phase).toBe('completed');
 
         console.log('\n========================================');
         console.log('Finalization Test Complete!');

@@ -469,7 +469,7 @@ export async function waitForTaskStatus(
       const creatorMatches =
         !creatorAddress || task.creator_address.toLowerCase() === creatorAddress.toLowerCase();
 
-      if (creatorMatches && task.status === expectedStatus) {
+      if (creatorMatches && task.phase === expectedStatus) {
         return task;
       }
     }
@@ -477,7 +477,7 @@ export async function waitForTaskStatus(
   }
 
   throw new Error(
-    `Task ${chainTaskIdStr} (chain: ${CHAIN_ID})${creatorAddress ? ` (creator: ${creatorAddress})` : ''} did not reach status "${expectedStatus}" after ${maxWaitMs}ms`
+    `Task ${chainTaskIdStr} (chain: ${CHAIN_ID})${creatorAddress ? ` (creator: ${creatorAddress})` : ''} did not reach phase "${expectedStatus}" after ${maxWaitMs}ms`
   );
 }
 
