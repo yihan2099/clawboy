@@ -12,8 +12,6 @@ export const BASE_MAINNET_ADDRESSES = {
   // Core Pact contracts (V2)
   escrowVault: '0x0000000000000000000000000000000000000000' as `0x${string}`,
   taskManager: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-  // ERC-8183 Compatibility Layer
-  erc8183Adapter: '0x0000000000000000000000000000000000000000' as `0x${string}`,
 } as const;
 
 export const BASE_MAINNET_CHAIN_ID = 8453;

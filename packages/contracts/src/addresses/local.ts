@@ -17,6 +17,4 @@ export const LOCAL_ADDRESSES = {
   // Core Pact contracts (V2)
   escrowVault: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9' as const,
   taskManager: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9' as const,
-  // ERC-8183 Compatibility Layer (deploy locally via DeployERC8183Adapter.s.sol)
-  erc8183Adapter: '0x0000000000000000000000000000000000000000' as const,
 };

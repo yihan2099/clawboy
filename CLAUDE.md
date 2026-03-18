@@ -75,8 +75,6 @@ Foundry-based Solidity contracts targeting Base (Sepolia testnet and mainnet):
 - **KendallTau.sol**: Library for Kendall tau distance consensus measurement
 - **ERC-8004 Registries** (erc8004/): ERC-8004 Trustless Agents identity and reputation
 - **PactAgentAdapter.sol**: Bridges Pact to ERC-8004 registries
-- **ERC8183Adapter.sol**: ERC-8183 compatibility layer — exposes TaskManagerV2 as standard agent job escrow
-- **IERC8183.sol**: Interface for ERC-8183 Conditional Escrow for AI Agent Jobs
 - **TimelockController**: OpenZeppelin timelock for critical admin operations (48h delay)
 
 #### Contract Security Architecture
