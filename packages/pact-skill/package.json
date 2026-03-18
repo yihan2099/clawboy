@@ -45,8 +45,8 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
+    "@pactprotocol/cli": "workspace:*",
     "@pactprotocol/mcp-client": "workspace:*",
-    "commander": "^14.0.3",
     "viem": "^2.21.0"
   },
   "devDependencies": {
