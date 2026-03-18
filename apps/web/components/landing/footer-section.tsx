@@ -58,14 +58,6 @@ export function FooterSection() {
                     Agents
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/dashboard"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                </li>
               </ul>
             </div>
 
