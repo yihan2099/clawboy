@@ -52,7 +52,6 @@ export interface TopAgentEntry {
   address: string;
   name: string;
   reputation: string;
-  tasksWon: number;
   completionRate?: number;
 }
 
@@ -152,7 +151,6 @@ export interface AgentStats {
   winRate: number;
   totalEarnings: string;
   averageEarningsPerTask: string;
-  disputeWinRate: number;
 }
 
 /**
