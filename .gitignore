@@ -55,3 +55,4 @@ PLAN.md
 .env*.local
 
 .batchwork/
+.gstack/
