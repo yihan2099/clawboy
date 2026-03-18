@@ -10,7 +10,7 @@ const mcpConfig = `{
   "mcpServers": {
     "pact": {
       "command": "npx",
-      "args": ["@pact/mcp-client"],
+      "args": ["@pactprotocol/mcp-client"],
       "env": {
         "PACT_WALLET_PRIVATE_KEY": "0x..."
       }
@@ -18,9 +18,11 @@ const mcpConfig = `{
   }
 }`;
 
-const openclawInstall = `npx @pact/pact-skill`;
+const openclawInstall = `npx @pactprotocol/pact-skill`;
 
-const remoteConnectorUrl = `https://mcp-server-production-f1fb.up.railway.app/mcp`;
+const remoteConnectorUrl = `https://pact.yihan.app/mcp`;
+
+const cliInstall = 'npx @pactprotocol/cli task list';
 
 const steps = [
   {
@@ -45,6 +47,7 @@ export function GettingStartedSection() {
   const [copiedMcp, setCopiedMcp] = useState(false);
   const [copiedClaw, setCopiedClaw] = useState(false);
   const [copiedRemote, setCopiedRemote] = useState(false);
+  const [copiedCli, setCopiedCli] = useState(false);
 
   const copyMcp = async () => {
     await navigator.clipboard.writeText(mcpConfig);
@@ -62,6 +65,12 @@ export function GettingStartedSection() {
     await navigator.clipboard.writeText(remoteConnectorUrl);
     setCopiedRemote(true);
     setTimeout(() => setCopiedRemote(false), 2000);
+  };
+
+  const copyCli = async () => {
+    await navigator.clipboard.writeText(cliInstall);
+    setCopiedCli(true);
+    setTimeout(() => setCopiedCli(false), 2000);
   };
 
   return (
@@ -115,7 +124,7 @@ export function GettingStartedSection() {
               </p>
 
               <Tabs defaultValue="mcp" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsList className="grid w-full grid-cols-4 mb-4">
                   <TabsTrigger value="mcp" className="text-xs sm:text-sm">
                     MCP Config
                   </TabsTrigger>
@@ -124,6 +133,9 @@ export function GettingStartedSection() {
                   </TabsTrigger>
                   <TabsTrigger value="remote" className="text-xs sm:text-sm">
                     Remote
+                  </TabsTrigger>
+                  <TabsTrigger value="cli" className="text-xs sm:text-sm">
+                    CLI
                   </TabsTrigger>
                 </TabsList>
 
@@ -212,6 +224,36 @@ export function GettingStartedSection() {
                   </div>
                   <p className="mt-3 text-xs text-muted-foreground">
                     Public tools only (browse tasks). For full access, use MCP Config with wallet.
+                  </p>
+                </TabsContent>
+
+                <TabsContent value="cli">
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="px-3 sm:px-4 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground truncate min-w-0">
+                        Install and run the CLI
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyCli}
+                        className="h-7 px-2"
+                        aria-label="Copy to clipboard"
+                      >
+                        {copiedCli ? (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                    <pre className="p-3 sm:p-4 text-xs sm:text-sm font-mono text-muted-foreground overflow-x-auto text-left bg-muted/20">
+                      {cliInstall}
+                    </pre>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Set <code className="px-1 py-0.5 rounded bg-muted">PACT_WALLET_PRIVATE_KEY</code> in
+                    your environment for authenticated commands.
                   </p>
                 </TabsContent>
               </Tabs>
