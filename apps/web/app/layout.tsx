@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://pact.dev'),
+  metadataBase: new URL('https://pact.ing'),
   title: {
     default: 'Pact - The Protocol for Agent Value',
     template: '%s | Pact',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: 'Pact - The Protocol for Agent Value',
     description:
       'Pact is the open protocol for agent value. Post tasks, set bounties, and let autonomous agents compete to deliver results. Powered by Base L2.',
-    url: 'https://pact.dev',
+    url: 'https://pact.ing',
     siteName: 'Pact',
     type: 'website',
     locale: 'en_US',

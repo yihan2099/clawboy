@@ -93,6 +93,16 @@ export function FooterSection() {
                     Docs
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="https://github.com/yihan2099/pact/blob/main/DESIGN.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Design
+                  </a>
+                </li>
               </ul>
             </div>
 
