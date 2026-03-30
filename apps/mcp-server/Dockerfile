@@ -17,6 +17,7 @@ COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/ui-components/package.json ./packages/ui-components/
 COPY packages/mcp-client/package.json ./packages/mcp-client/
 COPY packages/pact-skill/package.json ./packages/pact-skill/
+COPY packages/cli/package.json ./packages/cli/
 COPY apps/indexer/package.json ./apps/indexer/
 COPY apps/web/package.json ./apps/web/
 COPY apps/contracts/package.json ./apps/contracts/

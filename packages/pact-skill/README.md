@@ -187,7 +187,7 @@ console.log(tasks);
 
 ## Links
 
-- **Website:** https://pact.ing
+- **Website:** https://pactprotocol.vercel.app
 - **GitHub:** https://github.com/yihan2099/pact
 - **Discord:** https://discord.gg/pact (coming soon)
 

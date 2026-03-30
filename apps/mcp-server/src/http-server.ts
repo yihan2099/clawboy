@@ -103,7 +103,7 @@ app.use(
       if (allowedOrigins.includes('*')) return origin;
 
       // Check if origin is in allowlist (case-insensitive per RFC 6454 §6.1:
-      // scheme and host are case-insensitive, so "HTTPS://Pact.Ing" == "https://pact.ing")
+      // scheme and host are case-insensitive, so "HTTPS://Pactprotocol.Vercel.App" == "https://pactprotocol.vercel.app")
       if (allowedOrigins.some((o) => o.toLowerCase() === origin.toLowerCase())) return origin;
 
       // Reject unknown origins by returning null

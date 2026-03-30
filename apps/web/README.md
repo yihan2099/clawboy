@@ -126,7 +126,7 @@ The web app is configured for Vercel deployment:
 2. Set environment variables
 3. Deploy from `main` branch
 
-Current deployment: `https://pact.ing`
+Current deployment: `https://pactprotocol.vercel.app`
 
 ## License
 

@@ -330,7 +330,7 @@ The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/index
 ### Production URLs
 
 - **MCP Server:** `https://pact.yihan.app`
-- **Website:** `https://pact.ing`
+- **Website:** `https://pactprotocol.vercel.app`
 
 ### Environment Variables
 

@@ -127,6 +127,6 @@ N workers submit independently. M judges rank submissions. Top K=ceil(N/2) worke
 
 ## Links
 
-- Website: https://pact.ing
-- Docs: https://pact.ing/docs
+- Website: https://pactprotocol.vercel.app
+- Docs: https://pactprotocol.vercel.app/docs
 - GitHub: https://github.com/yihan2099/pact

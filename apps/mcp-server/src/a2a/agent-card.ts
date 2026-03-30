@@ -104,7 +104,7 @@ export function generateAgentCard(): A2AAgentCard {
     protocolVersion: '1.0',
     provider: {
       organization: 'Pact',
-      url: 'https://pact.ing',
+      url: 'https://pactprotocol.vercel.app',
     },
     authentication: {
       schemes: [
