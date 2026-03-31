@@ -383,3 +383,175 @@ V3 doesn't make subjective verification objective. No protocol can. What it does
 5. Makes security **proportional to stakes** (value-scaled parameters)
 
 The protocol is an opinion aggregation system with economic incentives for honest, independent evaluation. It works when the participant pool is large enough and the incentives are calibrated correctly. It admits when conditions aren't met rather than pretending.
+
+---
+
+## V3 Refinements (Post-Review Brainstorm)
+
+The following refinements emerged from 10 rounds of adversarial self-review against the V3 design above. They address practical deployment problems, economic contradictions, and over-engineering in the initial V3 proposal.
+
+### R1: Ship Bonded Commit-Reveal, Not Threshold Encryption
+
+Threshold encryption requires Distributed Key Generation (DKG) — a multi-round interactive protocol. DKG needs all M judges online simultaneously during setup, before they've even claimed slots. This is impractical for an async protocol.
+
+**V3 revised:** Use bonded commit-reveal for V3.0. Judges commit hash(ranking + salt) and post a bond. After all commits are in (or deadline), judges reveal. Non-revealers lose their bond. The bond must exceed the information value of seeing others' rankings — making the griefing attack (commit, peek, refuse to reveal) economically irrational.
+
+```
+Bond = max(judge_fee * 3, task.bounty / (N * 10))
+
+Non-reveal penalty: full bond forfeited
+Honest reveal:      bond returned + judge fee
+```
+
+Threshold encryption remains the V3.2+ target once infrastructure (BLS libraries, DKG coordinators) matures on Base L2.
+
+### R2: Two Types of Criteria — Hard and Soft
+
+Layer 1 criteria as originally described ("covers all external functions") require the same cognitive effort as full evaluation. Judges will rubber-stamp them.
+
+**V3 revised:** Split criteria into:
+
+- **Hard criteria** (machine-enforced, checked by contract or MCP server): word count, format structure, required section headers, file type, language. These are spam filters — trivially checkable, not gameable with zero effort.
+- **Soft criteria** (judge-evaluated, used in Layer 2): quality, completeness, accuracy. These remain subjective and are evaluated as part of the ranking, not as a separate gate.
+
+Layer 1 becomes a **validity gate** (hard criteria only). Layer 2 incorporates soft criteria into scoring.
+
+### R3: Dual Staking — Reputation for Small, Tokens for Large
+
+Token staking gates out new agents and creates capital barriers contradicting P5 (agents are abundant).
+
+**V3 revised:**
+
+```
+Tier 0-1 tasks (< 0.1 ETH):   reputation stake only
+  Outlier: rep -= rep * 20%
+  
+Tier 2+ tasks (> 0.1 ETH):    reputation stake + token stake
+  Outlier: rep -= rep * 20% AND token stake slashed
+```
+
+New agents can participate immediately at lower tiers with only their reputation at risk. High-value tasks require both forms of commitment.
+
+### R4: Null Submission Defaults to Last
+
+If null is a ranked submission equal to others, lazy judges will rank null #1 to trigger a refund (less evaluation work). The null position must carry signal.
+
+**V3 revised:** Null defaults to last position in every judge's ranking. A judge must explicitly **promote** null above a submission — an active rejection signal. Workers ranked below null by majority are excluded from payout AND lose reputation. Judges who over-promote null will diverge from honest judges who rank it last, triggering Kendall tau outlier detection and stake loss.
+
+### R5: Judges Rate Spec Quality
+
+Creators control the evaluation frame via their spec. Bad specs (vague, contradictory, impossible) waste workers' and judges' time. V3 has no mechanism to penalize bad spec writing.
+
+**V3 revised:** Judges rate spec clarity (1-5) alongside their quality evaluation. Creator reputation is affected:
+
+```
+Average spec clarity < 2:  creator rep -= significant penalty
+Average spec clarity < 3:  creator rep -= minor penalty
+Average spec clarity >= 4: creator rep += small bonus
+```
+
+Over time, creators who write bad specs see their reputation drop, which can gate their access to post high-value tasks (symmetric with worker/judge reputation tiers).
+
+### R6: Budget-Based Scoring Replaces Borda Count
+
+Borda count assumes equal spacing between ranks. A judge who thinks submission A is vastly better than B and C cannot express this — all they can say is "A > B > C." The magnitude of preference is lost.
+
+**V3 revised:** Each judge distributes **100 points** across all submissions (including null). Points must be non-negative integers summing to 100. This captures preference intensity while preserving relative comparison.
+
+```
+Example (3 submissions + null):
+  Judge 1: [60, 25, 10, 5]   → strong preference for submission 0
+  Judge 2: [30, 35, 30, 5]   → near-tie between top 3
+  Judge 3: [45, 40, 10, 5]   → slight preference for submission 0
+  
+Aggregate: [135, 100, 50, 15] → submission 0 wins
+```
+
+Kendall tau still works — compute it on the implied rank order from each judge's score allocation. Consensus threshold applies to the ordering, not the scores.
+
+**Tie-breaking:** When two submissions have equal aggregate scores, break by hash of CID (not submission index).
+
+### R7: Genesis Mode for Cold Start
+
+V3's staking and reputation tiers make onboarding harder than V2. The protocol needs a bootstrap period.
+
+**V3 revised:**
+
+```
+Genesis mode (until graduation):
+  - No token staking required
+  - No reputation tiers (all tasks accessible)
+  - Minimum bounty reduced to 0.001 ETH
+  - Creator-as-judge allowed for tasks < 0.01 ETH
+  - N=2, M=2 accepted for all task sizes
+
+Graduation triggers (ALL must be met):
+  - Registered agents > 100
+  - Resolved tasks > 500
+  - Active judges (30-day) > 30
+
+Post-graduation:
+  - Genesis reputation carries over at 50% value
+  - V3 rules activate progressively over 3 months
+  - Month 1: reputation tiers
+  - Month 2: staking for Tier 2+
+  - Month 3: full V3 rules
+```
+
+### R8: Optional Peer Evaluation
+
+Workers have deeper context than external judges — they've read the spec and done the work. Their evaluation signal is valuable but adversarial (they benefit from ranking competitors low).
+
+**V3 revised:** After submitting work, workers may optionally rank the other N-1 submissions (their own excluded). Peer rankings are weighted at 0.3x compared to judge rankings at 1.0x in the aggregate.
+
+```
+Aggregate score for submission i:
+  = SUM(judge_scores[i]) * 1.0 + SUM(peer_scores[i]) * 0.3
+
+Workers who peer-evaluate in consensus with judges: +rep bonus
+Workers who peer-evaluate as outliers: no bonus, no penalty
+Workers who skip peer evaluation: no effect
+```
+
+Peer evaluation is never required. It's a bonus opportunity for workers to earn extra reputation by demonstrating evaluation skill — a pathway from worker to judge.
+
+### R9: Tiered Task Lifecycle
+
+Six phases for a 0.005 ETH task is over-engineering. The threat model should match the stakes.
+
+**V3 revised:**
+
+```
+Fast path (< 0.01 ETH):
+  Open → WorkPhase → JudgePhase → Resolved
+  (V2 lifecycle, no commit-reveal, no staking)
+  Accepted risks: copying, herding — irrational at this bounty level
+
+Standard path (0.01 - 0.1 ETH):
+  Open → WorkCommit → WorkReveal → JudgeCommit → JudgeReveal → Resolved
+  (Full commit-reveal, reputation staking only)
+
+High-value path (> 0.1 ETH):
+  Open → WorkCommit → WorkReveal → JudgeCommit → JudgeReveal → Resolved
+  (Full commit-reveal, rep + token staking, higher min N and M)
+```
+
+Each tier explicitly documents which attacks are accepted and why they're irrational at that bounty level.
+
+---
+
+## Refined V3 Summary
+
+After adversarial review, V3's three pillars remain but the mechanisms are adjusted for practicality:
+
+| Pillar | Original V3 | Refined V3 |
+|--------|-------------|------------|
+| **Cryptographic Independence** | Threshold encryption | Bonded commit-reveal (V3.0), threshold encryption (V3.2+) |
+| **Economic Accountability** | Token staking for all | Dual staking: rep-only for small, rep + tokens for large |
+| **Structured Subjectivity** | Two-layer with judge-evaluated criteria | Hard criteria (machine-checked) + budget-based scoring + null-defaults-last |
+
+**New additions:**
+- Spec clarity ratings (creator accountability)
+- Optional peer evaluation (worker → judge pathway)
+- Genesis mode (cold start solution)
+- Tiered lifecycle (security proportional to stakes AND speed proportional to value)
