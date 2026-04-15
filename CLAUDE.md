@@ -329,8 +329,10 @@ The `.env.anvil` files in `apps/contracts/`, `apps/mcp-server/`, and `apps/index
 
 ### Production URLs
 
-- **MCP Server:** `https://pact.yihan.app`
+- **MCP Server:** `https://pact.yihan.app` (deployed on OCI ARM Singapore via Cloudflare Tunnel)
 - **Website:** `https://pactprotocol.vercel.app`
+
+Both point at Base Sepolia testnet contracts (CHAIN_ID=84532).
 
 ### Environment Variables
 
