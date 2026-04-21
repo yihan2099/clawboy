@@ -16,7 +16,7 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
-    "viem": "^2.21.0"
+    "viem": "^2.48.2"
   },
   "devDependencies": {
     "@pactprotocol/contracts": "workspace:*",
