@@ -111,6 +111,17 @@ export function createEventListener(
         return;
       }
 
+      // Cap the query range to MAX_BLOCK_RANGE per poll. Public RPCs
+      // (e.g. sepolia.base.org) reject eth_getLogs requests spanning more than
+      // 2000 blocks with `-32602: query exceeds max block range 2000`. Without
+      // this cap, an indexer that falls behind by >2000 blocks (e.g. after a
+      // restart) would have every poll fail and the lag would grow forever.
+      // By capping per-poll progress, the listener catches up across multiple
+      // poll cycles, advancing by up to MAX_BLOCK_RANGE each cycle.
+      const MAX_BLOCK_RANGE = 2000n;
+      const maxToBlock = fromBlock + MAX_BLOCK_RANGE - 1n;
+      const toBlock = currentBlock < maxToBlock ? currentBlock : maxToBlock;
+
       // ============ TaskManagerV2 Events ============
 
       // TaskCreated (V2: includes requiredWorkers, requiredJudges, workDeadline, judgeDeadline)
@@ -132,7 +143,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // WorkSubmitted (V2: worker instead of agent, slotIndex instead of submissionIndex)
@@ -149,7 +160,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // JudgmentSubmitted (V2 new event)
@@ -165,7 +176,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // PhaseChanged (V2 new event)
@@ -181,7 +192,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // TaskResolved (V2 new event)
@@ -198,7 +209,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // TaskFailed (V2 new event)
@@ -213,7 +224,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // TaskCancelled (unchanged from V1)
@@ -228,7 +239,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // ============ PactAgentAdapter Events (ERC-8004) ============
@@ -246,7 +257,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // AgentProfileUpdated (from ERC-8004 adapter)
@@ -262,7 +273,7 @@ export function createEventListener(
           ],
         },
         fromBlock,
-        toBlock: currentBlock,
+        toBlock,
       });
 
       // Process all events
@@ -307,15 +318,18 @@ export function createEventListener(
         }
       }
 
-      lastProcessedBlock = currentBlock;
+      // Advance to the chunked toBlock, not currentBlock. If the gap exceeded
+      // MAX_BLOCK_RANGE, the next poll picks up from toBlock+1 and continues
+      // catching up until lastProcessedBlock == currentBlock.
+      lastProcessedBlock = toBlock;
       completedInitialSync = true;
 
-      // Final checkpoint to currentBlock (may be ahead of last event block)
-      if (currentBlock > lastCheckpointedBlock) {
+      // Final checkpoint to toBlock (may be ahead of last event block within this chunk)
+      if (toBlock > lastCheckpointedBlock) {
         try {
           await Promise.all([
-            updateSyncState(chainId, addresses.taskManager, currentBlock),
-            updateSyncState(chainId, addresses.agentAdapter, currentBlock),
+            updateSyncState(chainId, addresses.taskManager, toBlock),
+            updateSyncState(chainId, addresses.agentAdapter, toBlock),
           ]);
         } catch (error) {
           console.warn('Failed to save final checkpoint:', error);
@@ -323,7 +337,7 @@ export function createEventListener(
       }
 
       if (allEvents.length > 0) {
-        console.log(`Processed ${allEvents.length} events up to block ${currentBlock}`);
+        console.log(`Processed ${allEvents.length} events up to block ${toBlock}`);
       }
     } catch (error) {
       console.error('Error polling events:', error);

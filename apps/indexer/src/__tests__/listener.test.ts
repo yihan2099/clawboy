@@ -347,4 +347,58 @@ describe('createEventListener', () => {
     listener.stop();
     expect(listener.getLastProcessedBlock()).toBe(500n);
   });
+
+  test('chunks getLogs queries when block gap exceeds MAX_BLOCK_RANGE', async () => {
+    // Public RPCs (e.g. sepolia.base.org) cap eth_getLogs at 2000 blocks per call.
+    // The listener must cap each getLogs request even when the gap is larger,
+    // otherwise the RPC rejects every query and the indexer never recovers.
+    mockDb.getLastSyncedBlock.mockImplementation(() => Promise.resolve(1000n));
+    mockBlockNumber = 10_000n; // gap of 8999 blocks, well above the 2000 limit
+    mockWeb3.mockGetLogs.mockImplementation(() => Promise.resolve([]));
+
+    const listener = createEventListener(84532, 100000);
+    listener.onEvent(mock(() => Promise.resolve()));
+    listener.start();
+    await new Promise((r) => setTimeout(r, 100));
+    listener.stop();
+
+    // Inspect the toBlock arg passed to every getLogs call this poll cycle made.
+    const calls = mockWeb3.mockGetLogs.mock.calls as Array<[{ fromBlock: bigint; toBlock: bigint }]>;
+    expect(calls.length).toBeGreaterThan(0);
+    for (const [arg] of calls) {
+      const span = arg.toBlock - arg.fromBlock + 1n;
+      expect(span).toBeLessThanOrEqual(2000n);
+    }
+
+    // Single poll should not jump straight to currentBlock when the gap is huge --
+    // it advances by at most MAX_BLOCK_RANGE so the next poll picks up the rest.
+    expect(listener.getLastProcessedBlock()).toBeLessThan(10_000n);
+    expect(listener.getLastProcessedBlock()).toBeGreaterThanOrEqual(1000n + 2000n);
+  });
+
+  test('catches up across multiple polls when gap > MAX_BLOCK_RANGE', async () => {
+    // After enough poll cycles, the indexer should drain a backlog and approach currentBlock.
+    // Use a slowly-growing currentBlock so the catch-up logic exercises the chunking
+    // path on every poll without ever hitting the reorg detector at the head.
+    mockDb.getLastSyncedBlock.mockImplementation(() => Promise.resolve(1000n));
+    let head = 8_000n; // gap of 6999 -> ~4 chunks of <=2000
+    mockWeb3.getBlockNumber.mockImplementation(() => {
+      const v = head;
+      head += 10n; // mimic ~10 new blocks per poll so we never fully catch the head
+      return Promise.resolve(v);
+    });
+    mockWeb3.mockGetLogs.mockImplementation(() => Promise.resolve([]));
+
+    const listener = createEventListener(84532, 20); // fast polling for this test
+    listener.onEvent(mock(() => Promise.resolve()));
+    listener.start();
+    await new Promise((r) => setTimeout(r, 500));
+    listener.stop();
+
+    // Should have progressed well past the starting checkpoint of 1000.
+    // With ~25 polls and 2000-block chunks, we expect to be near (but possibly
+    // not exactly at) the current head -- the important thing is monotonic progress.
+    const final = listener.getLastProcessedBlock();
+    expect(final).toBeGreaterThan(3_000n);
+  });
 });
